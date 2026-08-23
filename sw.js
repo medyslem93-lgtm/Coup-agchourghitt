@@ -1,5 +1,5 @@
-const C='agchorguit-live-v8';
-const CORE=['./','index.html','styles.css','config.js','public-app.js','manifest.webmanifest','assets/tournament.jpg'];
+const C='agchorguit-live-v9';
+const CORE=['./','index.html','styles.css','config.js','public-app.js','media-enhancer.js','manifest.webmanifest','assets/tournament.jpg'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{
