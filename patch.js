@@ -1,6 +1,7 @@
 /* Official data patch — 23 Aug 2026. No invented fixtures or statistics. */
 Object.assign(logoMap,{
-'القسام':'qassam.jpg','السديم':'sadim.jpg','سانتوس':'santos.jpg','السابع أكتوبر':'seventh_october.jpg','الشمال':'shamal.jpg','الطوفان':'toufan.jpg','البداع':'bidaa.jpg'
+'القسام':'qassam.jpg','السديم':'sadim.jpg','سانتوس':'santos.jpg','السابع أكتوبر':'seventh_october.jpg','الشمال':'shamal.jpg','الطوفان':'toufan.jpg','البداع':'bidaa.jpg',
+'القدس 1':'qods1.jpg','المحظرة':'mahdara.jpg','المرابطون':'morabitoun.jpg','النجوم':'al_noujoum.jpg','ملوك أغشورگيت':'molouk_aghchorguit.jpg','ملوك أغشوركيت':'molouk_aghchorguit.jpg','الإتحاد':'ittihad.jpg'
 });
 logoMap['الواد الغارك']='wadi_gharig.jpg'; logoMap['بغداد']='baghdad.jpg';
 
