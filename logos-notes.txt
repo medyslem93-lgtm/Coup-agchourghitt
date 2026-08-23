@@ -1,1 +1,0 @@
-Team logo assets are managed under assets/logos. Do not use this file in production.
