@@ -8,7 +8,7 @@
     teams:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M14 15.5a4.5 4.5 0 0 1 6.5 4.5"/></svg>',
     more:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>'
   };
-  const logoSelectors=['.team img','.teamcard img','.ref-team img','.middle-side img','.middle-team-visual img','.profile-logo','.table-team img','.favorite-card img'];
+  const logoSelectors=['.team img','.teamcard img','.ref-team img','.middle-side img','.middle-team-visual img','.profile-logo','.table-team img','.favorite-card img','.pred-team img','.score-pick img'];
   const isTeamLogo=(img)=>logoSelectors.some(s=>img.matches?.(s));
   function upgradeChrome(){
     document.body.classList.add('world-sport');
@@ -18,20 +18,30 @@
       const span=btn.querySelector('span'); if(!span)return;
       span.innerHTML=icons[btn.dataset.page]||icons.more;
     });
+    document.querySelectorAll('[data-pred-pane]').forEach(b=>{if(b.textContent.trim()!=='التوقعات')b.textContent='التوقعات'});
   }
   function installImageGuard(){
     document.addEventListener('error',e=>{
       const img=e.target;
       if(!(img instanceof HTMLImageElement)) return;
       if(img.dataset.worldFallback==='1') return;
-      img.dataset.worldFallback='1';
-      if(isTeamLogo(img)) img.src='assets/logo-placeholder.svg';
-      else if(img.id==='brandLogo'||img.id==='heroLogo') img.src='assets/tournament.jpg';
+      if(isTeamLogo(img)){
+        e.stopImmediatePropagation();
+        img.dataset.worldFallback='1';
+        img.onerror=null;
+        img.src='assets/logo-placeholder.svg';
+        return;
+      }
+      if(img.id==='brandLogo'||img.id==='heroLogo'){
+        e.stopImmediatePropagation();
+        img.dataset.worldFallback='1';
+        img.onerror=null;
+        img.src='assets/tournament.jpg';
+      }
     },true);
   }
   function observeChrome(){
-    const nav=document.querySelector('.nav'); if(!nav)return;
-    new MutationObserver(()=>upgradeChrome()).observe(nav,{subtree:true,childList:true,characterData:true});
+    new MutationObserver(()=>upgradeChrome()).observe(document.body,{subtree:true,childList:true,characterData:true});
   }
   function softenLegacyModes(){
     document.documentElement.style.setProperty('--safe-nav-space','calc(104px + env(safe-area-inset-bottom))');
