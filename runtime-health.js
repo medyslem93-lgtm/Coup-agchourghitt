@@ -26,10 +26,11 @@
     const wanted=logoFor(img);
     if(!wanted)return;
     const current=normalize(img.getAttribute('src')||img.currentSrc||'');
+    const wantedAbs=normalize(wanted);
     const broken=/tournament\.jpg|logo-placeholder\.svg/i.test(current);
-    if(force||broken){
-      img.onerror=()=>{img.onerror=null;img.src=FALLBACK};
-      if(current!==normalize(wanted))img.src=wanted;
+    const failed=img.dataset.failedLogo||'';
+    if((force||broken)&&failed!==wantedAbs&&current!==wantedAbs){
+      img.src=wanted;
       img.style.objectFit='contain';
     }
   }
@@ -44,15 +45,17 @@
     const {data,error}=await sb.from('teams').select('name,logo_url').not('logo_url','is',null);
     if(error){console.warn('Team logo sync failed',error.message);return}
     logos=new Map((data||[]).filter(x=>x.name&&x.logo_url).map(x=>[String(x.name).trim(),x.logo_url]));
+    document.querySelectorAll('img').forEach(img=>{delete img.dataset.failedLogo});
     scan(document,true);
   }
 
   document.addEventListener('error',ev=>{
     const img=ev.target;
     if(!(img instanceof HTMLImageElement)||isTournamentImage(img))return;
-    const wanted=logoFor(img);
+    const wanted=logoFor(img),current=normalize(img.getAttribute('src')||img.currentSrc||'');
+    if(wanted&&current===normalize(wanted))img.dataset.failedLogo=normalize(wanted);
     img.onerror=null;
-    img.src=wanted||FALLBACK;
+    if(!/logo-placeholder\.svg/i.test(current))img.src=FALLBACK;
     img.style.objectFit='contain';
   },true);
 
