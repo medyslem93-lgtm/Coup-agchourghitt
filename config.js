@@ -13,6 +13,6 @@ window.AGCH_CONFIG={
       const s=document.createElement('script');s.src='predictions.js';document.body.appendChild(s);
     },{once:true});
   }else{
-    document.write('<script src="predictions.js"><\\/script>');
+    document.write('<script src="predictions.js"></script>');
   }
 })();
