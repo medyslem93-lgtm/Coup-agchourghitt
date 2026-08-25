@@ -1,0 +1,21 @@
+:root{--health-nav-h:82px;--health-gap:18px}
+html,body{max-width:100%;overflow-x:hidden;overscroll-behavior-x:none}
+body{min-height:100dvh;-webkit-text-size-adjust:100%;text-rendering:optimizeLegibility}
+.main{padding-bottom:calc(var(--health-nav-h) + env(safe-area-inset-bottom) + 34px)!important}
+.nav{min-height:var(--health-nav-h)!important;bottom:max(10px,env(safe-area-inset-bottom))!important;max-width:min(760px,calc(100% - 24px))!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important}
+.nav button{min-width:0!important;min-height:58px!important;touch-action:manipulation}
+button,a,[role="button"]{min-height:44px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+img{max-width:100%;height:auto}
+.team img,.teamcard img,.match-card img,.favorite-card img,.search-result img,.standing-team img,.pred-team img{object-fit:contain!important}
+.sheet{padding-bottom:env(safe-area-inset-bottom)!important}
+.sheet-panel{max-height:92dvh!important;overflow:auto!important;overscroll-behavior:contain}
+.page,.section,.card,.match-card,.teamcard{min-width:0}
+.match-row>*{min-width:0}
+.match-row .team b,.teamcard h3{overflow-wrap:anywhere;word-break:normal}
+#aghHealthToast{position:fixed;z-index:100000;left:50%;bottom:calc(var(--health-nav-h) + env(safe-area-inset-bottom) + 26px);transform:translate(-50%,16px);width:min(92vw,520px);background:#102019;color:#fff;border:1px solid #ffffff24;border-radius:16px;padding:12px 14px;box-shadow:0 16px 44px #0007;opacity:0;pointer-events:none;transition:.2s ease;font:700 13px/1.6 Cairo,Tajawal,sans-serif;text-align:center}
+#aghHealthToast.show{opacity:1;transform:translate(-50%,0)}
+#aghOfflineBar{position:fixed;z-index:99999;top:calc(env(safe-area-inset-top) + 8px);left:50%;transform:translateX(-50%);padding:8px 13px;border-radius:999px;background:#6b2d2d;color:white;border:1px solid #ffffff26;font:700 12px Cairo,Tajawal,sans-serif;box-shadow:0 8px 30px #0006}
+.agh-retry{display:inline-flex!important;align-items:center;justify-content:center;gap:8px;margin-top:10px;padding:10px 14px;border-radius:14px;border:1px solid #ffffff24;background:#173127;color:#fff;font:700 13px Cairo,Tajawal,sans-serif}
+@media(max-width:430px){:root{--health-nav-h:76px}.nav{max-width:calc(100% - 16px)!important}.nav button{min-height:54px!important}.sheet-panel{max-height:94dvh!important}.main{padding-inline:12px!important}}
+@media(min-width:900px){.main{padding-bottom:48px!important}.nav{bottom:18px!important}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
