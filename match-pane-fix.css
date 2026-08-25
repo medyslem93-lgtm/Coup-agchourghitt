@@ -1,0 +1,21 @@
+/* Match Centre pane isolation: referees, events, lineups and stats must never overlap. */
+#sheetPanel .pane{display:none!important}
+#sheetPanel .pane.active{display:block!important}
+#sheetPanel #v2-overview:not(.active),
+#sheetPanel #v2-events:not(.active),
+#sheetPanel #v2-lineups:not(.active),
+#sheetPanel #v2-stats:not(.active){display:none!important}
+#sheetPanel #v2-overview.active,
+#sheetPanel #v2-events.active,
+#sheetPanel #v2-lineups.active,
+#sheetPanel #v2-stats.active{display:block!important}
+
+/* Make the referee view explicit. */
+#sheetPanel [data-v2-pane="overview"]{font-size:0}
+#sheetPanel [data-v2-pane="overview"]::after{content:"الحكام";font-size:12px;font-weight:800}
+
+/* Keep referee cards visually separate from the other match-centre views. */
+#sheetPanel #v2-overview .grid2{display:grid!important}
+#sheetPanel #v2-events .grid2,
+#sheetPanel #v2-lineups .grid2,
+#sheetPanel #v2-stats .grid2{display:none!important}
