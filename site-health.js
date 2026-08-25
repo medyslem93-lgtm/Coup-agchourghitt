@@ -37,10 +37,15 @@ function swRefresh(){
 }
 document.addEventListener('error',ev=>{
   const target=ev.target;
-  if(target instanceof HTMLImageElement&&!isTournament(target)){
+  if(!(target instanceof HTMLImageElement)||isTournament(target))return;
+  target.style.objectFit='contain';
+  setTimeout(()=>{
+    if(!target.isConnected||isTournament(target))return;
     const src=String(target.getAttribute('src')||'');
-    if(!src.includes('logo-placeholder.svg')){target.onerror=null;target.src=PLACEHOLDER;target.style.objectFit='contain'}
-  }
+    if(!src.includes('logo-placeholder.svg')&&/tournament\.jpg(?:$|[?#])/i.test(src)){
+      target.onerror=null;target.src=PLACEHOLDER;
+    }
+  },0);
 },true);
 window.addEventListener('unhandledrejection',ev=>{console.error('Unhandled promise rejection',ev.reason);toast('تعذر تنفيذ العملية. تحقق من الاتصال وحاول مرة أخرى.')});
 window.addEventListener('error',ev=>{if(ev.target!==window)return;console.error('Runtime error',ev.error||ev.message);toast('حدث خلل مؤقت في الواجهة. أعد المحاولة.')});
