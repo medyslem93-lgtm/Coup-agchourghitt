@@ -1,5 +1,5 @@
-const C='agchorguit-live-v31';
-const CORE=['./','index.html','styles.css','match-v2.css','prediction-league.css','matches-reference.css','matches-reference-patch.css','middle-section.css','middle-section-patch.css','world-ui.css','site-health.css','config.js','public-app.js','media-enhancer.js','prediction-league.js','match-details-v2.js','matches-reference.js','score-display-fix.js','middle-section.js','middle-section-patch.js','middle-watchdog.js','image-fallback.js','world-ui.js','runtime-health.js','site-health.js','manifest.webmanifest','assets/tournament.jpg','assets/logo-placeholder.svg'];
+const C='agchorguit-live-v32';
+const CORE=['./','index.html','styles.css','match-v2.css','prediction-league.css','matches-reference.css','matches-reference-patch.css','middle-section.css','middle-section-patch.css','world-ui.css','site-health.css','config.js','public-app.js','media-enhancer.js','prediction-league.js','prediction-verification-patch.js','match-details-v2.js','matches-reference.js','score-display-fix.js','middle-section.js','middle-section-patch.js','middle-watchdog.js','image-fallback.js','world-ui.js','runtime-health.js','site-health.js','manifest.webmanifest','assets/tournament.jpg','assets/logo-placeholder.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(C).then(cache=>Promise.all(CORE.map(url=>cache.add(url).catch(()=>null)))).then(()=>self.skipWaiting()));
 });
