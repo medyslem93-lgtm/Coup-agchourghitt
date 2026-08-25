@@ -22,33 +22,38 @@
     let box=label.querySelector('.player-select-preview');
     if(!box){box=document.createElement('div');box.className='player-select-preview empty';select.before(box)}
     const id=select.value;
-    if(!id){box.className='player-select-preview empty';box.innerHTML='<span>اختر لاعبًا لعرض بياناته</span>';return}
+    if(!id){if(box.dataset.playerId!==''){box.dataset.playerId='';box.className='player-select-preview empty';box.innerHTML='<span>اختر لاعبًا لعرض بياناته</span>'}return}
+    if(box.dataset.playerId===id)return;
+    box.dataset.playerId=id;
     const {data}=await sb.from('players').select('id,name,number,photo_url').eq('id',id).maybeSingle();
     if(!data){box.className='player-select-preview empty';box.innerHTML='<span>تعذر تحميل بيانات اللاعب</span>';return}
     box.className='player-select-preview';
     box.innerHTML=`${data.photo_url?`<img src="${esc(data.photo_url)}" alt="${esc(data.name)}">`:`<div class="avatar">${data.number??'⚽'}</div>`}<div><b>${esc(data.name)}</b><span>${data.number!=null?'الرقم '+esc(data.number):'الرقم غير مسجل'}</span></div>`;
   }
 
+  function setText(el,text){if(el&&el.textContent!==text)el.textContent=text}
   function patchPredictionPane(){
     const pane=document.getElementById('v2-predictions');if(!pane)return;
     if(!pane.querySelector('.prediction-system-heading')&&pane.children.length){
       const heading=document.createElement('div');heading.className='prediction-system-heading';heading.innerHTML='<span>🏆</span><div><h2>توقع نتيجة المباراة</h2><p>تحدي توقعات كأس أغشوركيت 2026</p></div>';
       pane.prepend(heading);
     }
-    const vs=pane.querySelector('.pred-matchup>strong');if(vs)vs.innerHTML='<span class="vs-latin">VS</span>';
-    const title=pane.querySelector('.prediction-title h2');if(title)title.textContent='توقع النتيجة واربح التحدي 🏆';
-    const sub=pane.querySelector('.prediction-title p');if(sub)sub.textContent='اكتب معلوماتك وتوقع النتيجة النهائية للمباراة قبل انطلاقها.';
-    const locked=pane.querySelector('.pred-locked p');if(locked)locked.textContent='سيتم إعلان أصحاب التوقعات الصحيحة والنقاط بعد نهاية المباراة.';
-    const save=document.getElementById('savePrediction');if(save&&!save.disabled){save.textContent=/تحديث/.test(save.textContent)?'تحديث التوقع ⚽':'حفظ التوقع ⚽'}
-    const msg=pane.querySelector('.pred-message.error');if(msg&&/هذا الرقم مسجل سابقًا/.test(msg.textContent))msg.textContent='لقد قمت بإرسال توقعك لهذه المباراة مسبقًا. استخدم نفس الجهاز لتحديث التوقع قبل بداية المباراة.';
+    const vs=pane.querySelector('.pred-matchup>strong');if(vs&&!vs.querySelector('.vs-latin'))vs.innerHTML='<span class="vs-latin">VS</span>';
+    setText(pane.querySelector('.prediction-title h2'),'توقع النتيجة واربح التحدي 🏆');
+    setText(pane.querySelector('.prediction-title p'),'اكتب معلوماتك وتوقع النتيجة النهائية للمباراة قبل انطلاقها.');
+    setText(pane.querySelector('.pred-locked p'),'سيتم إعلان أصحاب التوقعات الصحيحة والنقاط بعد نهاية المباراة.');
+    const save=document.getElementById('savePrediction');if(save&&!save.disabled){const desired=/تحديث/.test(save.textContent)?'تحديث التوقع ⚽':'حفظ التوقع ⚽';setText(save,desired)}
+    const msg=pane.querySelector('.pred-message.error');if(msg&&/هذا الرقم مسجل سابقًا/.test(msg.textContent))setText(msg,'لقد قمت بإرسال توقعك لهذه المباراة مسبقًا. استخدم نفس الجهاز لتحديث التوقع قبل بداية المباراة.');
     const ok=pane.querySelector('.pred-message.success');if(ok&&ok.dataset.fullMessage!=='1'){
       const updated=/تحديث/.test(ok.textContent);ok.dataset.fullMessage='1';ok.innerHTML=updated?'تم تحديث توقعك بنجاح ✅<small>تم حفظ التعديل قبل موعد المباراة.</small>':'تم تسجيل توقعك بنجاح ✅<small>بالتوفيق في تحدي توقعات كأس أغشوركيت 🏆</small>';
     }
     ['predScorer','predAssist','predMotm'].forEach(id=>{const s=document.getElementById(id);if(s&&!s.dataset.previewBound){s.dataset.previewBound='1';s.addEventListener('change',()=>updatePlayerPreview(s));updatePlayerPreview(s)}});
   }
 
-  function patchCards(){document.querySelectorAll('[data-prediction-cta]').forEach(x=>{if(x.classList.contains('open'))x.textContent='✨ توقع المباراة واكسب النقاط';else x.textContent='🔒 انتهى وقت التوقع'})}
-  const obs=new MutationObserver(()=>{patchPredictionPane();patchCards()});
-  const start=()=>{obs.observe(document.body,{childList:true,subtree:true,characterData:true});patchPredictionPane();patchCards()};
+  function patchCards(){document.querySelectorAll('[data-prediction-cta]').forEach(x=>{const desired=x.classList.contains('open')?'✨ توقع المباراة واكسب النقاط':'🔒 انتهى وقت التوقع';setText(x,desired)})}
+  let queued=false;
+  const apply=()=>{queued=false;patchPredictionPane();patchCards()};
+  const obs=new MutationObserver(()=>{if(!queued){queued=true;requestAnimationFrame(apply)}});
+  const start=()=>{obs.observe(document.body,{childList:true,subtree:true,characterData:true});apply()};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
