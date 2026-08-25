@@ -50,7 +50,30 @@
     ['predScorer','predAssist','predMotm'].forEach(id=>{const s=document.getElementById(id);if(s&&!s.dataset.previewBound){s.dataset.previewBound='1';s.addEventListener('change',()=>updatePlayerPreview(s));updatePlayerPreview(s)}});
   }
 
-  function patchCards(){document.querySelectorAll('[data-prediction-cta]').forEach(x=>{const desired=x.classList.contains('open')?'✨ توقع المباراة واكسب النقاط':'🔒 انتهى وقت التوقع';setText(x,desired)})}
+  let cardSyncBusy=false,cardSyncTimer=null,lastCardKey='';
+  async function syncCards(){
+    if(!sb||cardSyncBusy)return;
+    const cards=[...document.querySelectorAll('[data-open-match]')];const ids=[...new Set(cards.map(c=>c.dataset.openMatch).filter(Boolean))];if(!ids.length)return;
+    const key=ids.sort().join('|');cardSyncBusy=true;
+    try{
+      const [{data:ms},{data:ss}]=await Promise.all([
+        sb.from('matches').select('id,category,status,match_date,match_time').in('id',ids),
+        sb.from('match_prediction_settings').select('match_id,enabled,prediction_deadline').in('match_id',ids)
+      ]);
+      const mm=new Map((ms||[]).map(m=>[m.id,m])),sm=new Map((ss||[]).map(s=>[s.match_id,s]));let nextWake=60000;
+      cards.forEach(card=>{
+        const m=mm.get(card.dataset.openMatch),cta=card.querySelector('[data-prediction-cta]');if(!m||!cta)return;
+        if(m.status==='انتهت'){cta.remove();return}
+        const s=sm.get(m.id)||{},start=m.match_date&&m.match_time?new Date(`${m.match_date}T${String(m.match_time).slice(0,8)}Z`).getTime():0,custom=s.prediction_deadline?new Date(s.prediction_deadline).getTime():0,deadline=start&&custom?Math.min(start,custom):(custom||start),remaining=deadline-Date.now();
+        const open=['الكبار','الوسط'].includes(m.category)&&m.status==='قادمة'&&s.enabled!==false&&deadline>0&&remaining>0;
+        cta.classList.toggle('open',open);cta.classList.toggle('locked',!open);setText(cta,open?'✨ توقع المباراة واكسب النقاط':'🔒 انتهى وقت التوقع');
+        if(open)nextWake=Math.min(nextWake,Math.max(1000,remaining+150));
+      });
+      lastCardKey=key;clearTimeout(cardSyncTimer);cardSyncTimer=setTimeout(syncCards,nextWake);
+    }finally{cardSyncBusy=false}
+  }
+
+  function patchCards(){document.querySelectorAll('[data-prediction-cta]').forEach(x=>{const desired=x.classList.contains('open')?'✨ توقع المباراة واكسب النقاط':'🔒 انتهى وقت التوقع';setText(x,desired)});syncCards()}
   let queued=false;
   const apply=()=>{queued=false;patchPredictionPane();patchCards()};
   const obs=new MutationObserver(()=>{if(!queued){queued=true;requestAnimationFrame(apply)}});
