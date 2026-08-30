@@ -1,4 +1,4 @@
-const C = "agchorguit-live-v37";
+const C = "agchorguit-live-v38";
 const CORE = [
   "./",
   "index.html",
@@ -15,6 +15,7 @@ const CORE = [
   "visual-polish.css",
   "global-upgrade.css",
   "sports-app-v2.css",
+  "icon-system-v3.css",
   "config.js",
   "public-app.js",
   "media-enhancer.js",
@@ -33,6 +34,7 @@ const CORE = [
   "site-health.js",
   "ui-polish.js",
   "sports-app-v2.js",
+  "icon-system-v3.js",
   "manifest.webmanifest",
   "assets/tournament.jpg",
   "assets/logo-placeholder.svg",
