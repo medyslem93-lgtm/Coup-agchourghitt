@@ -36,6 +36,7 @@
     <link rel="stylesheet" href="visual-polish.css" />
     <link rel="stylesheet" href="global-upgrade.css" />
     <link rel="stylesheet" href="sports-app-v2.css" />
+    <link rel="stylesheet" href="icon-system-v3.css" />
     <script src="image-fallback.js"></script>
   </head>
   <body>
@@ -254,7 +255,7 @@
           </div>
           <div class="grid2">
             <button id="openLeaderboard" class="card action-card">
-              <b>🏆 لوحة الشرف</b><span>النقاط وترتيب المشاركين</span></button
+              <b>لوحة الشرف</b><span>النقاط وترتيب المشاركين</span></button
             ><button id="moreSearch" class="card action-card">
               <b>البحث الشامل</b><span>فريق، لاعب أو مباراة</span></button
             ><button id="favoriteBtn" class="card action-card">
@@ -266,11 +267,16 @@
     </div>
     <nav class="nav">
       <button class="active" data-page="home">
-        <span>⌂</span><b>الرئيسية</b></button
-      ><button data-page="matches"><span>⚽</span><b>المباريات</b></button
-      ><button data-page="tournament"><span>♜</span><b>البطولة</b></button
-      ><button data-page="teams"><span>♙</span><b>الفرق</b></button
-      ><button data-page="more"><span>•••</span><b>المزيد</b></button>
+        <span aria-hidden="true"></span><b>الرئيسية</b></button
+      ><button data-page="matches">
+        <span aria-hidden="true"></span><b>المباريات</b></button
+      ><button data-page="tournament">
+        <span aria-hidden="true"></span><b>البطولة</b></button
+      ><button data-page="teams">
+        <span aria-hidden="true"></span><b>الفرق</b></button
+      ><button data-page="more">
+        <span aria-hidden="true"></span><b>المزيد</b>
+      </button>
     </nav>
     <div id="sheet" class="sheet">
       <div id="sheetPanel" class="sheet-panel"></div>
@@ -293,6 +299,7 @@
     <script src="site-health.js"></script>
     <script src="ui-polish.js"></script>
     <script src="sports-app-v2.js"></script>
+    <script src="icon-system-v3.js"></script>
     <script>
       if ("serviceWorker" in navigator)
         addEventListener("load", () =>
