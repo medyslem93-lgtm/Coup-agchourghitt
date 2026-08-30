@@ -35,6 +35,7 @@
     <link rel="stylesheet" href="site-health.css" />
     <link rel="stylesheet" href="visual-polish.css" />
     <link rel="stylesheet" href="global-upgrade.css" />
+    <link rel="stylesheet" href="sports-app-v2.css" />
     <script src="image-fallback.js"></script>
   </head>
   <body>
@@ -69,6 +70,14 @@
       <div id="announcement" class="announcement" hidden></div>
       <main class="main">
         <section id="home" class="page active">
+          <div class="dashboard-heading">
+            <div>
+              <span class="dashboard-kicker"><i></i> المنصة الرسمية</span>
+              <h1>مرحبًا بك في البطولة</h1>
+            </div>
+            <span class="season-badge">2026</span>
+          </div>
+          <div id="dateRail" class="date-rail" aria-label="أيام الأسبوع"></div>
           <div class="hero">
             <div class="hero-copy">
               <span class="eyebrow"><i></i> COUPE D’AGHCHORGUIT · 2026</span>
@@ -96,6 +105,17 @@
                 alt="شعار كأس أغشوركيت"
               /><small>AGHCHORGUIT<br /><b>2026</b></small>
             </div>
+          </div>
+          <div class="quick-leagues" aria-label="فئات البطولة">
+            <button data-quickcat="الكبار" type="button">
+              <span>01</span><b>الكبار</b><small>الفئة الأولى</small>
+            </button>
+            <button data-quickcat="الوسط" type="button">
+              <span>02</span><b>الوسط</b><small>الفئة الثانية</small>
+            </button>
+            <button data-quickcat="الصغار" type="button">
+              <span>03</span><b>الصغار</b><small>الفئة الثالثة</small>
+            </button>
           </div>
           <div class="section">
             <div class="head">
@@ -272,6 +292,7 @@
     <script src="runtime-health.js"></script>
     <script src="site-health.js"></script>
     <script src="ui-polish.js"></script>
+    <script src="sports-app-v2.js"></script>
     <script>
       if ("serviceWorker" in navigator)
         addEventListener("load", () =>
