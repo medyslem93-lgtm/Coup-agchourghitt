@@ -1,4 +1,4 @@
-const C = "agchorguit-live-v40";
+const C = "agchorguit-live-v43";
 const CORE = [
   "./",
   "index.html",
@@ -7,26 +7,25 @@ const CORE = [
   "prediction-league.css",
   "matches-reference.css",
   "middle-section.css",
-  "stadium-2026.css",
   "football-pro-2026.css",
   "bedouin-final.css",
   "config.js",
   "public-app.js",
-  "media-enhancer.js",
   "prediction-league.js",
-  "prediction-verification-patch.js",
   "match-details-v2.js",
-  "referee-photos.js",
   "matches-reference.js",
-  "score-display-fix.js",
+  "rtl-score-fix.js",
   "middle-section.js",
-  "stadium-2026.js",
   "football-pro-2026.js",
-  "final-stability.js",
-  "image-fallback.js",
   "manifest.webmanifest",
   "assets/tournament.jpg",
-  "assets/logo-placeholder.svg"
+  "assets/logo-placeholder.svg",
+  "assets/teams/senior/hilal.svg",
+  "assets/teams/senior/kabba.svg",
+  "assets/teams/senior/noujoum.svg",
+  "assets/teams/senior/bougabra.svg",
+  "assets/teams/senior/hamd.svg",
+  "assets/teams/senior/birbaraka.svg"
 ];
 self.addEventListener("install",event=>{event.waitUntil(caches.open(C).then(cache=>Promise.all(CORE.map(url=>cache.add(url).catch(()=>null)))).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
