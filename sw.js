@@ -1,4 +1,4 @@
-const C = "agchorguit-live-v44";
+const C = "agchorguit-live-v45";
 const CORE = [
   "./",
   "index.html",
@@ -11,8 +11,9 @@ const CORE = [
   "bedouin-final.css",
   "config.js",
   "public-app.js",
+  "fair-play-standings.js",
   "prediction-league.js",
-  "match-details-v2.js",
+  "match-details-final.js",
   "matches-reference.js",
   "rtl-score-fix.js",
   "middle-section.js",
