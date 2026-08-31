@@ -1,4 +1,4 @@
-const C = "agchorguit-live-v43";
+const C = "agchorguit-live-v44";
 const CORE = [
   "./",
   "index.html",
