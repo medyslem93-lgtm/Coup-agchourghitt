@@ -10,9 +10,6 @@ function bind(){
  },true);
  window.go=go;
 }
-function fixScores(root=document){
- root.querySelectorAll('.ref-match-card').forEach(card=>{const a=card.querySelector('.ref-team[data-side="a"] .ref-team-score'),b=card.querySelector('.ref-team[data-side="b"] .ref-team-score'),clock=card.querySelector('.ref-clock');if(a&&b&&clock){clock.textContent=`${a.textContent.trim()} - ${b.textContent.trim()}`;clock.dir='rtl';}});
-}
-function init(){bind();fixScores();setTimeout(()=>fixScores(),1200);}
+function init(){bind();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
