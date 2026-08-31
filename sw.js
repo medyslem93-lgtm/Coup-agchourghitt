@@ -1,4 +1,4 @@
-const C = "agchorguit-live-v39";
+const C = "agchorguit-live-v40";
 const CORE = [
   "./",
   "index.html",
@@ -37,5 +37,5 @@ self.addEventListener("fetch",event=>{
   if(url.pathname.startsWith("/admin/")){event.respondWith(fetch(event.request));return}
   const isDoc=event.request.mode==="navigate"||event.request.destination==="document";
   if(isDoc){event.respondWith(fetch(event.request).then(r=>{if(r&&r.ok)caches.open(C).then(c=>c.put(event.request,r.clone())).catch(()=>{});return r}).catch(()=>caches.match(event.request).then(hit=>hit||caches.match("./"))));return}
-  event.respondWith(caches.match(event.request).then(hit=>{const network=fetch(event.request).then(r=>{if(r&&r.ok)caches.open(C).then(c=>c.put(event.request,r.clone())).catch(()=>{});return r}).catch(()=>hit);return hit||network}))
+  event.respondWith(fetch(event.request).then(r=>{if(r&&r.ok)caches.open(C).then(c=>c.put(event.request,r.clone())).catch(()=>{});return r}).catch(()=>caches.match(event.request)))
 });
