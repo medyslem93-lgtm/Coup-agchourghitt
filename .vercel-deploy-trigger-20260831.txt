@@ -1,0 +1,2 @@
+Force Vercel production build from the latest main branch.
+Created 2026-08-31 after RTL, match details, standings and fair-play updates.
