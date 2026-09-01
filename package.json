@@ -1,0 +1,10 @@
+{
+  "name": "coup-aghchourghitt",
+  "version": "4.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node --check public-app.js && node --check admin/admin.js && node --check sw.js && node scripts/validate-build.mjs",
+    "check": "npm run build"
+  }
+}

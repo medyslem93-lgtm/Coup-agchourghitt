@@ -1,1 +1,20 @@
-{"name":"كأس أغشوركيت 2026","short_name":"أغشوركيت 2026","start_url":"./","display":"standalone","background_color":"#07110e","theme_color":"#071a14","dir":"rtl","lang":"ar","icons":[{"src":"assets/tournament.jpg","sizes":"512x512","type":"image/jpeg","purpose":"any maskable"}]}
+{
+  "name": "كأس أغشوركيت 2026",
+  "short_name": "أغشوركيت 2026",
+  "description": "المنصة الرسمية لمباريات ونتائج وإحصائيات كأس أغشوركيت",
+  "start_url": "./#home",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#070908",
+  "theme_color": "#070908",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "assets/tournament.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
