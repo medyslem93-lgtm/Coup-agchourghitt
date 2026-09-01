@@ -1,0 +1,29 @@
+/* Mobile-first RTL polish inspired by modern football apps */
+:root{--ux-bg:#070907;--ux-surface:#111511;--ux-surface-2:#171d17;--ux-text:#f7f8f5;--ux-muted:#98a099;--ux-accent:#d9ff43;--ux-line:rgba(255,255,255,.08);--ux-danger:#ff4f5e;--ux-radius:22px;--ux-shadow:0 18px 55px rgba(0,0,0,.28)}
+html[dir="rtl"] body{direction:rtl;text-align:right;background:radial-gradient(circle at 50% -12%,rgba(217,255,67,.08),transparent 28%),var(--ux-bg)!important}
+body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent}
+button,a,[role="button"]{touch-action:manipulation}
+.topbar{min-height:68px!important;padding-inline:14px!important;gap:10px!important}
+.brand{min-width:0;flex:1}.brand img{flex:0 0 auto}.brand>div{min-width:0}.brand b{max-width:58vw}
+.main{padding-inline:14px!important;padding-bottom:calc(96px + env(safe-area-inset-bottom))!important}
+.dashboard-heading,.page-title{padding-inline:2px}.page-title h1,.dashboard-heading h1{letter-spacing:0!important}
+.date-rail{direction:rtl}.scroll,.filters,.tabs,.pro-status-tabs,.pro-date-tabs{direction:rtl;scrollbar-width:none}.scroll::-webkit-scrollbar,.filters::-webkit-scrollbar,.tabs::-webkit-scrollbar{display:none}
+.hero{min-height:230px!important;border-radius:28px!important}.hero-copy{text-align:right}.hero-actions{justify-content:flex-start}.hero-actions button{min-width:132px}
+.quick-leagues{direction:rtl}.quick-leagues button{text-align:right!important}
+.head{direction:rtl}.head>div{text-align:right}.head button{white-space:nowrap}
+.match-card{border-radius:22px!important;overflow:hidden}.match-card:focus-visible,.action-card:focus-visible,.filters button:focus-visible,.tabs button:focus-visible{outline:2px solid var(--ux-accent);outline-offset:2px}
+.match-meta,.match-footer{direction:rtl;align-items:center}.match-row{direction:ltr!important}.match-row .team{direction:rtl}.match-row .team[data-side="a"]{grid-column:3}.match-row .team[data-side="b"]{grid-column:1}.match-row .score,.match-row .vs{grid-column:2;direction:ltr!important;unicode-bidi:isolate;font-variant-numeric:tabular-nums}.match-row .team b{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.9em}
+.status.live{background:rgba(255,79,94,.13)!important;color:#ff8290!important;border-color:rgba(255,79,94,.22)!important}.status.live:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ux-danger);margin-left:6px;box-shadow:0 0 0 4px rgba(255,79,94,.1);animation:uxPulse 1.4s infinite}@keyframes uxPulse{50%{opacity:.45}}
+.team img,.teamcard img,.table-team img{box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+.news-card{border-radius:22px!important}.news-body h3{font-weight:800!important}.news-body p{line-height:1.8!important}
+.teamgrid,.news-grid{align-items:stretch}.teamcard{height:100%}.teamcard h3{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.table-wrap{scrollbar-width:thin}.table-wrap table{direction:rtl}.table-team{direction:rtl;justify-content:flex-start}
+.sheet{padding-top:env(safe-area-inset-top)}.sheet-panel{padding-bottom:calc(26px + env(safe-area-inset-bottom))!important}.sheet-head{direction:rtl;justify-content:flex-start!important}
+.detail-tabs{direction:rtl;overflow:auto;scrollbar-width:none}.detail-tabs button{min-width:max-content}
+.event-row,.player-row,.search-result,.favorite-card{direction:rtl;text-align:right}
+.nav{direction:rtl!important;box-shadow:0 -12px 40px rgba(0,0,0,.22)}.nav button{position:relative}.nav button.active:after{content:"";position:absolute;bottom:4px;width:18px;height:3px;border-radius:999px;background:var(--ux-accent)}
+.search{text-align:right}.search::placeholder{color:#7f8881}
+.empty{line-height:1.8}
+@media (max-width:430px){.main{padding-inline:12px!important}.topbar{padding-inline:12px!important}.brand img{width:42px!important;height:42px!important}.brand-kicker{font-size:8px!important}.brand b{font-size:12px!important}.hero{padding:20px 16px!important;min-height:220px!important}.hero h1{font-size:34px!important}.hero p{font-size:11px!important}.quick-leagues{gap:6px!important}.quick-leagues button{min-height:76px!important;padding:10px 8px!important}.quick-leagues b{font-size:12px!important}.match-card{padding:14px!important}.team img{width:56px!important;height:56px!important}.score{font-size:24px!important;min-width:64px!important}.team b{font-size:10px!important}.stat-grid{gap:8px!important}.stat-card{min-height:108px!important}.news-card>img{height:165px!important}.nav{min-height:68px!important;padding-inline:4px!important}.nav b{font-size:8px!important}}
+@media (min-width:760px){.main{padding-inline:20px!important}.topbar{padding-inline:max(20px,calc((100vw - 1180px)/2))!important}.nav{left:50%!important;right:auto!important;transform:translateX(-50%);width:min(760px,calc(100vw - 28px));bottom:12px!important;border:1px solid var(--ux-line)!important;border-radius:22px!important}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
