@@ -1,32 +1,5 @@
-const C="agchorguit-rebuild-v49";
-const CORE=[
-  "./",
-  "index.html",
-  "app-rebuild-2026.css",
-  "app-rebuild-components-2026.css",
-  "prediction-league.css",
-  "i18n-2026.js",
-  "app-shell-2026.js",
-  "config.js",
-  "public-app.js",
-  "fair-play-standings.js",
-  "prediction-league.js",
-  "match-details-final.js",
-  "football-pro-2026.js",
-  "manifest.webmanifest",
-  "assets/tournament.jpg",
-  "assets/logo-placeholder.svg"
-];
+const C="agchorguit-rebuild-v50";
+const CORE=["./","index.html","app-rebuild-2026.css","app-rebuild-components-2026.css","prediction-league.css","i18n-2026.js","dynamic-i18n-2026.js","app-shell-2026.js","config.js","public-app.js","fair-play-standings.js","prediction-league.js","match-details-final.js","football-pro-2026.js","manifest.webmanifest","assets/tournament.jpg","assets/logo-placeholder.svg"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(C).then(c=>Promise.all(CORE.map(u=>c.add(new Request(u,{cache:"reload"})).catch(()=>null)))).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
-self.addEventListener("fetch",e=>{
-  if(e.request.method!=="GET")return;
-  const u=new URL(e.request.url);
-  if(u.origin!==location.origin)return;
-  if(u.pathname.startsWith("/admin/")){e.respondWith(fetch(e.request));return}
-  const doc=e.request.mode==="navigate"||e.request.destination==="document";
-  e.respondWith(fetch(new Request(e.request,{cache:"no-store"})).then(r=>{
-    if(r&&r.ok)caches.open(C).then(c=>c.put(e.request,r.clone())).catch(()=>{});
-    return r
-  }).catch(()=>doc?caches.match("./"):caches.match(e.request)))
-});
+self.addEventListener("fetch",e=>{if(e.request.method!=="GET")return;const u=new URL(e.request.url);if(u.origin!==location.origin)return;if(u.pathname.startsWith("/admin/")){e.respondWith(fetch(e.request));return}const doc=e.request.mode==="navigate"||e.request.destination==="document";e.respondWith(fetch(new Request(e.request,{cache:"no-store"})).then(r=>{if(r&&r.ok)caches.open(C).then(c=>c.put(e.request,r.clone())).catch(()=>{});return r}).catch(()=>doc?caches.match("./"):caches.match(e.request))) });
