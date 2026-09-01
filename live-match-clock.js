@@ -1,53 +1,52 @@
 (() => {
   "use strict";
+  const LIVE = "مباشر";
+  let liveMatches = [];
 
-  const LIVE_TEXT = "مباشر";
-  const TICK_MS = 1000;
-
-  function parseKickoff(date, time) {
-    if (!date || !time) return null;
-    const clean = String(time).slice(0, 5);
-    const value = Date.parse(`${date}T${clean}:00Z`);
-    return Number.isFinite(value) ? value : null;
+  function kickoff(match) {
+    if (!match?.match_date || !match?.match_time) return NaN;
+    return Date.parse(`${match.match_date}T${String(match.match_time).slice(0, 8)}Z`);
   }
 
-  function minuteFromKickoff(kickoff) {
-    const elapsed = Math.max(0, Date.now() - kickoff);
-    return Math.max(1, Math.floor(elapsed / 60000) + 1);
+  function minute(match) {
+    const start = kickoff(match);
+    if (!Number.isFinite(start)) return Number(match?.minute) || 1;
+    return Math.max(1, Math.floor((Date.now() - start) / 60000) + 1);
   }
 
-  function matchMinute(match) {
-    if (!match || match.status !== LIVE_TEXT) return null;
-    const kickoff = parseKickoff(match.match_date, match.match_time);
-    if (!kickoff) return Number(match.minute) || 1;
-    return minuteFromKickoff(kickoff);
-  }
-
-  function updateVisibleClocks() {
-    document.querySelectorAll('[data-live-kickoff]').forEach((node) => {
-      const kickoff = Number(node.dataset.liveKickoff);
-      if (!Number.isFinite(kickoff)) return;
-      node.textContent = `${minuteFromKickoff(kickoff)}′`;
+  function paint() {
+    document.querySelectorAll('[data-route^="match/"]').forEach((card) => {
+      const id = String(card.getAttribute("data-route") || "").replace(/^match\//, "");
+      const match = liveMatches.find((item) => String(item.id) === id);
+      if (!match) return;
+      const value = minute(match);
+      const scoreMinute = card.querySelector(".score-block small, .match-score small");
+      if (scoreMinute) {
+        scoreMinute.classList.add("live-minute");
+        scoreMinute.textContent = `${value}′`;
+      }
+      const status = card.querySelector(".status-pill");
+      if (status && status.textContent.includes(LIVE)) {
+        status.innerHTML = `<span class="live-dot"></span>${LIVE} · <span class="live-minute">${value}′</span>`;
+      }
     });
   }
 
-  window.AGCH_LIVE_CLOCK = {
-    matchMinute,
-    kickoff(match) {
-      return parseKickoff(match?.match_date, match?.match_time);
-    },
-    markup(match) {
-      if (!match || match.status !== LIVE_TEXT) return "";
-      const kickoff = parseKickoff(match.match_date, match.match_time);
-      const minute = kickoff ? minuteFromKickoff(kickoff) : (Number(match.minute) || 1);
-      return kickoff
-        ? `<span class="live-minute" data-live-kickoff="${kickoff}">${minute}′</span>`
-        : `<span class="live-minute">${minute}′</span>`;
+  async function start() {
+    const config = window.AGCH_CONFIG || {};
+    const db = window.supabase?.createClient?.(config.supabaseUrl, config.supabaseKey, { auth: { persistSession: false, autoRefreshToken: false } });
+    if (!db) return;
+    async function reload() {
+      const { data, error } = await db.from("matches").select("id,status,match_date,match_time,minute").eq("status", LIVE);
+      if (!error) liveMatches = data || [];
+      paint();
     }
-  };
+    await reload();
+    const root = document.getElementById("appMain");
+    if (root) new MutationObserver(paint).observe(root, { childList: true, subtree: true });
+    setInterval(paint, 1000);
+    db.channel("live-match-clock").on("postgres_changes", { event: "*", schema: "public", table: "matches" }, reload).subscribe();
+  }
 
-  window.setInterval(updateVisibleClocks, TICK_MS);
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) updateVisibleClocks();
-  });
+  window.addEventListener("DOMContentLoaded", start, { once: true });
 })();
