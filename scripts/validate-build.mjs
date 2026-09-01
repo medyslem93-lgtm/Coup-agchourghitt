@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const htmlFiles = ["index.html", "admin/index.html", "admin/login.html"];
@@ -15,13 +15,9 @@ for (const relativePath of htmlFiles) {
     const reference = match[1];
     if (/^(?:https?:|data:|mailto:)/.test(reference) || reference === "../" || reference === "./") continue;
 
-    // Root-relative links are resolved from the project root, while ordinary
-    // relative links are resolved from the directory containing the HTML file.
-    const cleanReference = reference.startsWith("/") ? reference.slice(1) : reference;
-    const base = reference.startsWith("/")
-      ? root
-      : resolve(root, relativePath.startsWith("admin/") ? "admin" : ".");
-    const target = resolve(base, cleanReference);
+    const target = reference.startsWith("/")
+      ? resolve(root, reference.slice(1))
+      : resolve(dirname(resolve(root, relativePath)), reference);
 
     if (!existsSync(target)) errors.push(`${relativePath}: missing referenced file ${reference}`);
   }
