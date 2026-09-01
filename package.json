@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node --check public-app.js && node --check admin/admin.js && node --check sw.js && node scripts/validate-build.mjs",
+    "build": "node --check public-app.js && node --check admin/admin.js && node --check sw.js && node scripts/validate-build.mjs && node scripts/prepare-dist.mjs",
     "check": "npm run build"
   }
 }
