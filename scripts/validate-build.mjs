@@ -14,7 +14,15 @@ for (const relativePath of htmlFiles) {
   for (const match of source.matchAll(/(?:src|href)=["']([^"'#?]+)(?:\?[^"']*)?["']/g)) {
     const reference = match[1];
     if (/^(?:https?:|data:|mailto:)/.test(reference) || reference === "../" || reference === "./") continue;
-    const target = resolve(root, relativePath.startsWith("admin/") ? "admin" : ".", reference);
+
+    // Root-relative links are resolved from the project root, while ordinary
+    // relative links are resolved from the directory containing the HTML file.
+    const cleanReference = reference.startsWith("/") ? reference.slice(1) : reference;
+    const base = reference.startsWith("/")
+      ? root
+      : resolve(root, relativePath.startsWith("admin/") ? "admin" : ".");
+    const target = resolve(base, cleanReference);
+
     if (!existsSync(target)) errors.push(`${relativePath}: missing referenced file ${reference}`);
   }
 }
