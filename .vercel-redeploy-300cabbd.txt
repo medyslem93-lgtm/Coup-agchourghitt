@@ -1,1 +1,2 @@
-Trigger production deployment for live match display commit 300cabbd.
+Trigger production deployment after Vercel output-directory fix.
+Redeploy requested: 2026-09-01.
