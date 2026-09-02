@@ -16,6 +16,6 @@
       if(zero){zero.classList.add('live-minute');zero.textContent=`${n}′`;}
     });
   }
-  async function start(){const c=window.AGCH_CONFIG||{},db=window.supabase?.createClient?.(c.supabaseUrl,c.supabaseKey,{auth:{persistSession:false,autoRefreshToken:false}});if(!db)return;async function reload(){const r=await db.from('matches').select('id,status,match_date,match_time,minute').eq('status',LIVE);if(!r.error)liveMatches=r.data||[];paint()}await reload();const root=document.getElementById('appMain');if(root)new MutationObserver(paint).observe(root,{childList:true,subtree:true});setInterval(paint,1000);db.channel('live-match-clock-v2').on('postgres_changes',{event:'*',schema:'public',table:'matches'},reload).subscribe();}
+  async function start(){const c=window.AGCH_CONFIG||{},db=window.AGCH_PUBLIC_SB||window.supabase?.createClient?.(c.supabaseUrl,c.supabaseKey,{auth:{persistSession:false,autoRefreshToken:false}});if(!db)return;window.AGCH_PUBLIC_SB=db;async function reload(){const r=await db.from('matches').select('id,status,match_date,match_time,minute').eq('status',LIVE);if(!r.error)liveMatches=r.data||[];paint()}await reload();const root=document.getElementById('appMain');if(root)new MutationObserver(paint).observe(root,{childList:true,subtree:true});setInterval(paint,1000);db.channel('live-match-clock-v2').on('postgres_changes',{event:'*',schema:'public',table:'matches'},reload).subscribe();}
   window.addEventListener('DOMContentLoaded',start,{once:true});
 })();

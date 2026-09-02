@@ -3,10 +3,11 @@
   const config = window.AGCH_CONFIG || {};
   if (!window.supabase?.createClient || !config.supabaseUrl || !config.supabaseKey) return;
 
-  const db = window.supabase.createClient(config.supabaseUrl, config.supabaseKey, {
+  const db = window.AGCH_PUBLIC_SB || window.supabase.createClient(config.supabaseUrl, config.supabaseKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     global: { headers: { "x-client-info": "aghchorguit-visit-tracker" } },
   });
+  window.AGCH_PUBLIC_SB = db;
 
   const visitorKey = "aghchorguit-visitor-id";
   const sessionKey = "aghchorguit-session-id";

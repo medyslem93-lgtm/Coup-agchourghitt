@@ -44,8 +44,8 @@
           catch(_){try{await loadScript('https://unpkg.com/@supabase/supabase-js@2',4500)}catch(__){}}
           try{await loadScript('public-app.js?v=20260902-mobileboot2',6000);appLoaded=true}
           catch(_){showBootError('تعذر تشغيل ملفات التطبيق. تحقق من الاتصال ثم أعد المحاولة.');return}
-          loadScript('visit-tracker.js?v=20260901',4000).catch(()=>{});
-          loadScript('live-match-clock.js?v=20260901-v4',4000).catch(()=>{});
+          loadScript('visit-tracker.js?v=20260902-shared-client',4000).catch(()=>{});
+          loadScript('live-match-clock.js?v=20260902-shared-client',4000).catch(()=>{});
           loadScript('scorers-rank-fix.js?v=20260901-2',4000).catch(()=>{});
           setTimeout(()=>{if(main?.querySelector('.loading-page'))showBootError('استغرق جلب بيانات البطولة وقتًا أطول من اللازم. أعد المحاولة وسيتم تحميل نسخة جديدة بدون كاش قديم.')},12000);
         };

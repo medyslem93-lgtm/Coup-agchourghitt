@@ -34,10 +34,11 @@
     channel: null,
   };
 
-  const db = window.supabase?.createClient?.(config.supabaseUrl, config.supabaseKey, {
+  const db = window.AGCH_PUBLIC_SB || window.supabase?.createClient?.(config.supabaseUrl, config.supabaseKey, {
     auth: { persistSession: true, autoRefreshToken: true },
     global: { headers: { "x-client-info": "aghchorguit-premium-web" } },
   });
+  if (db) window.AGCH_PUBLIC_SB = db;
 
   const ICONS = {
     arrow: '<path d="M19 12H5m6-6-6 6 6 6"/>',
