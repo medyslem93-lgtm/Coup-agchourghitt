@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const cfg=window.AGCH_CONFIG,sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true}});
+  const cfg=window.AGCH_CONFIG,sb=window.AGCH_ADMIN_SB||window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true}});
   const $=id=>document.getElementById(id),esc=(v='')=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const show=h=>{$('panel').innerHTML=h;$('sheet').classList.add('on')};
   const close=()=>{$('sheet').classList.remove('on')};

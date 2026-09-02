@@ -1,7 +1,6 @@
 (()=>{
   'use strict';
-  const SUPABASE_URL='https://pncjlbsflsgshmzgiiqu.supabase.co';
-  const SUPABASE_KEY='sb_publishable_fnl_v042_IqkcFPpP5oVLA_F_CrpRZX';
+  const cfg=window.AGCH_CONFIG;
   const form=document.getElementById('adminLogin');
   const status=document.getElementById('loginStatus');
   const button=document.getElementById('loginButton');
@@ -10,8 +9,9 @@
   const recoveryStatus=document.getElementById('recoveryStatus');
   const pageTitle=document.getElementById('pageTitle');
   const pageIntro=document.getElementById('pageIntro');
-  if(!window.supabase||!form){ if(status){status.textContent='تعذر تحميل خدمة تسجيل الدخول. أعد تحميل الصفحة.';status.className='login-status error';} return; }
-  const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  if(!window.supabase||!cfg?.supabaseUrl||!cfg?.supabaseKey||!form){ if(status){status.textContent='تعذر تحميل خدمة تسجيل الدخول. أعد تحميل الصفحة.';status.className='login-status error';} return; }
+  localStorage.removeItem('aghchorguit_admin_link');
+  const client=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   const recoveryMode=()=>{
     form.classList.add('hidden');updateForm.classList.remove('hidden');
     pageTitle.textContent='تعيين كلمة مرور جديدة';
@@ -31,7 +31,7 @@
       const {data,error}=await client.auth.signInWithPassword({email,password});
       if(error) throw error;
       if(!data.session) throw new Error('لم يتم إنشاء جلسة دخول.');
-      localStorage.setItem('aghchorguit_admin_link','supabase-auth');
+      localStorage.removeItem('aghchorguit_admin_link');
       status.textContent='تم تسجيل الدخول بنجاح. جارٍ فتح لوحة الإدارة…';status.className='login-status ok';
       location.replace('./');
     }catch(err){
@@ -59,7 +59,7 @@
     recoveryStatus.textContent='جارٍ حفظ كلمة المرور الجديدة…';recoveryStatus.className='login-status';
     const {error}=await client.auth.updateUser({password});
     if(error){recoveryStatus.textContent='تعذر تغيير كلمة المرور: '+error.message;recoveryStatus.className='login-status error';updateButton.disabled=false;return;}
-    localStorage.setItem('aghchorguit_admin_link','supabase-auth');
+    localStorage.removeItem('aghchorguit_admin_link');
     recoveryStatus.textContent='تم تغيير كلمة المرور بنجاح. جارٍ فتح لوحة الإدارة…';recoveryStatus.className='login-status ok';
     setTimeout(()=>location.replace('./'),700);
   });

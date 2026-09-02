@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   if(!window.supabase||!window.AGCH_CONFIG)return;
-  const sb=window.supabase.createClient(window.AGCH_CONFIG.supabaseUrl,window.AGCH_CONFIG.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true}});
+  const sb=window.AGCH_ADMIN_SB||window.supabase.createClient(window.AGCH_CONFIG.supabaseUrl,window.AGCH_CONFIG.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true}});
   const $=id=>document.getElementById(id);
   const nullable=v=>v===''?null:v;
   let currentEditId=null, enhancing=false;

@@ -453,6 +453,23 @@
     const upcoming = matches.filter((match) => match.status === "قادمة").sort((a, b) => matchDateTime(a) - matchDateTime(b));
     const favorite = isFavorite(id);
     main.innerHTML = `<div class="page-shell"><section class="profile-hero" style="--profile-accent:${escapeHtml(tournament?.accent_color || "#c7ff37")}"><div class="back-row"><button class="back-button" type="button" data-route="teams">${icon("back")} كل الفرق</button><span class="status-pill finished">${escapeHtml(tournament?.short_name || team.category)}</span></div><div class="profile-main"><span class="team-logo-large">${image(team.logo_url, team.name, { eager: true })}</span><div><span class="eyebrow">TEAM PROFILE</span><h1>${escapeHtml(team.name)}</h1><p>${escapeHtml(team.description || `${tournament?.name || team.category}${team.group_name ? ` · المجموعة ${team.group_name}` : ""}`)}</p><div class="profile-badges">${team.coach ? `<span class="soft-badge">المدرب · ${escapeHtml(team.coach)}</span>` : ""}${team.captain ? `<span class="soft-badge">القائد · ${escapeHtml(team.captain)}</span>` : ""}<span class="soft-badge">${players.length} لاعب</span></div></div><div class="profile-actions"><button class="secondary-button" type="button" data-favorite-team="${team.id}">${icon(favorite ? "heartFill" : "heart", "button-icon")} ${favorite ? "في المفضلة" : "أضف للمفضلة"}</button><button class="secondary-button" type="button" data-share="${location.href}">${icon("share", "button-icon")} مشاركة</button></div></div><div class="profile-metrics"><div class="profile-metric"><strong>${table.played || 0}</strong><span>لعب</span></div><div class="profile-metric"><strong>${table.won || 0}</strong><span>فاز</span></div><div class="profile-metric"><strong>${table.drawn || 0}</strong><span>تعادل</span></div><div class="profile-metric"><strong>${table.lost || 0}</strong><span>خسر</span></div><div class="profile-metric"><strong>${table.goals_for || 0}</strong><span>له</span></div><div class="profile-metric"><strong>${table.goals_against || 0}</strong><span>عليه</span></div><div class="profile-metric"><strong>${(table.goal_difference || 0) > 0 ? "+" : ""}${table.goal_difference || 0}</strong><span>الفارق</span></div><div class="profile-metric"><strong>${table.points || 0}</strong><span>النقاط</span></div></div></section><section class="section-block">${sectionHeading("FORM", "آخر المباريات")}${matchCollection(results.slice(0, 5))}</section><section class="section-block">${sectionHeading("NEXT", "المباريات القادمة")}${matchCollection(upcoming.slice(0, 5))}</section><section class="section-block">${sectionHeading("SQUAD", "قائمة اللاعبين")}<div class="two-column">${playerList(players, 999)}<div>${leaderCard("هدافو الفريق", players.filter((row) => Number(row.goals) > 0).sort((a, b) => b.goals - a.goals), "goals", "لا توجد أهداف مسجلة", 10)}<div style="height:12px"></div>${leaderCard("بطاقات الفريق", players.filter((row) => Number(row.yellow_cards) + Number(row.red_cards) > 0).map((row) => ({ ...row, cards: Number(row.yellow_cards) + Number(row.red_cards) })).sort((a, b) => b.cards - a.cards), "cards", "لا توجد بطاقات", 10)}</div></div></section></div>`;
+    const teamHero = main.querySelector(".profile-hero");
+    teamHero?.classList.add("team-profile-hero");
+    if (team.team_photo_url && teamHero) {
+      const cover = document.createElement("div");
+      const coverImage = document.createElement("img");
+      cover.className = "team-profile-cover";
+      cover.setAttribute("aria-hidden", "true");
+      coverImage.src = imageUrl(team.team_photo_url);
+      coverImage.alt = "";
+      coverImage.loading = "eager";
+      coverImage.decoding = "async";
+      coverImage.fetchPriority = "high";
+      coverImage.addEventListener("error", () => cover.remove(), { once: true });
+      cover.append(coverImage);
+      teamHero.prepend(cover);
+      teamHero.classList.add("has-team-cover");
+    }
   }
 
   function renderPlayer(id) {

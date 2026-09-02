@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const cfg=window.AGCH_CONFIG;if(!cfg||!window.supabase)return;
-  const sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:false,autoRefreshToken:false}});
+  const sb=window.AGCH_ADMIN_SB||window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true}});
   const esc=(v='')=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const state={matches:[],settings:[],predictions:[],users:[],players:[],category:'الكبار',matchId:'',q:''};
   const teamName=m=>`${m?.team_a?.name||'الفريق الأول'} × ${m?.team_b?.name||'الفريق الثاني'}`;

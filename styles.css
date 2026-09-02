@@ -392,6 +392,19 @@ a { color: inherit; }
 
 .profile-hero { position: relative; overflow: hidden; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: linear-gradient(145deg, color-mix(in srgb, var(--profile-accent, var(--accent)) 12%, var(--surface)), var(--surface)); }
 .profile-hero::after { content: ""; position: absolute; width: 260px; height: 260px; top: -150px; left: -110px; border: 1px solid color-mix(in srgb, var(--profile-accent, var(--accent)) 22%, transparent); border-radius: 50%; box-shadow: 0 0 0 42px color-mix(in srgb, var(--profile-accent, var(--accent)) 3%, transparent); }
+.profile-hero::after { z-index: 1; pointer-events: none; }
+.team-profile-hero.has-team-cover { background: #080d09; }
+.team-profile-cover { position: absolute; z-index: 0; inset: 0; overflow: hidden; background: #080d09; pointer-events: none; }
+.team-profile-cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4,8,5,.46) 0%, rgba(4,8,5,.66) 42%, rgba(4,8,5,.96) 100%), linear-gradient(90deg, rgba(7,12,8,.08), rgba(7,12,8,.45)); }
+.team-profile-cover img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; filter: saturate(.88) contrast(1.08); transform: scale(1.015); }
+.team-profile-hero.has-team-cover > :not(.team-profile-cover) { position: relative; z-index: 2; }
+.team-profile-hero.has-team-cover .soft-badge,
+.team-profile-hero.has-team-cover .secondary-button,
+.team-profile-hero.has-team-cover .profile-metric { border-color: rgba(255,255,255,.16); background: rgba(5,9,6,.54); backdrop-filter: blur(12px); }
+.team-profile-hero.has-team-cover .profile-main p,
+.team-profile-hero.has-team-cover .soft-badge,
+.team-profile-hero.has-team-cover .profile-metric span,
+.team-profile-hero.has-team-cover .back-button { color: rgba(255,255,255,.72); }
 .back-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; }
 .back-button { display: inline-flex; align-items: center; gap: 7px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 10px; font-weight: 800; cursor: pointer; }
 .back-button svg { width: 17px; fill: none; stroke: currentColor; stroke-width: 2; }

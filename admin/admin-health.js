@@ -2,7 +2,7 @@
   'use strict';
   const cfg=window.AGCH_CONFIG;
   if(!cfg||!window.supabase)return;
-  const sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:false,autoRefreshToken:false}});
+  const sb=window.AGCH_ADMIN_SB||window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true}});
   const FALLBACK='../assets/logo-placeholder.svg';
   let logos=new Map();
 

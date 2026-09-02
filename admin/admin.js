@@ -2,6 +2,7 @@
   'use strict';
   const cfg=window.AGCH_CONFIG;
   const sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true}});
+  window.AGCH_ADMIN_SB=sb;
   const $=id=>document.getElementById(id);
   const esc=(v='')=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const CATS=['الكبار','الوسط','الصغار'];
@@ -26,11 +27,11 @@
   const eventTeamName=e=>team(e.team_id)?.name||'';
 
   async function guard(){
-    const {data:{session}}=await sb.auth.getSession();
-    if(!session){location.replace('login.html');return false}
-    const {data,error}=await sb.from('admin_emails').select('email').limit(1);
-    if(error||!data?.length){await sb.auth.signOut();location.replace('login.html');return false}
-    S.user=session.user;$('adminUser').textContent=session.user.email||'المسؤول';return true;
+    const {data:{user},error:authError}=await sb.auth.getUser();
+    if(authError||!user){location.replace('login.html');return false}
+    const {data:admin,error}=await sb.from('admin_emails').select('email').eq('email',user.email).maybeSingle();
+    if(error||!admin){await sb.auth.signOut();location.replace('login.html');return false}
+    S.user=user;$('adminUser').textContent=user.email||'المسؤول';return true;
   }
 
   async function loadAll(silent=false){
@@ -120,7 +121,7 @@
   function activateTab(id){document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));scrollTo({top:0,behavior:'smooth'})}
   function bindStatic(){
     document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));
-    $('logout').onclick=async()=>{await sb.auth.signOut();location.replace('login.html')};
+    $('logout').onclick=async()=>{localStorage.removeItem('aghchorguit_admin_link');await sb.auth.signOut();location.replace('login.html')};
     $('teamSearch').oninput=debounce(renderTeams,120);$('teamCategory').onchange=renderTeams;$('playerSearch').oninput=debounce(renderPlayers,120);$('playerCategory').onchange=renderPlayers;$('playerTeamFilter').onchange=renderPlayers;$('matchCategory').onchange=renderMatches;$('matchStatus').onchange=renderMatches;$('eventMatchFilter').onchange=renderEvents;
     if($('addTournament'))$('addTournament').onclick=()=>tournamentForm();$('addTeam').onclick=()=>teamForm();$('addPlayer').onclick=()=>playerForm();$('addMatch').onclick=()=>matchForm();$('addEvent').onclick=()=>eventForm();$('addRef').onclick=()=>refForm();$('addNews').onclick=()=>newsForm();$('addAward').onclick=()=>awardForm();$('addMedia').onclick=mediaForm;
     document.addEventListener('click',e=>{const c=e.target.closest('[data-close]');if(c){close();return}const te=e.target.closest('[data-edit-tournament]');if(te)return tournamentForm(te.dataset.editTournament);const td=e.target.closest('[data-delete-tournament]');if(td)return deleteTournament(td.dataset.deleteTournament);const a=e.target.closest('[data-edit-team]');if(a)return teamForm(a.dataset.editTeam);const b=e.target.closest('[data-delete-team]');if(b)return deleteTeam(b.dataset.deleteTeam);const p=e.target.closest('[data-edit-player]');if(p)return playerForm(p.dataset.editPlayer);const pd=e.target.closest('[data-delete-player]');if(pd)return deletePlayer(pd.dataset.deletePlayer);const ps=e.target.closest('[data-player-events]');if(ps)return playerStatsSheet(ps.dataset.playerEvents);const mf=e.target.closest('[data-edit-match]');if(mf)return matchForm(mf.dataset.editMatch);const md=e.target.closest('[data-delete-match]');if(md)return deleteMatch(md.dataset.deleteMatch);const ms=e.target.closest('[data-start-match]');if(ms)return setMatchStatus(ms.dataset.startMatch,'مباشر');const me=e.target.closest('[data-finish-match]');if(me)return setMatchStatus(me.dataset.finishMatch,'انتهت');const mx=e.target.closest('[data-match-events]');if(mx)return openEventsForMatch(mx.dataset.matchEvents);const ee=e.target.closest('[data-edit-event]');if(ee)return eventForm(ee.dataset.editEvent);const ed=e.target.closest('[data-delete-event]');if(ed)return deleteEvent(ed.dataset.deleteEvent);const rf=e.target.closest('[data-edit-ref]');if(rf)return refForm(rf.dataset.editRef);const rd=e.target.closest('[data-delete-ref]');if(rd)return deleteRef(rd.dataset.deleteRef);const nf=e.target.closest('[data-edit-news]');if(nf)return newsForm(nf.dataset.editNews);const nd=e.target.closest('[data-delete-news]');if(nd)return deleteNews(nd.dataset.deleteNews);const af=e.target.closest('[data-edit-award]');if(af)return awardForm(af.dataset.editAward);const ad=e.target.closest('[data-delete-award]');if(ad)return deleteAward(ad.dataset.deleteAward);const dm=e.target.closest('[data-delete-media]');if(dm)return deleteMedia(dm.dataset.deleteMedia);if(e.target.id==='sheet')close()});

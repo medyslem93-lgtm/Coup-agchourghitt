@@ -25,6 +25,11 @@ for (const relativePath of htmlFiles) {
 
 JSON.parse(readFileSync(resolve(root, "manifest.webmanifest"), "utf8"));
 
+const adminHtml = readFileSync(resolve(root, "admin/index.html"), "utf8");
+if (adminHtml.includes("link-access.js")) {
+  errors.push("admin/index.html: legacy link-access must not override Supabase Auth");
+}
+
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);

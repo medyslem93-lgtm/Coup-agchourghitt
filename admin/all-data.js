@@ -6,7 +6,7 @@
   const fmtTime = t => t ? String(t).slice(0,5) : 'بدون وقت';
   const cfg = window.AGCH_CONFIG;
   if (!cfg || !window.supabase?.createClient) return;
-  const sb = window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true}});
+  const sb = window.AGCH_ADMIN_SB || window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true}});
 
   const style=document.createElement('style');
   style.textContent=`
