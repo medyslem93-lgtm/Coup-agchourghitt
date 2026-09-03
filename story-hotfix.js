@@ -1,89 +1,22 @@
 (() => {
   'use strict';
-  const cfg = window.AGCH_CONFIG || {};
-  const main = document.getElementById('appMain');
-  if (!main || !window.supabase?.createClient) return;
-  const sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth: { persistSession: true, autoRefreshToken: true } });
-  let stories = [];
-  let timer = null;
-  const esc = (v='') => String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  const live = s => s && s.status === 'published' && s.is_story === true && (s.story_pinned || !s.story_expires_at || new Date(s.story_expires_at) > new Date());
-
-  function ensureLayer() {
-    let layer = document.getElementById('storyHotfixLayer');
-    if (layer) return layer;
-    layer = document.createElement('div');
-    layer.id = 'storyHotfixLayer';
-    layer.hidden = true;
-    layer.style.cssText = 'position:fixed;inset:0;z-index:2147483646;background:#050505;display:flex;align-items:center;justify-content:center;padding:0;';
-    document.body.appendChild(layer);
-    return layer;
-  }
-
-  function closeStory() {
-    clearTimeout(timer);
-    const layer = document.getElementById('storyHotfixLayer');
-    if (layer) layer.hidden = true;
-    document.body.style.overflow = '';
-  }
-
-  function openStory(index) {
-    const s = stories[index];
-    if (!s) return;
-    const layer = ensureLayer();
-    layer.hidden = false;
-    document.body.style.overflow = 'hidden';
-    clearTimeout(timer);
-    const media = s.video_url
-      ? `<video src="${esc(s.video_url)}" autoplay muted playsinline style="width:100%;height:100%;object-fit:contain;background:#000"></video>`
-      : `<img src="${esc(s.image_url || (Array.isArray(s.gallery_urls) ? s.gallery_urls[0] : ''))}" alt="${esc(s.title)}" style="width:100%;height:100%;object-fit:contain;background:#000">`;
-    layer.innerHTML = `<div style="position:relative;width:min(100vw,540px);height:100vh;background:#000;overflow:hidden">
-      <div style="position:absolute;top:max(16px,env(safe-area-inset-top));left:16px;right:16px;z-index:4;height:3px;background:rgba(255,255,255,.25);border-radius:999px;overflow:hidden"><i id="storyHotfixProgress" style="display:block;height:100%;width:0;background:#fff;animation:storyHotfixProgress 10s linear forwards"></i></div>
-      <button data-story-hotfix-close aria-label="إغلاق" style="position:absolute;top:max(28px,calc(env(safe-area-inset-top) + 12px));right:18px;z-index:5;width:44px;height:44px;border:0;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;font-size:30px">×</button>
-      ${media}
-      <div style="position:absolute;right:18px;left:18px;bottom:max(34px,env(safe-area-inset-bottom));z-index:4;color:#fff;text-align:right;text-shadow:0 2px 12px #000"><b style="font:800 22px Cairo,sans-serif;display:block">${esc(s.title || '')}</b>${s.description ? `<p style="font:500 14px/1.8 Cairo,sans-serif;margin:8px 0 0">${esc(s.description)}</p>` : ''}</div>
-    </div>`;
-    layer.querySelector('[data-story-hotfix-close]').onclick = closeStory;
-    timer = setTimeout(closeStory, 10000);
-  }
-
-  function injectStyles() {
-    if (document.getElementById('storyHotfixStyles')) return;
-    const style = document.createElement('style');
-    style.id = 'storyHotfixStyles';
-    style.textContent = `@keyframes storyHotfixProgress{from{width:0}to{width:100%}}.story-hotfix-strip{display:flex;gap:14px;overflow-x:auto;padding:8px 2px 18px;scrollbar-width:none}.story-hotfix-strip::-webkit-scrollbar{display:none}.story-hotfix-item{flex:0 0 78px;background:none;border:0;color:inherit;padding:0;text-align:center}.story-hotfix-ring{width:70px;height:70px;border-radius:50%;padding:3px;background:linear-gradient(135deg,#9b5cff,#d7ff3f);display:block;margin:auto}.story-hotfix-ring>span{display:block;width:100%;height:100%;border-radius:50%;overflow:hidden;border:3px solid #0b0d0b;background:#111}.story-hotfix-ring img{width:100%;height:100%;object-fit:cover}.story-hotfix-item b{display:block;margin-top:7px;font:700 11px/1.45 Cairo,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}`;
-    document.head.appendChild(style);
-  }
-
-  async function refresh() {
-    if (location.hash !== '#news') return;
-    const { data, error } = await sb.from('news').select('id,title,description,image_url,video_url,gallery_urls,is_story,story_pinned,story_expires_at,status,story_duration_seconds,created_at').eq('is_story', true).eq('status', 'published').order('story_pinned', { ascending:false }).order('created_at', { ascending:false });
-    if (error) return;
-    stories = (data || []).filter(live);
-    injectStyles();
-    const page = main.querySelector('.page-shell');
-    if (!page) return;
-    page.querySelectorAll('.news-card').forEach(card => {
-      const id = card.dataset.route?.split('/')[1];
-      if (id && stories.some(s => s.id === id)) card.remove();
-    });
-    let strip = page.querySelector('.story-hotfix-strip');
-    if (!strip) {
-      strip = document.createElement('div');
-      strip.className = 'story-hotfix-strip';
-      const heading = page.querySelector('.page-heading');
-      if (heading?.nextSibling) page.insertBefore(strip, heading.nextSibling); else page.prepend(strip);
-    }
-    strip.innerHTML = stories.map((s,i) => `<button class="story-hotfix-item" data-story-hotfix="${i}"><span class="story-hotfix-ring"><span><img src="${esc(s.image_url || (Array.isArray(s.gallery_urls) ? s.gallery_urls[0] : '') || 'assets/tournament.jpg')}" alt="${esc(s.title)}"></span></span><b>${esc(s.title)}</b></button>`).join('');
-    strip.hidden = stories.length === 0;
-    strip.querySelectorAll('[data-story-hotfix]').forEach(btn => btn.onclick = () => openStory(Number(btn.dataset.storyHotfix)));
-  }
-
-  document.addEventListener('click', e => {
-    if (e.target.closest('[data-route="news"]')) setTimeout(refresh, 350);
-  }, true);
-  window.addEventListener('hashchange', () => setTimeout(refresh, 350));
-  window.addEventListener('load', () => setTimeout(refresh, 600));
-  const obs = new MutationObserver(() => { if (location.hash === '#news') setTimeout(refresh, 120); });
-  obs.observe(main, { childList:true, subtree:true });
+  const cfg=window.AGCH_CONFIG||{};
+  const main=document.getElementById('appMain');
+  if(!main||!cfg.supabaseUrl||!cfg.supabaseKey)return;
+  let stories=[], timer=null, current=0;
+  const esc=(v='')=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const api=async()=>{
+    const url=`${cfg.supabaseUrl}/rest/v1/news?select=id,title,description,image_url,video_url,gallery_urls,is_story,story_pinned,story_expires_at,status,story_duration_seconds,created_at&is_story=eq.true&status=eq.published&order=story_pinned.desc,created_at.desc`;
+    const r=await fetch(url,{headers:{apikey:cfg.supabaseKey,Authorization:`Bearer ${cfg.supabaseKey}`},cache:'no-store'});
+    if(!r.ok)throw new Error('stories fetch failed'); return r.json();
+  };
+  const live=s=>s&&(s.story_pinned||!s.story_expires_at||new Date(s.story_expires_at)>new Date());
+  function styles(){if(document.getElementById('aghNativeStoryCSS'))return;const s=document.createElement('style');s.id='aghNativeStoryCSS';s.textContent=`
+  .agh-stories{margin:8px 0 22px}.agh-stories-title{display:flex;align-items:center;justify-content:space-between;margin:0 2px 10px}.agh-stories-title b{font:900 18px Cairo,sans-serif}.agh-stories-title span{font:700 11px Cairo,sans-serif;opacity:.6}.agh-stories-row{display:flex;gap:14px;overflow-x:auto;padding:3px 2px 8px;scrollbar-width:none}.agh-stories-row::-webkit-scrollbar{display:none}.agh-story{flex:0 0 78px;border:0;background:none;color:inherit;padding:0;text-align:center}.agh-story-ring{display:block;width:72px;height:72px;margin:auto;padding:3px;border-radius:50%;background:linear-gradient(135deg,#d7ff3f,#8b5cf6,#ff3b30)}.agh-story-ring>i{display:block;width:100%;height:100%;border-radius:50%;overflow:hidden;border:3px solid #090b09;background:#151515}.agh-story-ring img{width:100%;height:100%;object-fit:cover}.agh-story b{display:block;margin-top:6px;font:700 11px/1.4 Cairo,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.agh-story-layer[hidden]{display:none!important}.agh-story-layer{position:fixed;inset:0;z-index:2147483647;background:#000;display:flex;justify-content:center;align-items:center}.agh-story-stage{position:relative;width:min(100vw,560px);height:100dvh;min-height:100vh;background:#000;overflow:hidden}.agh-story-stage>img,.agh-story-stage>video{width:100%;height:100%;object-fit:contain;background:#000}.agh-story-progress{position:absolute;z-index:5;top:max(12px,env(safe-area-inset-top));left:12px;right:12px;height:4px;border-radius:10px;background:#ffffff40;overflow:hidden}.agh-story-progress i{display:block;height:100%;background:#fff;width:0}.agh-story-close{position:absolute;z-index:6;top:max(25px,calc(env(safe-area-inset-top) + 12px));right:16px;width:44px;height:44px;border:0;border-radius:50%;background:#0009;color:#fff;font-size:29px}.agh-story-copy{position:absolute;z-index:5;right:18px;left:18px;bottom:max(32px,env(safe-area-inset-bottom));color:#fff;text-align:right;text-shadow:0 2px 14px #000}.agh-story-copy h2{font:900 22px/1.4 Cairo,sans-serif;margin:0}.agh-story-copy p{font:600 14px/1.8 Cairo,sans-serif;margin:7px 0 0}.agh-story-nav{position:absolute;z-index:4;top:70px;bottom:100px;width:42%;border:0;background:transparent}.agh-story-prev{left:0}.agh-story-next{right:0}@keyframes aghStoryRun{from{width:0}to{width:100%}}
+  `;document.head.appendChild(s)}
+  function close(){clearTimeout(timer);const l=document.getElementById('aghStoryLayer');if(l)l.hidden=true;document.body.style.overflow=''}
+  function open(i){if(!stories.length)return;current=(i+stories.length)%stories.length;const x=stories[current],duration=Math.max(3,Number(x.story_duration_seconds||10));let l=document.getElementById('aghStoryLayer');if(!l){l=document.createElement('div');l.id='aghStoryLayer';l.className='agh-story-layer';document.body.appendChild(l)}clearTimeout(timer);document.body.style.overflow='hidden';const media=x.video_url?`<video src="${esc(x.video_url)}" autoplay muted playsinline></video>`:`<img src="${esc(x.image_url||(Array.isArray(x.gallery_urls)?x.gallery_urls[0]:'')||'assets/tournament.jpg')}" alt="${esc(x.title)}">`;l.innerHTML=`<div class="agh-story-stage"><div class="agh-story-progress"><i style="animation:aghStoryRun ${duration}s linear forwards"></i></div><button class="agh-story-close">×</button>${media}<button class="agh-story-nav agh-story-prev"></button><button class="agh-story-nav agh-story-next"></button><div class="agh-story-copy"><h2>${esc(x.title)}</h2>${x.description?`<p>${esc(x.description)}</p>`:''}</div></div>`;l.hidden=false;l.querySelector('.agh-story-close').onclick=close;l.querySelector('.agh-story-prev').onclick=()=>open(current-1);l.querySelector('.agh-story-next').onclick=()=>open(current+1);timer=setTimeout(()=>current<stories.length-1?open(current+1):close(),duration*1000)}
+  function mount(){if(location.hash!=='#news')return;const page=main.querySelector('.news-center-page,.page-shell');if(!page)return;page.querySelectorAll('[data-news-open],.news-card').forEach(el=>{const id=(el.dataset.newsOpen||el.dataset.route?.split('/')[1]);if(id&&stories.some(s=>s.id===id))el.remove()});let box=page.querySelector('.agh-stories');if(!box){box=document.createElement('section');box.className='agh-stories';const head=page.querySelector('.news-center-head,.page-heading');if(head)head.insertAdjacentElement('afterend',box);else page.prepend(box)}box.innerHTML=`<div class="agh-stories-title"><b>Stories</b><span>آخر لحظات البطولة</span></div><div class="agh-stories-row">${stories.map((x,i)=>`<button class="agh-story" data-agh-story="${i}"><span class="agh-story-ring"><i><img src="${esc(x.image_url||(Array.isArray(x.gallery_urls)?x.gallery_urls[0]:'')||'assets/tournament.jpg')}" alt="${esc(x.title)}"></i></span><b>${esc(x.title)}</b></button>`).join('')}</div>`;box.hidden=!stories.length;box.querySelectorAll('[data-agh-story]').forEach(b=>b.onclick=()=>open(Number(b.dataset.aghStory)))}
+  async function refresh(){if(location.hash!=='#news')return;try{stories=(await api()).filter(live);styles();mount()}catch(e){console.error(e)}}
+  document.addEventListener('click',e=>{if(e.target.closest('[data-route="news"]'))setTimeout(refresh,500)},true);window.addEventListener('hashchange',()=>setTimeout(refresh,300));window.addEventListener('load',()=>setTimeout(refresh,700));let wait;new MutationObserver(()=>{if(location.hash==='#news'){clearTimeout(wait);wait=setTimeout(mount,80)}}).observe(main,{childList:true,subtree:true});styles();setTimeout(refresh,500);
 })();
