@@ -1,9 +1,11 @@
-const CACHE = "agchorguit-premium-v1";
+const CACHE = "agchorguit-premium-v4-20260903";
 const CORE = [
   "./",
   "index.html",
   "styles.css?v=20260831",
-  "public-app.js?v=20260831",
+  "public-app.js?v=20260903-4",
+  "match-details-v2.css?v=20260903-4",
+  "match-details-v2.js?v=20260903-4",
   "config.js",
   "manifest.webmanifest",
   "assets/tournament.jpg",
@@ -31,7 +33,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin || url.pathname.startsWith("/admin/")) return;
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: "no-store" })
       .then((response) => {
         if (response.ok) caches.open(CACHE).then((cache) => cache.put(event.request, response.clone())).catch(() => {});
         return response;
