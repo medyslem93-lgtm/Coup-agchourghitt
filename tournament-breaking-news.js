@@ -9,6 +9,7 @@
     auth: { persistSession: true, autoRefreshToken: true },
   });
 
+  const MIDDLE_SLUG = 'middle-2026';
   const esc = (value = '') => String(value ?? '').replace(/[&<>"']/g, (char) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[char]);
@@ -43,14 +44,14 @@
   function renderBanner() {
     document.querySelectorAll('.tournament-breaking-banner').forEach(el => el.remove());
     const slug = currentTournamentSlug();
-    if (!slug) return;
+    if (slug !== MIDDLE_SLUG) return;
 
-    const item = cache.find(n => published(n) && n.tournament?.slug === slug);
+    const item = cache.find(n => published(n) && n.tournament?.slug === MIDDLE_SLUG);
     if (!item) return;
 
     const shell = main.querySelector('.page-shell');
-    const hero = shell?.querySelector('.profile-hero');
-    if (!shell || !hero) return;
+    if (!shell) return;
+    const anchor = shell.querySelector('.profile-hero') || shell.firstElementChild;
 
     const banner = document.createElement('button');
     banner.type = 'button';
@@ -58,17 +59,16 @@
     banner.setAttribute('aria-label', `خبر عاجل: ${item.title || ''}`);
     banner.innerHTML = `
       <span class="tournament-breaking-label">عاجل</span>
-      <span class="tournament-breaking-text">${esc(item.title || item.description || item.content || 'خبر عاجل')}</span>
+      <span class="tournament-breaking-text">${esc(item.description || item.content || item.title || 'خبر عاجل')}</span>
     `;
-    banner.addEventListener('click', () => {
-      location.hash = `#news/${item.id}`;
-    });
+    banner.addEventListener('click', () => { location.hash = `#news/${item.id}`; });
 
-    hero.insertAdjacentElement('beforebegin', banner);
+    if (anchor) anchor.insertAdjacentElement('beforebegin', banner);
+    else shell.prepend(banner);
   }
 
   async function run() {
-    if (!currentTournamentSlug()) {
+    if (currentTournamentSlug() !== MIDDLE_SLUG) {
       renderBanner();
       return;
     }
@@ -76,11 +76,10 @@
     requestAnimationFrame(renderBanner);
   }
 
-  window.addEventListener('hashchange', () => setTimeout(run, 180));
-  window.addEventListener('load', () => setTimeout(run, 450));
-
+  window.addEventListener('hashchange', () => setTimeout(run, 120));
+  window.addEventListener('load', () => setTimeout(run, 350));
   const observer = new MutationObserver(() => {
-    if (currentTournamentSlug()) setTimeout(renderBanner, 30);
+    if (currentTournamentSlug() === MIDDLE_SLUG) setTimeout(renderBanner, 30);
   });
   observer.observe(main, { childList: true, subtree: false });
 })();
