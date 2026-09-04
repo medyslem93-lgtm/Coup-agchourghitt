@@ -13,6 +13,8 @@ const files = [
   "sw.js",
   "assets",
   "admin",
+  "referees-section.js",
+  "referees-section.css",
 ];
 
 await rm(output, { recursive: true, force: true });
