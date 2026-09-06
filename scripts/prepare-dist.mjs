@@ -24,6 +24,8 @@ const files = [
   "motm-v5.css",
   "team-of-week-v6.js",
   "team-of-week-v6.css",
+  "goal-of-round-v7.js",
+  "goal-of-round-v7.css",
 ];
 
 await rm(output, { recursive: true, force: true });
