@@ -1,11 +1,9 @@
-const CACHE = "agchorguit-premium-v4-20260903";
+const CACHE = "agchorguit-premium-v5-20260906";
 const CORE = [
   "./",
   "index.html",
   "styles.css?v=20260831",
   "public-app.js?v=20260903-4",
-  "match-details-v2.css?v=20260903-4",
-  "match-details-v2.js?v=20260903-4",
   "config.js",
   "manifest.webmanifest",
   "assets/tournament.jpg",
