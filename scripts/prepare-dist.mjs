@@ -20,6 +20,8 @@ const files = [
   "road-to-cup.js",
   "road-to-cup.css",
   "road-to-cup-final-hotfix.js",
+  "motm-v5.js",
+  "motm-v5.css",
 ];
 
 await rm(output, { recursive: true, force: true });
