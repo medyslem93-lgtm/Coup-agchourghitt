@@ -35,4 +35,13 @@
   addEventListener('online',()=>{document.body.classList.remove('is-offline');syncTeams()});
   addEventListener('offline',()=>document.body.classList.add('is-offline'));
   sb.channel('admin-health-teams').on('postgres_changes',{event:'*',schema:'public',table:'teams'},syncTeams).subscribe();
+
+  // Isolated Team of the Week admin enhancer. Loaded here to avoid altering the legacy admin shell again.
+  if(!document.querySelector('script[data-tow-eligibility-loader]')){
+    const s=document.createElement('script');
+    s.src='team-of-week-eligibility-v6.js?v=20260906-1';
+    s.async=true;
+    s.dataset.towEligibilityLoader='1';
+    document.head.appendChild(s);
+  }
 })();
