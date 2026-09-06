@@ -17,6 +17,8 @@ const files = [
   "referees-section.css",
   "team-calendar-v2.js",
   "team-calendar-v2.css",
+  "road-to-cup.js",
+  "road-to-cup.css",
 ];
 
 await rm(output, { recursive: true, force: true });
