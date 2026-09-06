@@ -66,7 +66,7 @@
     for (const [id, name] of [[m.team_a_id,a],[m.team_b_id,b]]) {
       if (!id || !name) continue;
       const n = norm(name);
-      if (note.includes(`فاز ${n}`) || note.includes(`فوز ${n}`) || note.includes(`تاهل ${n}`) || (note.includes(n) && note.includes('تاهل'))) return id;
+      if (note.includes(`فاز ${n}`) || note.includes(`فوز ${n}`) || note.includes(`تاهل ${n}`)) return id;
     }
     return null;
   }
@@ -111,16 +111,11 @@
     return w === teamId ? '✅ تأهل' : '❌ خرج';
   }
 
-  function scoreText(m) {
-    if (m.status === 'قادمة' || m.status === 'مؤجلة' || m.status === 'ملغاة') return 'VS';
-    return `${m.score_a ?? 0} — ${m.score_b ?? 0}`;
-  }
-
   function logo(team) {
     return team?.logo_url ? `<img src="${esc(team.logo_url)}" alt="">` : '<span class="rtc-logo-fallback">⚽</span>';
   }
 
-  function matchCard(m, opts = {}) {
+  function matchCard(m) {
     const a = sideName(m,'team_a');
     const b = sideName(m,'team_b');
     const win = winnerId(m);
@@ -160,7 +155,7 @@
   function roadMarkup(data) {
     const ko = data.matches.filter(isKnockout).sort((a,b) => stageRank(stageLabel(a))-stageRank(stageLabel(b)) || (a.display_order||0)-(b.display_order||0));
     if (!ko.length) return `<section class="rtc-shell"><div class="rtc-title"><span>ROAD TO THE CUP</span><h2>طريق ${esc(data.team.name)} إلى الكأس</h2></div><div class="rtc-empty">لم يبدأ طريق الأدوار الإقصائية لهذا الفريق بعد.</div></section>`;
-    let visible = [];
+    const visible = [];
     for (const m of ko) {
       visible.push(m);
       if (m.status === 'انتهت' && winnerId(m) && winnerId(m) !== data.team.id) break;
