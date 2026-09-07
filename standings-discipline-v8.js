@@ -15,14 +15,11 @@
     document.querySelectorAll('.standings-table').forEach((table) => {
       if (table.dataset.disciplineV8 === '1') return;
       const rows = [...table.querySelectorAll('tbody tr')];
-      const targetRows = rows.filter((row) => {
-        const name = normalizeName(row.querySelector('.standings-team b')?.textContent || '');
-        return Object.prototype.hasOwnProperty.call(DISCIPLINE, name);
-      });
-      if (!targetRows.length) return;
+      if (!rows.length) return;
 
       const headRow = table.querySelector('thead tr');
       if (!headRow) return;
+
       const yellowHead = document.createElement('th');
       yellowHead.textContent = '🟨';
       yellowHead.title = 'البطاقات الصفراء';
