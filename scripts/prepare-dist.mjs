@@ -26,6 +26,8 @@ const files = [
   "team-of-week-v6.css",
   "goal-of-round-v7.js",
   "goal-of-round-v7.css",
+  "standings-fairplay-v9.js",
+  "standings-fairplay-v9.css",
 ];
 
 await rm(output, { recursive: true, force: true });
