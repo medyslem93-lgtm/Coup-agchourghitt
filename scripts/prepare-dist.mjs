@@ -28,6 +28,7 @@ const files = [
   "goal-of-round-v7.css",
   "standings-fairplay-v9.js",
   "standings-fairplay-v9.css",
+  "team-cards-events-hotfix.js",
 ];
 
 await rm(output, { recursive: true, force: true });
