@@ -35,4 +35,9 @@ const files = [
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await Promise.all(files.map((entry) => cp(resolve(root, entry), resolve(output, entry), { recursive: true })));
+await mkdir(resolve(output, "vendor"), { recursive: true });
+await cp(
+  resolve(root, "node_modules/@supabase/supabase-js/dist/umd/supabase.js"),
+  resolve(output, "vendor/supabase.js"),
+);
 console.log("Production bundle prepared in dist/.");
