@@ -1,4 +1,4 @@
-const CACHE = "agchorguit-premium-v6-20260909";
+const CACHE = "agchorguit-premium-v7-20260909";
 const CORE = [
   "./",
   "index.html",
@@ -30,7 +30,17 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin || url.pathname.startsWith("/admin/")) return;
+  if (url.origin !== self.location.origin) return;
+
+  // Admin pages and their assets must always go straight to Vercel.
+  // Never serve the public-site offline fallback for an admin navigation.
+  if (
+    url.pathname === "/admin" ||
+    url.pathname.startsWith("/admin/") ||
+    url.pathname === "/admin-dashboard" ||
+    url.pathname === "/admin-dashboard.html"
+  ) return;
+
   event.respondWith(
     fetch(event.request, { cache: "no-store" })
       .then((response) => {
