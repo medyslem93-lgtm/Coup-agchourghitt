@@ -13,6 +13,7 @@ const files = [
   "sw.js",
   "assets",
   "admin",
+  "visitors",
   "referees-section.js",
   "referees-section.css",
   "team-calendar-v2.js",
