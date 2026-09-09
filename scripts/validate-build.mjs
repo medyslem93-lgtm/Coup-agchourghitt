@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
-const htmlFiles = ["index.html", "admin/index.html", "admin/login.html"];
+const htmlFiles = ["index.html", "admin/index.html", "admin/login.html", "visitors/index.html"];
 const generatedReferences = new Set(["vendor/supabase.js", "../vendor/supabase.js"]);
 const errors = [];
 
