@@ -18,13 +18,13 @@
     <h1 class="title">زوار كأس أغشوركيت</h1>
     <p class="sub">عداد منفصل لمتابعة عدد زوار الموقع.</p>
     <section class="grid">
-      <article class="card"><div id="total" class="value">—</div><div class="label">إجمالي الزوار</div></article>
-      <article class="card"><div id="week" class="value">—</div><div class="label">آخر 7 أيام</div></article>
-      <article class="card"><div id="today" class="value">—</div><div class="label">زوار اليوم</div></article>
+      <article class="card"><div id="total" class="value">—</div><div class="label">الزوار الفريدون</div></article>
+      <article class="card"><div id="views" class="value">—</div><div class="label">إجمالي الزيارات</div></article>
+      <article class="card"><div id="today" class="value">—</div><div class="label">زوار اليوم الفريدون</div></article>
     </section>
     <div class="meta"><span id="state" class="status"><span class="dot"></span>متصل بقاعدة البيانات</span><span id="updated">آخر تحديث: —</span></div>
   </main>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../vendor/supabase.js?v=2.116.0"></script>
   <script src="../config.js"></script>
   <script>
     const fmt = new Intl.NumberFormat('ar-MR');
@@ -32,12 +32,12 @@
     async function load(){
       const state=document.getElementById('state');
       try{
-        const {data,error}=await db.rpc('site_visit_dashboard_stats');
+        const {data,error}=await db.rpc('site_visit_stats');
         if(error) throw error;
         const row=Array.isArray(data)?data[0]:data;
-        document.getElementById('total').textContent=fmt.format(Number(row?.total_visitors||0));
-        document.getElementById('week').textContent=fmt.format(Number(row?.week_visitors||0));
-        document.getElementById('today').textContent=fmt.format(Number(row?.today_visitors||0));
+        document.getElementById('total').textContent=fmt.format(Number(row?.unique_visitors||0));
+        document.getElementById('views').textContent=fmt.format(Number(row?.total_views||0));
+        document.getElementById('today').textContent=fmt.format(Number(row?.today_unique||0));
         document.getElementById('updated').textContent='آخر تحديث: '+new Date().toLocaleString('ar-MR');
       }catch(e){state.classList.add('error');state.textContent='تعذر تحميل الإحصائيات';}
     }
