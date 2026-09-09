@@ -3,10 +3,9 @@
   "outputDirectory": "dist",
   "cleanUrls": false,
   "rewrites": [
-    { "source": "/admin", "destination": "/admin/index.html" },
-    { "source": "/admin/", "destination": "/admin/index.html" },
-    { "source": "/admin/index", "destination": "/admin/index.html" },
-    { "source": "/admin-dashboard", "destination": "/admin/index.html" },
+    { "source": "/admin", "destination": "/admin-dashboard.html" },
+    { "source": "/admin/", "destination": "/admin-dashboard.html" },
+    { "source": "/admin/index", "destination": "/admin-dashboard.html" },
     { "source": "/visitors", "destination": "/visitors/index.html" },
     { "source": "/visitors/", "destination": "/visitors/index.html" }
   ],
@@ -19,13 +18,13 @@
       ]
     },
     {
-      "source": "/admin/(.*)",
+      "source": "/admin-dashboard.html",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, max-age=0" }
       ]
     },
     {
-      "source": "/admin-dashboard",
+      "source": "/admin/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, max-age=0" }
       ]
