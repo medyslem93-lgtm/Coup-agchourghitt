@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const htmlFiles = ["index.html", "admin/index.html", "admin/login.html"];
+const generatedReferences = new Set(["vendor/supabase.js", "../vendor/supabase.js"]);
 const errors = [];
 
 for (const relativePath of htmlFiles) {
@@ -14,6 +15,7 @@ for (const relativePath of htmlFiles) {
   for (const match of source.matchAll(/(?:src|href)=["']([^"'#?]+)(?:\?[^"']*)?["']/g)) {
     const reference = match[1];
     if (/^(?:https?:|data:|mailto:)/.test(reference) || reference === "../" || reference === "./") continue;
+    if (generatedReferences.has(reference)) continue;
 
     const target = reference.startsWith("/")
       ? resolve(root, reference.slice(1))
