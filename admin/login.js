@@ -31,7 +31,6 @@
       const {data,error}=await client.auth.signInWithPassword({email,password});
       if(error) throw error;
       if(!data.session) throw new Error('لم يتم إنشاء جلسة دخول.');
-      localStorage.setItem('aghchorguit_admin_link','supabase-auth');
       status.textContent='تم تسجيل الدخول بنجاح. جارٍ فتح لوحة الإدارة…';status.className='login-status ok';
       location.replace('./');
     }catch(err){
@@ -59,7 +58,6 @@
     recoveryStatus.textContent='جارٍ حفظ كلمة المرور الجديدة…';recoveryStatus.className='login-status';
     const {error}=await client.auth.updateUser({password});
     if(error){recoveryStatus.textContent='تعذر تغيير كلمة المرور: '+error.message;recoveryStatus.className='login-status error';updateButton.disabled=false;return;}
-    localStorage.setItem('aghchorguit_admin_link','supabase-auth');
     recoveryStatus.textContent='تم تغيير كلمة المرور بنجاح. جارٍ فتح لوحة الإدارة…';recoveryStatus.className='login-status ok';
     setTimeout(()=>location.replace('./'),700);
   });
