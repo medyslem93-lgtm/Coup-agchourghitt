@@ -1,12 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "dist",
-  "cleanUrls": true,
-  "trailingSlash": false,
+  "cleanUrls": false,
   "rewrites": [
     { "source": "/admin", "destination": "/admin/index.html" },
     { "source": "/admin/", "destination": "/admin/index.html" },
     { "source": "/admin/index", "destination": "/admin/index.html" },
+    { "source": "/admin-dashboard", "destination": "/admin/index.html" },
     { "source": "/visitors", "destination": "/visitors/index.html" },
     { "source": "/visitors/", "destination": "/visitors/index.html" }
   ],
@@ -21,7 +21,13 @@
     {
       "source": "/admin/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-store, max-age=0" }
+      ]
+    },
+    {
+      "source": "/admin-dashboard",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, max-age=0" }
       ]
     },
     {
