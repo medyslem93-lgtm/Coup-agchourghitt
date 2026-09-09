@@ -36,9 +36,14 @@ const files = [
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await Promise.all(files.map((entry) => cp(resolve(root, entry), resolve(output, entry), { recursive: true })));
+
+// Publish the admin dashboard as a physical root-level HTML file as well as /admin/index.html.
+// This deliberately avoids relying on an Edge rewrite for the primary admin entry point.
+await cp(resolve(root, "admin/index.html"), resolve(output, "admin-dashboard.html"));
+
 await mkdir(resolve(output, "vendor"), { recursive: true });
 await cp(
   resolve(root, "node_modules/@supabase/supabase-js/dist/umd/supabase.js"),
   resolve(output, "vendor/supabase.js"),
 );
-console.log("Production bundle prepared in dist/.");
+console.log("Production bundle prepared in dist/ (including physical admin-dashboard.html).");
