@@ -20,6 +20,7 @@ const files = [
   "road-to-cup.js",
   "road-to-cup.css",
   "road-to-cup-final-hotfix.js",
+  "road-to-cup-opponent-hotfix.js",
   "motm-v5.js",
   "motm-v5.css",
   "team-of-week-v6.js",
