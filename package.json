@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node --check public-app.js && node --check admin/admin.js && node --check sw.js && node scripts/validate-build.mjs && node scripts/prepare-dist.mjs",
+    "build": "node --check public-app.js && node --check admin/admin.js && node --check admin/control-center.js && node --check admin/login.js && node --check sw.js && node scripts/validate-build.mjs && node scripts/prepare-dist.mjs",
     "check": "npm run build"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.116.0"
   }
 }
