@@ -1,4 +1,4 @@
-import { cp, mkdir, rm } from "node:fs/promises";
+import { cp, mkdir, rm, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -18,6 +18,7 @@ const files = [
   "referees-section.css",
   "middle-round-three-draw.js",
   "middle-round-three-draw.css",
+  "breaking-news-live.js",
   "team-background-live-v10.js",
   "team-calendar-v2.js",
   "team-calendar-v2.css",
@@ -39,7 +40,25 @@ const files = [
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await Promise.all(files.map((entry) => cp(resolve(root, entry), resolve(output, entry), { recursive: true })));
-await cp(resolve(root, "admin/index.html"), resolve(output, "admin-dashboard.html"));
+
+// The public ticker is database-driven. Keep the existing HTML as an immediate fallback,
+// then let this module replace it from site_settings and listen for Realtime updates.
+const publicIndexPath = resolve(output, "index.html");
+let publicIndex = await readFile(publicIndexPath, "utf8");
+if (!publicIndex.includes("breaking-news-live.js")) {
+  publicIndex = publicIndex.replace("</body>", '<script src="breaking-news-live.js?v=20260910-1"></script></body>');
+  await writeFile(publicIndexPath, publicIndex);
+}
+
+// Expose the breaking-news editor inside the existing Settings section of the admin.
+const adminIndexPath = resolve(output, "admin/index.html");
+let adminIndex = await readFile(adminIndexPath, "utf8");
+if (!adminIndex.includes("breaking-news-admin.js")) {
+  adminIndex = adminIndex.replace("</body>", '<script src="/admin/breaking-news-admin.js?v=20260910-1"></script></body>');
+  await writeFile(adminIndexPath, adminIndex);
+}
+
+await cp(adminIndexPath, resolve(output, "admin-dashboard.html"));
 await mkdir(resolve(output, "vendor"), { recursive: true });
 await cp(resolve(root, "node_modules/@supabase/supabase-js/dist/umd/supabase.js"),resolve(output, "vendor/supabase.js"));
-console.log("Production bundle prepared in dist/ (including physical admin-dashboard.html).");
+console.log("Production bundle prepared in dist/ (including admin-managed breaking news).");
