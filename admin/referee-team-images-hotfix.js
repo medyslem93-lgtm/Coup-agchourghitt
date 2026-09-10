@@ -42,7 +42,6 @@
         const role=document.getElementById('rfRole')?.value;
         if(!name)return toast('اسم الحكم مطلوب',false);
         let id=document.querySelector('[data-edit-ref][data-current]')?.dataset?.editRef||null;
-        // Resolve existing referee by exact editable fields when editing; otherwise insert first.
         let q=sb.from('referee_assignments').select('id,photo_url').eq('name',name).eq('category',category).eq('role',role).limit(1);
         const {data:found}=await q;
         id=found?.[0]?.id||id;
@@ -56,4 +55,12 @@
     const editTeam=e.target.closest('[data-edit-team]');
     if(editTeam){setTimeout(async()=>{const panel=document.getElementById('panel');const input=panel?.querySelector('#tfTeamPhoto');if(!input)return;const id=getId(editTeam,'data-edit-team');const {data:t}=await sb.from('teams').select('team_photo_url').eq('id',id).maybeSingle();const field=input.closest('.field');if(t?.team_photo_url&&!field.querySelector('.team-bg-preview')){const im=document.createElement('img');im.className='team-bg-preview';im.src=t.team_photo_url;im.alt='خلفية الفريق الحالية';im.style.cssText='width:100%;max-height:160px;object-fit:cover;border-radius:14px;margin-bottom:8px';field.prepend(im)}const label=field?.querySelector('label');if(label)label.textContent='خلفية الفريق / صورة اللاعبين';},0)}
   },true);
+})();
+
+(() => {
+  if(document.querySelector('script[data-middle-draw-admin]'))return;
+  const s=document.createElement('script');
+  s.src='/admin/middle-draw-admin.js?v=20260910-2';
+  s.dataset.middleDrawAdmin='1';
+  document.body.appendChild(s);
 })();
