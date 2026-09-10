@@ -1,0 +1,1 @@
+Restored pre-predictions site baseline on 2026-09-10 after prediction UI regression. Small tournament results updated in Supabase separately.
