@@ -26,3 +26,8 @@
   document.addEventListener('click',e=>{const c=e.target.closest('[data-referee]');if(c&&data){const ref=data.refs.find(x=>x.id===c.dataset.referee);if(ref)openProfile(ref)}if(e.target.closest('.agh-ref-close')||e.target.id==='aghRefModal')document.getElementById('aghRefModal')?.classList.remove('open');const mc=e.target.closest('[data-match-id]');if(mc){document.getElementById('aghRefModal')?.classList.remove('open');location.hash=`#/match/${mc.dataset.matchId}`}},true);
   const observer=new MutationObserver(()=>setTimeout(inject,80));observer.observe(main,{childList:true,subtree:false});window.addEventListener('hashchange',()=>setTimeout(inject,120));setTimeout(inject,350);
 })();
+
+(() => {
+  if(!document.getElementById('middleRoundThreeDrawStyle')){const l=document.createElement('link');l.id='middleRoundThreeDrawStyle';l.rel='stylesheet';l.href='middle-round-three-draw.css?v=20260910-1';document.head.appendChild(l)}
+  if(!document.getElementById('middleRoundThreeDrawScript')){const s=document.createElement('script');s.id='middleRoundThreeDrawScript';s.src='middle-round-three-draw.js?v=20260910-1';document.body.appendChild(s)}
+})();
