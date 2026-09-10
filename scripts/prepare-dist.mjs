@@ -16,6 +16,8 @@ const files = [
   "visitors",
   "referees-section.js",
   "referees-section.css",
+  "middle-round-three-draw.js",
+  "middle-round-three-draw.css",
   "team-background-live-v10.js",
   "team-calendar-v2.js",
   "team-calendar-v2.css",
