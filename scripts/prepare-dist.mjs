@@ -8,6 +8,7 @@ const files = [
   "index.html",
   "styles.css",
   "public-app.js",
+  "live-stream.js",
   "config.js",
   "manifest.webmanifest",
   "sw.js",
