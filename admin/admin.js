@@ -134,7 +134,7 @@
     const stream_enabled=val('mfStreamEnabled')==='true';
     const stream_url=nullable(val('mfStreamUrl'));
     const stream_type=nullable(val('mfStreamType')||detectStreamType(stream_url));
-    const stream_status=val('mfStreamStatus')||'offline';
+    let stream_status=val('mfStreamStatus')||'offline';if(val('mfStatus')==='انتهت'&&stream_status==='live')stream_status='ended';
     if(stream_enabled&&(!stream_url||!stream_type))return toast('أدخل رابط البث واختر نوعه قبل التفعيل',false);
     if(stream_url){try{const parsed=new URL(stream_url);if(parsed.protocol!=='https:')throw new Error('https')}catch{return toast('رابط البث يجب أن يكون رابط HTTPS صحيحًا',false)}}
     if(stream_type&&!['youtube','facebook','hls','embed'].includes(stream_type))return toast('نوع البث غير مدعوم',false);
