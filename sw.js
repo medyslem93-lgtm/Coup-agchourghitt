@@ -1,10 +1,10 @@
-const CACHE = "agchorguit-premium-v9-20260914-live";
+const CACHE = "agchorguit-premium-v10-20260914-live";
 const CORE = [
   "./",
   "index.html",
   "styles.css?v=20260914-live1",
   "public-app.js?v=20260914-live1",
-  "live-stream.js?v=20260914-1",
+  "live-stream.js?v=20260914-2",
   "config.js",
   "vendor/supabase.js?v=2.116.0",
   "manifest.webmanifest",
