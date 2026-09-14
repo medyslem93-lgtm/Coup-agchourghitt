@@ -51,7 +51,7 @@ if (!publicIndex.includes("breaking-news-live.js")) {
   await writeFile(publicIndexPath, publicIndex);
 }
 
-// Expose the breaking-news editor inside the existing Settings section of the admin.
+// Expose the breaking-news editor only inside the protected /admin area.
 const adminIndexPath = resolve(output, "admin/index.html");
 let adminIndex = await readFile(adminIndexPath, "utf8");
 if (!adminIndex.includes("breaking-news-admin.js")) {
@@ -59,7 +59,8 @@ if (!adminIndex.includes("breaking-news-admin.js")) {
   await writeFile(adminIndexPath, adminIndex);
 }
 
-await cp(adminIndexPath, resolve(output, "admin-dashboard.html"));
+// Intentionally do NOT publish a root-level admin-dashboard.html alias.
+// Administration stays under /admin and is protected by the admin login/session guard.
 await mkdir(resolve(output, "vendor"), { recursive: true });
 await cp(resolve(root, "node_modules/@supabase/supabase-js/dist/umd/supabase.js"),resolve(output, "vendor/supabase.js"));
-console.log("Production bundle prepared in dist/ (including admin-managed breaking news).");
+console.log("Production bundle prepared in dist/ (admin available only under /admin).");
