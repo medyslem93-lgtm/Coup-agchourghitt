@@ -560,7 +560,7 @@
   }
 
   function hasLiveStream(match) {
-    return Boolean(match?.stream_enabled && match.stream_status === "live" && match.stream_url);
+    return Boolean(match?.stream_enabled && match.stream_status === "live" && match.stream_url && match.status !== FINISHED);
   }
 
   function liveStreamBlock(match, home, away) {
