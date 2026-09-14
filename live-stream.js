@@ -171,18 +171,28 @@
         lowLatencyMode: true,
         backBufferLength: 30,
       });
+      let networkRetries = 0;
+      let mediaRetries = 0;
       activePlayers.set(container, player);
       player.loadSource(source);
       player.attachMedia(video);
       player.on(Hls.Events.MANIFEST_PARSED, () => {
+        networkRetries = 0;
+        mediaRetries = 0;
         container.classList.add("stream-ready");
         video.play().catch(() => {});
       });
       player.on(Hls.Events.ERROR, (_event, data) => {
         if (!data?.fatal) return;
-        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) player.startLoad();
-        else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) player.recoverMediaError();
-        else message(container, copy().unavailable);
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR && networkRetries < 2) {
+          networkRetries += 1;
+          player.startLoad();
+        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRetries < 1) {
+          mediaRetries += 1;
+          player.recoverMediaError();
+        } else {
+          message(container, copy().unavailable);
+        }
       });
     } catch {
       message(container, copy().hlsUnsupported);
