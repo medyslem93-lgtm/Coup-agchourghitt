@@ -89,9 +89,76 @@
   function playerStatsSheet(id){const p=player(id),t=team(p?.team_id),ev=S.events.filter(e=>e.player_id===id||e.assist_player_id===id),goals=ev.filter(e=>e.player_id===id&&['هدف','ركلة جزاء مسجلة'].includes(e.type)).length,assists=ev.filter(e=>(e.type==='تمريرة حاسمة'&&e.player_id===id)||e.assist_player_id===id).length,y=ev.filter(e=>e.player_id===id&&e.type==='بطاقة صفراء').length,r=ev.filter(e=>e.player_id===id&&e.type==='بطاقة حمراء').length;show(`<div class="panel-head"><h2>${esc(p?.name||'')}</h2><button class="ghost" data-close>إغلاق</button></div><p class="muted">${esc(t?.name||'')}</p><div class="dashboard-grid"><div class="metric"><b>${goals}</b><span>أهداف</span></div><div class="metric"><b>${assists}</b><span>صناعة</span></div><div class="metric"><b>${y}</b><span>صفراء</span></div><div class="metric"><b>${r}</b><span>حمراء</span></div></div>`)}
 
   function renderMatches(){if(!$('matchList'))return;const cat=val('matchCategory')||'الكل',st=val('matchStatus')||'الكل';const a=S.matches.filter(m=>(cat==='الكل'||m.category===cat)&&(st==='الكل'||m.status===st));$('matchList').innerHTML=a.length?a.map(m=>`<div class="item">${img(m.team_a?.logo_url,m.team_a?.name||'')}<div class="meta"><b>${esc(m.team_a?.name||'')} <span>${m.status==='انتهت'||m.status==='مباشر'?`${m.score_a??0} - ${m.score_b??0}`:'VS'}</span> ${esc(m.team_b?.name||'')}</b><small>${esc(m.category)} · ${esc(m.status)} · ${esc(m.match_date||'بدون تاريخ')} ${(m.match_time||'').slice(0,5)}</small></div><div class="actions">${m.status==='قادمة'?`<button class="primary" data-start-match="${m.id}">بدء</button>`:''}${m.status==='مباشر'?`<button class="primary" data-finish-match="${m.id}">إنهاء</button>`:''}<button class="ghost" data-match-events="${m.id}">الأحداث</button><button class="ghost" data-edit-match="${m.id}">تعديل</button><button class="danger" data-delete-match="${m.id}">حذف</button></div></div>`).join(''):'<div class="empty card">لا توجد مباريات مطابقة</div>'}
-  function matchForm(id=null){const m=id?match(id):null;show(`<div class="panel-head"><h2>${m?'تعديل المباراة':'إنشاء مباراة'}</h2><button class="ghost" data-close>إغلاق</button></div><div class="row two"><div class="field"><label>البطولة</label><select id="mfTournament">${S.tournaments.map(t=>`<option value="${t.id}" ${m?.tournament_id===t.id?'selected':''}>${esc(t.short_name)} · ${esc(t.season)}</option>`).join('')}</select></div><div class="field"><label>المجموعة</label><input id="mfGroup" value="${esc(m?.group_name||'')}"></div></div><div class="row two"><div class="field"><label>الفريق الأول</label><select id="mfA"></select></div><div class="field"><label>الفريق الثاني</label><select id="mfB"></select></div></div><div class="row two"><div class="field"><label>المرحلة</label><input id="mfStage" value="${esc(m?.stage||'')}"></div><div class="field"><label>الجولة</label><input id="mfRound" value="${esc(m?.round_name||'')}"></div><div class="field"><label>التاريخ</label><input id="mfDate" type="date" value="${esc(m?.match_date||'')}"></div><div class="field"><label>الوقت</label><input id="mfTime" type="time" value="${esc((m?.match_time||'').slice(0,5))}"></div><div class="field"><label>الملعب</label><input id="mfVenue" value="${esc(m?.venue||'')}"></div><div class="field"><label>الحالة</label><select id="mfStatus">${['قادمة','مباشر','انتهت','مؤجلة','ملغاة'].map(s=>`<option ${m?.status===s?'selected':''}>${s}</option>`).join('')}</select></div><div class="field"><label>نتيجة الفريق الأول</label><input id="mfScoreA" type="number" min="0" value="${m?.score_a??''}"></div><div class="field"><label>نتيجة الفريق الثاني</label><input id="mfScoreB" type="number" min="0" value="${m?.score_b??''}"></div></div><div class="savebar"><button id="saveMatch" class="primary">حفظ المباراة</button><button class="ghost" data-close>إلغاء</button></div>`);const fillTeams=()=>{const tournament_id=val('mfTournament'),arr=S.teams.filter(t=>t.tournament_id===tournament_id),opts=arr.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');$('mfA').innerHTML=opts;$('mfB').innerHTML=opts;if(m){$('mfA').value=m.team_a_id;$('mfB').value=m.team_b_id}};$('mfTournament').onchange=fillTeams;fillTeams();$('saveMatch').onclick=()=>saveMatch(m?.id||null)}
-  async function saveMatch(id){const team_a_id=val('mfA'),team_b_id=val('mfB'),tournament_id=val('mfTournament'),tour=tournament(tournament_id),category=tour?.division;if(!team_a_id||!team_b_id||!tournament_id)return toast('اختر البطولة والفريقين',false);if(team_a_id===team_b_id)return toast('لا يمكن اختيار الفريق نفسه مرتين',false);const payload={team_a_id,team_b_id,tournament_id,category,group_name:nullable(val('mfGroup')),stage:nullable(val('mfStage')),round_name:nullable(val('mfRound')),match_date:nullable(val('mfDate')),match_time:nullable(val('mfTime')),venue:nullable(val('mfVenue')),status:val('mfStatus'),score_a:val('mfScoreA')===''?null:Number(val('mfScoreA')),score_b:val('mfScoreB')===''?null:Number(val('mfScoreB')),updated_at:new Date().toISOString()};const {error}=await(id?sb.from('matches').update(payload).eq('id',id):sb.from('matches').insert(payload));if(error)return toast('تعذر حفظ المباراة: '+error.message,false);toast('تم حفظ المباراة');close();await loadAll(true)}
-  async function setMatchStatus(id,status){const payload={status,updated_at:new Date().toISOString()};if(status==='مباشر'){const m=match(id);if(m.score_a==null)payload.score_a=0;if(m.score_b==null)payload.score_b=0}const {error}=await sb.from('matches').update(payload).eq('id',id);if(error)return toast('تعذر تحديث حالة المباراة',false);toast('تم تحديث حالة المباراة');await loadAll(true)}
+  function detectStreamType(value){
+    try{
+      const url=new URL(String(value||'').trim());
+      const host=url.hostname.replace(/^www\./,'').toLowerCase();
+      if(host==='youtu.be'||host.endsWith('youtube.com')||host==='youtube-nocookie.com')return'youtube';
+      if(host==='facebook.com'||host.endsWith('.facebook.com'))return'facebook';
+      if(url.pathname.toLowerCase().endsWith('.m3u8'))return'hls';
+      return'embed';
+    }catch{return''}
+  }
+  function previewMatchStream(){
+    const box=$('mfStreamPreview'),url=val('mfStreamUrl'),type=val('mfStreamType')||detectStreamType(url);
+    if(!box||!url)return toast('أدخل رابط البث للمعاينة',false);
+    if(!type)return toast('اختر نوع البث',false);
+    $('mfStreamType').value=type;
+    box.hidden=false;
+    window.AGCH_LIVE_STREAM?.render(box,{enabled:true,status:'live',type,url});
+  }
+  function matchForm(id=null){
+    const m=id?match(id):null;
+    show(`<div class="panel-head"><h2>${m?'تعديل المباراة':'إنشاء مباراة'}</h2><button class="ghost" data-close>إغلاق</button></div>
+      <div class="row two"><div class="field"><label>البطولة</label><select id="mfTournament">${S.tournaments.map(t=>`<option value="${t.id}" ${m?.tournament_id===t.id?'selected':''}>${esc(t.short_name)} · ${esc(t.season)}</option>`).join('')}</select></div><div class="field"><label>المجموعة</label><input id="mfGroup" value="${esc(m?.group_name||'')}"></div></div>
+      <div class="row two"><div class="field"><label>الفريق الأول</label><select id="mfA"></select></div><div class="field"><label>الفريق الثاني</label><select id="mfB"></select></div></div>
+      <div class="row two"><div class="field"><label>المرحلة</label><input id="mfStage" value="${esc(m?.stage||'')}"></div><div class="field"><label>الجولة</label><input id="mfRound" value="${esc(m?.round_name||'')}"></div><div class="field"><label>التاريخ</label><input id="mfDate" type="date" value="${esc(m?.match_date||'')}"></div><div class="field"><label>الوقت</label><input id="mfTime" type="time" value="${esc((m?.match_time||'').slice(0,5))}"></div><div class="field"><label>الملعب</label><input id="mfVenue" value="${esc(m?.venue||'')}"></div><div class="field"><label>الحالة</label><select id="mfStatus">${['قادمة','مباشر','انتهت','مؤجلة','ملغاة'].map(s=>`<option ${m?.status===s?'selected':''}>${s}</option>`).join('')}</select></div><div class="field"><label>نتيجة الفريق الأول</label><input id="mfScoreA" type="number" min="0" value="${m?.score_a??''}"></div><div class="field"><label>نتيجة الفريق الثاني</label><input id="mfScoreB" type="number" min="0" value="${m?.score_b??''}"></div></div>
+      <section class="stream-admin-card"><div class="stream-admin-heading"><div><span>LIVE STREAM</span><h3>البث المباشر</h3></div><span class="stream-security-note">للمشرفين فقط</span></div>
+        <div class="row two"><div class="field"><label>تفعيل البث</label><select id="mfStreamEnabled"><option value="false" ${!m?.stream_enabled?'selected':''}>معطّل</option><option value="true" ${m?.stream_enabled?'selected':''}>مفعّل</option></select></div><div class="field"><label>حالة البث</label><select id="mfStreamStatus">${[['offline','غير متصل'],['scheduled','مجدول'],['live','مباشر'],['ended','انتهى']].map(([value,label])=>`<option value="${value}" ${(m?.stream_status||'offline')===value?'selected':''}>${label}</option>`).join('')}</select></div></div>
+        <div class="field"><label>رابط البث الآمن (HTTPS)</label><input id="mfStreamUrl" type="url" dir="ltr" inputmode="url" autocomplete="off" placeholder="https://youtube.com/watch?v=... أو https://.../stream.m3u8" value="${esc(m?.stream_url||'')}"><small>يدعم YouTube Live وFacebook وHLS بصيغة m3u8 وروابط Embed المسموحة.</small></div>
+        <div class="row two"><div class="field"><label>نوع البث</label><select id="mfStreamType"><option value="">تحديد تلقائي</option>${[['youtube','YouTube Live'],['facebook','Facebook Live'],['hls','HLS (.m3u8)'],['embed','Embed']].map(([value,label])=>`<option value="${value}" ${m?.stream_type===value?'selected':''}>${label}</option>`).join('')}</select></div><div class="field stream-preview-action"><label>المعاينة</label><button id="previewStream" type="button" class="ghost">معاينة البث</button></div></div>
+        <div id="mfStreamPreview" class="live-stream-card admin-stream-preview" hidden><div class="live-stream-stage" data-stream-stage></div></div>
+      </section>
+      <div class="savebar"><button id="saveMatch" class="primary">حفظ المباراة</button><button class="ghost" data-close>إلغاء</button></div>`);
+    const fillTeams=()=>{const tournament_id=val('mfTournament'),arr=S.teams.filter(t=>t.tournament_id===tournament_id),opts=arr.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');$('mfA').innerHTML=opts;$('mfB').innerHTML=opts;if(m){$('mfA').value=m.team_a_id;$('mfB').value=m.team_b_id}};
+    $('mfTournament').onchange=fillTeams;
+    fillTeams();
+    $('mfStreamUrl').addEventListener('blur',()=>{if(!$('mfStreamType').value)$('mfStreamType').value=detectStreamType(val('mfStreamUrl'))});
+    $('previewStream').onclick=previewMatchStream;
+    $('saveMatch').onclick=()=>saveMatch(m?.id||null);
+  }
+  async function saveMatch(id){
+    const team_a_id=val('mfA'),team_b_id=val('mfB'),tournament_id=val('mfTournament'),tour=tournament(tournament_id),category=tour?.division;
+    if(!team_a_id||!team_b_id||!tournament_id)return toast('اختر البطولة والفريقين',false);
+    if(team_a_id===team_b_id)return toast('لا يمكن اختيار الفريق نفسه مرتين',false);
+    const stream_enabled=val('mfStreamEnabled')==='true';
+    const stream_url=nullable(val('mfStreamUrl'));
+    const stream_type=nullable(val('mfStreamType')||detectStreamType(stream_url));
+    const stream_status=val('mfStreamStatus')||'offline';
+    if(stream_enabled&&(!stream_url||!stream_type))return toast('أدخل رابط البث واختر نوعه قبل التفعيل',false);
+    if(stream_url){try{const parsed=new URL(stream_url);if(parsed.protocol!=='https:')throw new Error('https')}catch{return toast('رابط البث يجب أن يكون رابط HTTPS صحيحًا',false)}}
+    if(stream_type&&!['youtube','facebook','hls','embed'].includes(stream_type))return toast('نوع البث غير مدعوم',false);
+    if(!['offline','scheduled','live','ended'].includes(stream_status))return toast('حالة البث غير صحيحة',false);
+    const payload={team_a_id,team_b_id,tournament_id,category,group_name:nullable(val('mfGroup')),stage:nullable(val('mfStage')),round_name:nullable(val('mfRound')),match_date:nullable(val('mfDate')),match_time:nullable(val('mfTime')),venue:nullable(val('mfVenue')),status:val('mfStatus'),score_a:val('mfScoreA')===''?null:Number(val('mfScoreA')),score_b:val('mfScoreB')===''?null:Number(val('mfScoreB')),stream_enabled,stream_url,stream_type,stream_status,updated_at:new Date().toISOString()};
+    const button=$('saveMatch');
+    button.disabled=true;
+    button.textContent='جارٍ الحفظ...';
+    const {error}=await(id?sb.from('matches').update(payload).eq('id',id):sb.from('matches').insert(payload));
+    if(error){button.disabled=false;button.textContent='حفظ المباراة';return toast('تعذر حفظ المباراة: '+error.message,false)}
+    toast('تم حفظ المباراة وتحديث البث');
+    close();
+    await loadAll(true);
+  }
+  async function setMatchStatus(id,status){
+    const payload={status,updated_at:new Date().toISOString()};
+    const m=match(id);
+    if(status==='مباشر'){if(m.score_a==null)payload.score_a=0;if(m.score_b==null)payload.score_b=0}
+    if(status==='انتهت'&&m.stream_status==='live')payload.stream_status='ended';
+    const {error}=await sb.from('matches').update(payload).eq('id',id);
+    if(error)return toast('تعذر تحديث حالة المباراة',false);
+    toast('تم تحديث حالة المباراة');
+    await loadAll(true);
+  }
   async function deleteMatch(id){if(!confirmDelete('هذه المباراة'))return;const {error}=await sb.from('matches').delete().eq('id',id);if(error)return toast('تعذر حذف المباراة لوجود بيانات مرتبطة بها',false);toast('تم حذف المباراة');await loadAll(true)}
 
   function renderEvents(){if(!$('eventsList'))return;const mid=val('eventMatchFilter'),a=S.events.filter(e=>!mid||e.match_id===mid);$('eventsList').innerHTML=a.length?a.slice(0,300).map(e=>{const m=match(e.match_id);return `<div class="item"><div class="meta"><b><span class="event-chip">${esc(e.type)}</span> ${esc(eventPlayerName(e)||e.note||'بدون لاعب')}</b><small>${esc(m?.team_a?.name||'')} × ${esc(m?.team_b?.name||'')}${e.minute!=null?` · الدقيقة ${e.minute}`:''}${eventTeamName(e)?` · ${esc(eventTeamName(e))}`:''}</small></div><div class="actions"><button class="ghost" data-edit-event="${e.id}">تعديل</button><button class="danger" data-delete-event="${e.id}">حذف</button></div></div>`}).join(''):'<div class="empty card">لا توجد أحداث مسجلة</div>'}
