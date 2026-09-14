@@ -248,7 +248,7 @@
     const home = teamForSide(match, "a");
     const away = teamForSide(match, "b");
     return `<article class="match-card" data-route="match/${match.id}">
-      <div class="match-card-top"><span class="competition-label">${escapeHtml(tournament?.short_name || match.category)} · ${escapeHtml(match.stage || match.round_name || "المباراة")}</span><span class="status-pill ${statusClass(match.status)}">${escapeHtml(match.status)}</span></div>
+      <div class="match-card-top"><span class="competition-label">${escapeHtml(tournament?.short_name || match.category)} · ${escapeHtml(match.stage || match.round_name || "المباراة")}</span><span class="status-pill ${statusClass(match.status)}">${match.stream_enabled && match.stream_status === "live" ? '<span class="live-dot"></span>LIVE · ' : ""}${escapeHtml(match.status)}</span></div>
       <div class="match-card-main">
         <div class="match-team"><span class="team-logo-small">${image(home.logo_url, home.name)}</span><b>${escapeHtml(home.name)}</b></div>
         <div class="match-score">${scoreMarkup(match, true)}</div>
@@ -552,15 +552,44 @@
     }).join("")}</div>`;
   }
 
+  function liveStreamCopy() {
+    const lang = (document.documentElement.lang || "ar").toLowerCase();
+    if (lang.startsWith("fr")) return { title: "Direct", live: "En direct", watch: "Regarder le direct" };
+    if (lang.startsWith("en")) return { title: "Live Stream", live: "Live Now", watch: "Watch Live" };
+    return { title: "البث المباشر", live: "مباشر الآن", watch: "مشاهدة البث" };
+  }
+
+  function hasLiveStream(match) {
+    return Boolean(match?.stream_enabled && match.stream_status === "live" && match.stream_url);
+  }
+
+  function liveStreamBlock(match, home, away) {
+    if (!hasLiveStream(match)) return "";
+    const labels = liveStreamCopy();
+    const minute = match.current_minute ?? match.minute;
+    return `<section id="matchLiveStream" class="live-stream-card" data-stream-enabled="true" data-stream-status="${escapeHtml(match.stream_status)}" data-stream-type="${escapeHtml(match.stream_type || "")}" data-stream-url="${escapeHtml(match.stream_url || "")}" aria-label="${escapeHtml(labels.title)}">
+      <div class="live-stream-head">
+        <div><span class="live-stream-kicker"><i aria-hidden="true"></i>${escapeHtml(labels.live)}${minute != null ? ` · ${escapeHtml(minute)}′` : ""}</span><strong>${escapeHtml(home.name)} ${score(match.score_a)} - ${score(match.score_b)} ${escapeHtml(away.name)}</strong></div>
+        <span class="live-stream-badge">LIVE</span>
+      </div>
+      <div class="live-stream-stage" data-stream-stage><div class="stream-loader" aria-hidden="true"></div></div>
+    </section>`;
+  }
+
   function renderMatch(id, tab = "summary") {
     const match = getMatch(id);
     if (!match) return renderNotFound();
     const tournament = getTournament(match.tournament_id);
-    const home = teamForSide(match, "a"); const away = teamForSide(match, "b");
+    const home = teamForSide(match, "a");
+    const away = teamForSide(match, "b");
     const events = getEvents(id);
     const tabs = [["summary", "الملخص"], ["timeline", "الأحداث"], ["stats", "الإحصائيات"], ["lineups", "التشكيلة"]];
-    let content = tab === "timeline" ? eventTimeline(events) : tab === "stats" ? matchStatistics(match, events) : tab === "lineups" ? matchLineups(match) : matchSummary(match, events);
-    main.innerHTML = `<div class="page-shell"><section class="match-center-hero" style="--t-accent:${escapeHtml(tournament?.accent_color || "#c7ff37")}"><div class="match-center-heading"><button class="back-button" type="button" data-route="tournament/${tournament?.slug || ""}/matches">${icon("back")} ${escapeHtml(tournament?.short_name || "المباريات")}</button><button class="icon-button" type="button" data-share="${location.href}" aria-label="مشاركة المباراة">${icon("share")}</button></div><div class="match-center-teams"><div class="match-center-team" data-route="team/${home.id}"><span class="team-logo-large">${image(home.logo_url, home.name, { eager: true })}</span><b>${escapeHtml(home.name)}</b></div><div class="match-center-score">${scoreMarkup(match)}<span class="status-pill ${statusClass(match.status)}">${escapeHtml(match.status)}</span></div><div class="match-center-team" data-route="team/${away.id}"><span class="team-logo-large">${image(away.logo_url, away.name, { eager: true })}</span><b>${escapeHtml(away.name)}</b></div></div><div class="match-facts"><span>${icon("calendar", "button-icon")} ${escapeHtml(formatDate(match.match_date))}</span><span>${icon("clock", "button-icon")} ${escapeHtml(formatTime(match.match_time))}</span>${match.venue ? `<span>${icon("pin", "button-icon")} ${escapeHtml(match.venue)}</span>` : ""}<span>${escapeHtml(match.stage || match.round_name || "المباراة")}</span></div></section><div class="section-block app-tabs">${tabs.map(([key, label]) => `<button type="button" class="${tab === key ? "active" : ""}" data-route="match/${match.id}/${key}">${label}</button>`).join("")}</div>${content}</div>`;
+    const content = tab === "timeline" ? eventTimeline(events) : tab === "stats" ? matchStatistics(match, events) : tab === "lineups" ? matchLineups(match) : matchSummary(match, events);
+    const streamLive = hasLiveStream(match);
+    const labels = liveStreamCopy();
+    const streamAction = streamLive ? `<button class="watch-stream-button" type="button" data-stream-jump="matchLiveStream"><span class="live-dot" aria-hidden="true"></span>${escapeHtml(labels.watch)}</button>` : "";
+    main.innerHTML = `<div class="page-shell"><section class="match-center-hero" style="--t-accent:${escapeHtml(tournament?.accent_color || "#c7ff37")}"><div class="match-center-heading"><button class="back-button" type="button" data-route="tournament/${tournament?.slug || ""}/matches">${icon("back")} ${escapeHtml(tournament?.short_name || "المباريات")}</button><button class="icon-button" type="button" data-share="${location.href}" aria-label="مشاركة المباراة">${icon("share")}</button></div><div class="match-center-teams"><div class="match-center-team" data-route="team/${home.id}"><span class="team-logo-large">${image(home.logo_url, home.name, { eager: true })}</span><b>${escapeHtml(home.name)}</b></div><div class="match-center-score">${scoreMarkup(match)}<span class="status-pill ${statusClass(match.status)}">${streamLive ? '<span class="live-dot" aria-hidden="true"></span>LIVE · ' : ""}${escapeHtml(match.status)}</span></div><div class="match-center-team" data-route="team/${away.id}"><span class="team-logo-large">${image(away.logo_url, away.name, { eager: true })}</span><b>${escapeHtml(away.name)}</b></div></div><div class="match-facts"><span>${icon("calendar", "button-icon")} ${escapeHtml(formatDate(match.match_date))}</span><span>${icon("clock", "button-icon")} ${escapeHtml(formatTime(match.match_time))}</span>${match.venue ? `<span>${icon("pin", "button-icon")} ${escapeHtml(match.venue)}</span>` : ""}<span>${escapeHtml(match.stage || match.round_name || "المباراة")}</span>${streamAction}</div></section>${liveStreamBlock(match, home, away)}<div class="section-block app-tabs">${tabs.map(([key, label]) => `<button type="button" class="${tab === key ? "active" : ""}" data-route="match/${match.id}/${key}">${label}</button>`).join("")}</div>${content}</div>`;
+    if (streamLive) queueMicrotask(() => window.AGCH_LIVE_STREAM?.mount("matchLiveStream"));
   }
 
   function renderStats(type = "scorers") {
