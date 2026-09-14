@@ -624,9 +624,8 @@
       ["news", "الأخبار", "آخر أخبار وأحداث البطولة", "news"],
       ["search", "البحث الشامل", "ابحث عن فريق أو لاعب أو مباراة", "search"],
       ["trophy", "البطولات", "مساحة مستقلة لكل بطولة", "tournaments"],
-      ["lock", "لوحة الإدارة", "إدارة الفرق والمباريات والأحداث", "admin"],
     ];
-    main.innerHTML = `<div class="page-shell">${pageHeading("MORE", "المزيد", tournament ? `أدوات ${tournament.short_name}` : "أدوات المنصة")}<div class="more-grid">${actions.map(([ico, title, description, route]) => route === "admin" ? `<a class="action-tile" href="admin/"><span class="action-tile-icon">${icon(ico)}</span><span class="action-tile-copy"><b>${title}</b><small>${description}</small></span>${icon("arrow")}</a>` : `<button class="action-tile" type="button" ${route === "search" ? 'data-action="open-search"' : `data-route="${route}"`}><span class="action-tile-icon">${icon(ico)}</span><span class="action-tile-copy"><b>${title}</b><small>${description}</small></span>${icon("arrow")}</button>`).join("")}</div></div>`;
+    main.innerHTML = `<div class="page-shell">${pageHeading("MORE", "المزيد", tournament ? `أدوات ${tournament.short_name}` : "أدوات المنصة")}<div class="more-grid">${actions.map(([ico, title, description, route]) => `<button class="action-tile" type="button" ${route === "search" ? 'data-action="open-search"' : `data-route="${route}"`}><span class="action-tile-icon">${icon(ico)}</span><span class="action-tile-copy"><b>${title}</b><small>${description}</small></span>${icon("arrow")}</button>`).join("")}</div></div>`;
   }
 
   function renderError(message = "تعذر تحميل البيانات") {
