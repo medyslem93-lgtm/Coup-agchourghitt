@@ -1,4 +1,4 @@
-const CACHE = "agchorguit-premium-v8-20260914-live";
+const CACHE = "agchorguit-premium-v9-20260914-live";
 const CORE = [
   "./",
   "index.html",
