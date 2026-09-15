@@ -1,8 +1,15 @@
-const CACHE = "agchorguit-premium-v16-20260915-events3";
+const CACHE = "agchorguit-premium-v17-20260915-styles";
 const CORE = [
   "./",
   "index.html",
   "styles.css?v=20260915-events1",
+  "referees-section.css?v=20260915-1",
+  "team-calendar-v2.css?v=20260915-1",
+  "road-to-cup.css?v=20260915-1",
+  "motm-v5.css?v=20260915-1",
+  "team-of-week-v6.css?v=20260915-1",
+  "goal-of-round-v7.css?v=20260915-1",
+  "standings-fairplay-v9.css?v=20260915-1",
   "public-app.js?v=20260915-events3",
   "live-stream.js?v=20260915-score1",
   "config.js",

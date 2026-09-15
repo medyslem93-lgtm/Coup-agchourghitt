@@ -27,6 +27,22 @@ for (const relativePath of htmlFiles) {
 
 JSON.parse(readFileSync(resolve(root, "manifest.webmanifest"), "utf8"));
 
+const publicIndex = readFileSync(resolve(root, "index.html"), "utf8");
+const componentBundles = [
+  ["referees-section.js", "referees-section.css"],
+  ["team-calendar-v2.js", "team-calendar-v2.css"],
+  ["road-to-cup.js", "road-to-cup.css"],
+  ["motm-v5.js", "motm-v5.css"],
+  ["team-of-week-v6.js", "team-of-week-v6.css"],
+  ["goal-of-round-v7.js", "goal-of-round-v7.css"],
+  ["standings-fairplay-v9.js", "standings-fairplay-v9.css"],
+];
+for (const [script, stylesheet] of componentBundles) {
+  if (publicIndex.includes(script) && !publicIndex.includes(stylesheet)) {
+    errors.push(`index.html: ${script} is loaded without its stylesheet ${stylesheet}`);
+  }
+}
+
 const publicApp = readFileSync(resolve(root, "public-app.js"), "utf8");
 const publicStyles = readFileSync(resolve(root, "styles.css"), "utf8");
 if (!publicApp.includes("function patchLiveEvent") || !publicApp.includes("showBroadcastEvent(incoming)")) {
