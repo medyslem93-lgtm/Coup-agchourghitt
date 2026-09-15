@@ -1,4 +1,4 @@
-const CACHE = "agchorguit-premium-v19-20260915-mobile";
+const CACHE = "agchorguit-premium-v20-20260915-mobile";
 const CORE = [
   "./",
   "index.html",
@@ -10,7 +10,7 @@ const CORE = [
   "team-of-week-v6.css?v=20260915-1",
   "goal-of-round-v7.css?v=20260915-1",
   "standings-fairplay-v9.css?v=20260915-1",
-  "public-app.js?v=20260915-events5",
+  "public-app.js?v=20260915-events6",
   "featured-final-hotfix.js?v=20260915-final2",
   "live-stream.js?v=20260915-score1",
   "config.js",
