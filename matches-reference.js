@@ -56,7 +56,7 @@ function renderMatchesPage(){
  if(!$('#refMatchesRoot'))return;renderCatbar();const root=$('#refMatchesRoot');root.dataset.category=state.cat;
  let base=baseMatches().sort(sortMatches);const dates=[...new Set(base.map(dateKey).filter(Boolean))];
  const hasUndated=base.some(m=>!m.match_date);
- $('#refDays').innerHTML=`<button data-refdate="all" class="${state.date==='all'||state.date==='today'?'active':''}"><b>كل</b><span>المواعيد</span></button>`+dates.map(d=>{const [w,n]=fmtChip(d);return `<button data-refdate="${d}" class="${state.date===d?'active':''}"><b>${esc(w)}</b><span>${esc(n)}</span></button>`).join('')+(hasUndated?`<button data-refdate="undated" class="${state.date==='undated'?'active':''}"><b>بدون</b><span>تاريخ</span></button>`:'');
+ $('#refDays').innerHTML=`<button data-refdate="all" class="${state.date==='all'||state.date==='today'?'active':''}"><b>كل</b><span>المواعيد</span></button>`+dates.map(d=>{const [w,n]=fmtChip(d);return `<button data-refdate="${d}" class="${state.date===d?'active':''}"><b>${esc(w)}</b><span>${esc(n)}</span></button>`}).join('')+(hasUndated?`<button data-refdate="undated" class="${state.date==='undated'?'active':''}"><b>بدون</b><span>تاريخ</span></button>`:'');
  const statusItems=[['all','الكل'],['upcoming','القادمة'],['results','النتائج']];if(base.some(isLive))statusItems.splice(2,0,['live','مباشر']);
  $('#refStatuses').innerHTML=statusItems.map(([v,l])=>`<button data-refstatus="${v}" class="${state.status===v?'active':''}">${l}</button>`).join('');
  let filtered=base;if(state.date==='undated')filtered=filtered.filter(m=>!m.match_date);else if(state.date!=='all'&&state.date!=='today')filtered=filtered.filter(m=>m.match_date===state.date);

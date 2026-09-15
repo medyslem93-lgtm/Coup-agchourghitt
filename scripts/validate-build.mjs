@@ -27,6 +27,18 @@ for (const relativePath of htmlFiles) {
 
 JSON.parse(readFileSync(resolve(root, "manifest.webmanifest"), "utf8"));
 
+const publicApp = readFileSync(resolve(root, "public-app.js"), "utf8");
+const publicStyles = readFileSync(resolve(root, "styles.css"), "utf8");
+if (!publicApp.includes("function patchLiveEvent") || !publicApp.includes("showBroadcastEvent(incoming)")) {
+  errors.push("public-app.js: live match events are not connected to the broadcast overlay");
+}
+if (!publicApp.includes('table: "match_events"') || !publicApp.includes("patchLiveEvent(payload)")) {
+  errors.push("public-app.js: Supabase Realtime match_events subscription is missing");
+}
+if (!publicStyles.includes(".broadcast-event-layer") || !publicStyles.includes(".broadcast-event-card")) {
+  errors.push("styles.css: cinematic broadcast event styles are missing");
+}
+
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);

@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { cp, mkdir, rm, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,6 +22,11 @@ const files = [
   "middle-round-three-draw.js",
   "middle-round-three-draw.css",
   "breaking-news-live.js",
+  "news-center.css",
+  "news-center.js",
+  "visit-tracker.js",
+  "live-match-clock.js",
+  "featured-final-hotfix.js",
   "team-background-live-v10.js",
   "team-calendar-v2.js",
   "team-calendar-v2.css",
@@ -59,4 +65,22 @@ if (!adminIndex.includes("breaking-news-admin.js")) {
 
 await mkdir(resolve(output, "vendor"), { recursive: true });
 await cp(resolve(root, "node_modules/@supabase/supabase-js/dist/umd/supabase.js"),resolve(output, "vendor/supabase.js"));
+
+const deployedHtmlFiles = ["index.html", "admin/index.html", "admin/login.html", "visitors/index.html"];
+const missingReferences = [];
+for (const relativePath of deployedHtmlFiles) {
+  const source = await readFile(resolve(output, relativePath), "utf8");
+  for (const match of source.matchAll(/(?:src|href)=["']([^"'#?]+)(?:\?[^"']*)?["']/g)) {
+    const reference = match[1];
+    if (/^(?:https?:|data:|mailto:)/.test(reference) || reference === "../" || reference === "./") continue;
+    const target = reference.startsWith("/")
+      ? resolve(output, reference.slice(1))
+      : resolve(dirname(resolve(output, relativePath)), reference);
+    if (!existsSync(target)) missingReferences.push(`${relativePath}: ${reference}`);
+  }
+}
+
+if (missingReferences.length) {
+  throw new Error(`Production bundle has missing assets:\n${missingReferences.join("\n")}`);
+}
 console.log("Production bundle prepared in dist/ (admin available only under /admin).");

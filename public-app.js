@@ -614,6 +614,7 @@
     const parts = parseRoute();
     const container = document.getElementById("matchLiveStream");
     const sameTeams = previous.team_a_id === next.team_a_id && previous.team_b_id === next.team_b_id && previous.tournament_id === next.tournament_id;
+    if (parts[0] === "match" && parts[1] !== next.id && document.getElementById("matchLiveStream")) return true;
     if (parts[0] !== "match" || parts[1] !== next.id || !container || !sameTeams || !hasLiveStream(next)) return false;
 
     const home = teamForSide(next, "a");
@@ -641,18 +642,21 @@
     const dictionaries = {
       ar: {
         "هدف": "هــــدف!", "هدف عكسي": "هدف عكسي", "ركلة جزاء مسجلة": "هدف من ركلة جزاء",
+        "ركلة جزاء ضائعة": "ركلة جزاء ضائعة",
         "تمريرة حاسمة": "صناعة هدف", "بطاقة صفراء": "بطاقة صفراء", "بطاقة حمراء": "بطاقة حمراء",
         "تبديل": "تبديل", "ركنية": "ركلة ركنية", "خطأ": "خطأ", "بداية المباراة": "انطلاق المباراة",
         "نهاية الشوط": "نهاية الشوط", "نهاية المباراة": "نهاية المباراة",
       },
       fr: {
         "هدف": "BUUUT !", "هدف عكسي": "But contre son camp", "ركلة جزاء مسجلة": "Penalty marqué",
+        "ركلة جزاء ضائعة": "Penalty manqué",
         "تمريرة حاسمة": "Passe décisive", "بطاقة صفراء": "Carton jaune", "بطاقة حمراء": "Carton rouge",
         "تبديل": "Remplacement", "ركنية": "Corner", "خطأ": "Faute", "بداية المباراة": "Coup d'envoi",
         "نهاية الشوط": "Mi-temps", "نهاية المباراة": "Fin du match",
       },
       en: {
         "هدف": "GOAL!", "هدف عكسي": "Own Goal", "ركلة جزاء مسجلة": "Penalty Goal",
+        "ركلة جزاء ضائعة": "Penalty Missed",
         "تمريرة حاسمة": "Assist", "بطاقة صفراء": "Yellow Card", "بطاقة حمراء": "Red Card",
         "تبديل": "Substitution", "ركنية": "Corner", "خطأ": "Foul", "بداية المباراة": "Kick-off",
         "نهاية الشوط": "Half-time", "نهاية المباراة": "Full-time",
@@ -759,6 +763,7 @@
     } else return false;
 
     const parts = parseRoute();
+    if (parts[0] === "match" && parts[1] !== matchId && document.getElementById("matchLiveStream")) return true;
     if (parts[0] !== "match" || parts[1] !== matchId) return false;
     const match = getMatch(matchId);
     const content = main.querySelector("[data-match-tab-content]");
