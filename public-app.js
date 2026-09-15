@@ -1021,10 +1021,12 @@
   });
 
   searchInput.addEventListener("input", () => renderSearchResults(searchInput.value));
-  searchLayer.querySelector('[data-action="close-search"]')?.addEventListener("click", (event) => {
+  searchLayer.addEventListener("click", (event) => {
+    if (!event.target.closest('[data-action="close-search"]')) return;
     event.preventDefault();
+    event.stopPropagation();
     closeSearch();
-  });
+  }, { capture: true });
   document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !searchLayer.hidden) closeSearch(); });
   window.addEventListener("hashchange", () => { renderRoute(); window.scrollTo({ top: 0, behavior: "smooth" }); });
   window.addEventListener("online", () => loadData(true));
