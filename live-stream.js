@@ -96,7 +96,7 @@
 
   function message(container, text) {
     destroy(container);
-    const stage = container.querySelector("[data-stream-stage]") || container;
+    const stage = container.querySelector("[data-stream-media]") || container.querySelector("[data-stream-stage]") || container;
     stage.innerHTML = `<div class="stream-unavailable" role="status"><span aria-hidden="true">◉</span><p>${escapeText(text)}</p></div>`;
     container.classList.add("stream-error");
   }
@@ -126,7 +126,7 @@
       container.classList.add("stream-ready");
     }, { once: true });
     iframe.addEventListener("error", () => message(container, copy().unavailable), { once: true });
-    container.querySelector("[data-stream-stage]").replaceChildren(iframe);
+    (container.querySelector("[data-stream-media]") || container.querySelector("[data-stream-stage]")).replaceChildren(iframe);
     setTimeout(() => {
       if (document.contains(container) && !loaded) message(container, copy().unavailable);
     }, 15000);
@@ -169,7 +169,7 @@
     video.preload = "metadata";
     video.setAttribute("webkit-playsinline", "");
     video.addEventListener("error", () => message(container, copy().unavailable), { once: true });
-    container.querySelector("[data-stream-stage]").replaceChildren(video);
+    (container.querySelector("[data-stream-media]") || container.querySelector("[data-stream-stage]")).replaceChildren(video);
 
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = source;
@@ -217,7 +217,7 @@
   }
 
   async function liveKit(container, matchId) {
-    const stage = container.querySelector("[data-stream-stage]");
+    const stage = container.querySelector("[data-stream-media]") || container.querySelector("[data-stream-stage]");
     if (!stage || !matchId) return message(container, copy().unavailable);
 
     try {

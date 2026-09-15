@@ -564,17 +564,60 @@
     return Boolean(match?.stream_enabled && match.stream_status === "live" && sourceReady && match.status !== FINISHED);
   }
 
-  function liveStreamBlock(match, home, away) {
+  function liveStreamBlock(match, home, away, tournament) {
     if (!hasLiveStream(match)) return "";
     const labels = liveStreamCopy();
-    const minute = match.current_minute ?? match.minute;
+    const minute = match.current_minute ?? match.minute ?? 0;
+    const tournamentLogo = tournament?.logo_url || state.settings.logo_url || "assets/tournament.jpg";
     return `<section id="matchLiveStream" class="live-stream-card" data-stream-enabled="true" data-stream-status="${escapeHtml(match.stream_status)}" data-stream-type="${escapeHtml(match.stream_type || "")}" data-stream-url="${escapeHtml(match.stream_url || "")}" data-match-id="${escapeHtml(match.id)}" aria-label="${escapeHtml(labels.title)}">
       <div class="live-stream-head">
-        <div><span class="live-stream-kicker"><i aria-hidden="true"></i>${escapeHtml(labels.live)}${minute != null ? ` · ${escapeHtml(minute)}′` : ""}</span><strong>${escapeHtml(home.name)} ${score(match.score_a)} - ${score(match.score_b)} ${escapeHtml(away.name)}</strong></div>
+        <div><span class="live-stream-kicker"><i aria-hidden="true"></i><span data-stream-kicker-text>${escapeHtml(labels.live)} · ${escapeHtml(minute)}′</span></span><strong data-stream-summary>${escapeHtml(home.name)} ${score(match.score_a)} - ${score(match.score_b)} ${escapeHtml(away.name)}</strong></div>
         <span class="live-stream-badge">LIVE</span>
       </div>
-      <div class="live-stream-stage" data-stream-stage><div class="stream-loader" aria-hidden="true"></div></div>
+      <div class="live-stream-stage" data-stream-stage>
+        <div class="live-stream-media" data-stream-media><div class="stream-loader" aria-hidden="true"></div></div>
+        <div class="broadcast-scorebug" data-broadcast-scorebug role="status" aria-live="polite" aria-label="${escapeHtml(`${home.name} ${score(match.score_a)} - ${score(match.score_b)} ${away.name}، الدقيقة ${minute}`)}">
+          <div class="scorebug-main">
+            <span class="scorebug-team scorebug-home"><span class="scorebug-crest">${image(home.logo_url, home.name, { eager: true })}</span><b>${escapeHtml(home.name)}</b></span>
+            <span class="scorebug-score"><strong data-broadcast-home-score>${score(match.score_a)}</strong><span class="scorebug-cup">${image(tournamentLogo, tournament?.name || "كأس أغشوركيت", { eager: true })}</span><strong data-broadcast-away-score>${score(match.score_b)}</strong></span>
+            <span class="scorebug-team scorebug-away"><b>${escapeHtml(away.name)}</b><span class="scorebug-crest">${image(away.logo_url, away.name, { eager: true })}</span></span>
+          </div>
+          <span class="scorebug-clock"><i aria-hidden="true"></i><b>LIVE</b><time data-broadcast-minute>${escapeHtml(minute)}′</time></span>
+        </div>
+      </div>
     </section>`;
+  }
+
+  function patchLiveMatch(payload) {
+    const update = payload?.new;
+    if (!update?.id) return false;
+    const index = state.matches.findIndex((item) => item.id === update.id);
+    if (index < 0) return false;
+    const previous = state.matches[index];
+    const next = { ...previous, ...update };
+    state.matches[index] = next;
+    const parts = parseRoute();
+    const container = document.getElementById("matchLiveStream");
+    const sameTeams = previous.team_a_id === next.team_a_id && previous.team_b_id === next.team_b_id && previous.tournament_id === next.tournament_id;
+    if (parts[0] !== "match" || parts[1] !== next.id || !container || !sameTeams || !hasLiveStream(next)) return false;
+
+    const home = teamForSide(next, "a");
+    const away = teamForSide(next, "b");
+    const labels = liveStreamCopy();
+    const minute = next.current_minute ?? next.minute ?? 0;
+    const setText = (selector, value) => { const element = container.querySelector(selector); if (element) element.textContent = value; };
+    setText("[data-broadcast-home-score]", score(next.score_a));
+    setText("[data-broadcast-away-score]", score(next.score_b));
+    setText("[data-broadcast-minute]", `${minute}′`);
+    setText("[data-stream-kicker-text]", `${labels.live} · ${minute}′`);
+    setText("[data-stream-summary]", `${home.name} ${score(next.score_a)} - ${score(next.score_b)} ${away.name}`);
+    const scorebug = container.querySelector("[data-broadcast-scorebug]");
+    if (scorebug) scorebug.setAttribute("aria-label", `${home.name} ${score(next.score_a)} - ${score(next.score_b)} ${away.name}، الدقيقة ${minute}`);
+    const centerScore = main.querySelector(".match-center-score strong");
+    const centerMinute = main.querySelector(".match-center-score small");
+    if (centerScore) centerScore.textContent = `${score(next.score_a)} – ${score(next.score_b)}`;
+    if (centerMinute) centerMinute.textContent = `${minute}′`;
+    return true;
   }
 
   function renderMatch(id, tab = "summary") {
@@ -589,7 +632,7 @@
     const streamLive = hasLiveStream(match);
     const labels = liveStreamCopy();
     const streamAction = streamLive ? `<button class="watch-stream-button" type="button" data-stream-jump="matchLiveStream"><span class="live-dot" aria-hidden="true"></span>${escapeHtml(labels.watch)}</button>` : "";
-    main.innerHTML = `<div class="page-shell"><section class="match-center-hero" style="--t-accent:${escapeHtml(tournament?.accent_color || "#c7ff37")}"><div class="match-center-heading"><button class="back-button" type="button" data-route="tournament/${tournament?.slug || ""}/matches">${icon("back")} ${escapeHtml(tournament?.short_name || "المباريات")}</button><button class="icon-button" type="button" data-share="${location.href}" aria-label="مشاركة المباراة">${icon("share")}</button></div><div class="match-center-teams"><div class="match-center-team" data-route="team/${home.id}"><span class="team-logo-large">${image(home.logo_url, home.name, { eager: true })}</span><b>${escapeHtml(home.name)}</b></div><div class="match-center-score">${scoreMarkup(match)}<span class="status-pill ${statusClass(match.status)}">${streamLive ? '<span class="live-dot" aria-hidden="true"></span>LIVE · ' : ""}${escapeHtml(match.status)}</span></div><div class="match-center-team" data-route="team/${away.id}"><span class="team-logo-large">${image(away.logo_url, away.name, { eager: true })}</span><b>${escapeHtml(away.name)}</b></div></div><div class="match-facts"><span>${icon("calendar", "button-icon")} ${escapeHtml(formatDate(match.match_date))}</span><span>${icon("clock", "button-icon")} ${escapeHtml(formatTime(match.match_time))}</span>${match.venue ? `<span>${icon("pin", "button-icon")} ${escapeHtml(match.venue)}</span>` : ""}<span>${escapeHtml(match.stage || match.round_name || "المباراة")}</span>${streamAction}</div></section>${liveStreamBlock(match, home, away)}<div class="section-block app-tabs">${tabs.map(([key, label]) => `<button type="button" class="${tab === key ? "active" : ""}" data-route="match/${match.id}/${key}">${label}</button>`).join("")}</div>${content}</div>`;
+    main.innerHTML = `<div class="page-shell"><section class="match-center-hero" style="--t-accent:${escapeHtml(tournament?.accent_color || "#c7ff37")}"><div class="match-center-heading"><button class="back-button" type="button" data-route="tournament/${tournament?.slug || ""}/matches">${icon("back")} ${escapeHtml(tournament?.short_name || "المباريات")}</button><button class="icon-button" type="button" data-share="${location.href}" aria-label="مشاركة المباراة">${icon("share")}</button></div><div class="match-center-teams"><div class="match-center-team" data-route="team/${home.id}"><span class="team-logo-large">${image(home.logo_url, home.name, { eager: true })}</span><b>${escapeHtml(home.name)}</b></div><div class="match-center-score">${scoreMarkup(match)}<span class="status-pill ${statusClass(match.status)}">${streamLive ? '<span class="live-dot" aria-hidden="true"></span>LIVE · ' : ""}${escapeHtml(match.status)}</span></div><div class="match-center-team" data-route="team/${away.id}"><span class="team-logo-large">${image(away.logo_url, away.name, { eager: true })}</span><b>${escapeHtml(away.name)}</b></div></div><div class="match-facts"><span>${icon("calendar", "button-icon")} ${escapeHtml(formatDate(match.match_date))}</span><span>${icon("clock", "button-icon")} ${escapeHtml(formatTime(match.match_time))}</span>${match.venue ? `<span>${icon("pin", "button-icon")} ${escapeHtml(match.venue)}</span>` : ""}<span>${escapeHtml(match.stage || match.round_name || "المباراة")}</span>${streamAction}</div></section>${liveStreamBlock(match, home, away, tournament)}<div class="section-block app-tabs">${tabs.map(([key, label]) => `<button type="button" class="${tab === key ? "active" : ""}" data-route="match/${match.id}/${key}">${label}</button>`).join("")}</div>${content}</div>`;
     if (streamLive) queueMicrotask(() => window.AGCH_LIVE_STREAM?.mount("matchLiveStream"));
   }
 
@@ -665,6 +708,8 @@
     if (state.loading && !state.tournaments.length) return;
     if (state.error && !state.tournaments.length) return renderError(state.error);
     const parts = parseRoute();
+    const activeStream = document.getElementById("matchLiveStream");
+    if (activeStream) window.AGCH_LIVE_STREAM?.destroy(activeStream);
     updateNavigation(parts[0]); updateDocumentTitle(parts);
     if (parts[0] === "home") renderHome();
     else if (parts[0] === "matches") renderMatches();
@@ -766,7 +811,7 @@
     let timer;
     const refresh = () => { clearTimeout(timer); timer = setTimeout(() => loadData(true), 500); };
     state.channel = db.channel("premium-public-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, (payload) => { if (!patchLiveMatch(payload)) refresh(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "match_events" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "teams" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "players" }, refresh)
