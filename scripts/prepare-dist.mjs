@@ -9,6 +9,7 @@ const files = [
   "styles.css",
   "public-app.js",
   "live-stream.js",
+  "livekit-viewer.js",
   "config.js",
   "manifest.webmanifest",
   "sw.js",
@@ -42,8 +43,6 @@ await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await Promise.all(files.map((entry) => cp(resolve(root, entry), resolve(output, entry), { recursive: true })));
 
-// The public ticker is database-driven. Keep the existing HTML as an immediate fallback,
-// then let this module replace it from site_settings and listen for Realtime updates.
 const publicIndexPath = resolve(output, "index.html");
 let publicIndex = await readFile(publicIndexPath, "utf8");
 if (!publicIndex.includes("breaking-news-live.js")) {
@@ -51,7 +50,6 @@ if (!publicIndex.includes("breaking-news-live.js")) {
   await writeFile(publicIndexPath, publicIndex);
 }
 
-// Expose the breaking-news editor only inside the protected /admin area.
 const adminIndexPath = resolve(output, "admin/index.html");
 let adminIndex = await readFile(adminIndexPath, "utf8");
 if (!adminIndex.includes("breaking-news-admin.js")) {
@@ -59,8 +57,6 @@ if (!adminIndex.includes("breaking-news-admin.js")) {
   await writeFile(adminIndexPath, adminIndex);
 }
 
-// Intentionally do NOT publish a root-level admin-dashboard.html alias.
-// Administration stays under /admin and is protected by the admin login/session guard.
 await mkdir(resolve(output, "vendor"), { recursive: true });
 await cp(resolve(root, "node_modules/@supabase/supabase-js/dist/umd/supabase.js"),resolve(output, "vendor/supabase.js"));
 console.log("Production bundle prepared in dist/ (admin available only under /admin).");
