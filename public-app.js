@@ -34,6 +34,12 @@
     channel: null,
   };
 
+  const broadcastEvents = {
+    queue: [],
+    timer: 0,
+    seen: new Set(),
+  };
+
   const db = window.supabase?.createClient?.(config.supabaseUrl, config.supabaseKey, {
     auth: { persistSession: true, autoRefreshToken: true },
     global: { headers: { "x-client-info": "aghchorguit-premium-web" } },
@@ -487,6 +493,14 @@
     return "goal";
   }
 
+  function matchTabContent(match, tab = "summary") {
+    const events = getEvents(match.id);
+    if (tab === "timeline") return eventTimeline(events);
+    if (tab === "stats") return matchStatistics(match, events);
+    if (tab === "lineups") return matchLineups(match);
+    return matchSummary(match, events);
+  }
+
   function eventTimeline(events) {
     if (!events.length) return emptyState("لا توجد أحداث", "لم تسجل أحداث لهذه المباراة بعد.", "ball");
     const ordered = events.slice().sort((a, b) => {
@@ -584,6 +598,7 @@
           </div>
           <span class="scorebug-clock"><i aria-hidden="true"></i><b>LIVE</b><time data-broadcast-minute>${escapeHtml(minute)}′</time></span>
         </div>
+        <div class="broadcast-event-layer" data-broadcast-event-layer aria-live="assertive" aria-atomic="true"></div>
       </div>
     </section>`;
   }
@@ -620,19 +635,149 @@
     return true;
   }
 
+  function broadcastEventDetails(event) {
+    const lang = (document.documentElement.lang || "ar").toLowerCase();
+    const type = String(event?.type || "حدث");
+    const dictionaries = {
+      ar: {
+        "هدف": "هــــدف!", "هدف عكسي": "هدف عكسي", "ركلة جزاء مسجلة": "هدف من ركلة جزاء",
+        "تمريرة حاسمة": "صناعة هدف", "بطاقة صفراء": "بطاقة صفراء", "بطاقة حمراء": "بطاقة حمراء",
+        "تبديل": "تبديل", "ركنية": "ركلة ركنية", "خطأ": "خطأ", "بداية المباراة": "انطلاق المباراة",
+        "نهاية الشوط": "نهاية الشوط", "نهاية المباراة": "نهاية المباراة",
+      },
+      fr: {
+        "هدف": "BUUUT !", "هدف عكسي": "But contre son camp", "ركلة جزاء مسجلة": "Penalty marqué",
+        "تمريرة حاسمة": "Passe décisive", "بطاقة صفراء": "Carton jaune", "بطاقة حمراء": "Carton rouge",
+        "تبديل": "Remplacement", "ركنية": "Corner", "خطأ": "Faute", "بداية المباراة": "Coup d'envoi",
+        "نهاية الشوط": "Mi-temps", "نهاية المباراة": "Fin du match",
+      },
+      en: {
+        "هدف": "GOAL!", "هدف عكسي": "Own Goal", "ركلة جزاء مسجلة": "Penalty Goal",
+        "تمريرة حاسمة": "Assist", "بطاقة صفراء": "Yellow Card", "بطاقة حمراء": "Red Card",
+        "تبديل": "Substitution", "ركنية": "Corner", "خطأ": "Foul", "بداية المباراة": "Kick-off",
+        "نهاية الشوط": "Half-time", "نهاية المباراة": "Full-time",
+      },
+    };
+    const dictionary = lang.startsWith("fr") ? dictionaries.fr : lang.startsWith("en") ? dictionaries.en : dictionaries.ar;
+    let theme = "moment";
+    let symbol = "◆";
+    if (["هدف", "هدف عكسي", "ركلة جزاء مسجلة"].includes(type)) { theme = "goal"; symbol = "⚽"; }
+    else if (type === "بطاقة صفراء") { theme = "yellow"; symbol = ""; }
+    else if (type === "بطاقة حمراء") { theme = "red"; symbol = ""; }
+    else if (type === "تبديل") { theme = "substitution"; symbol = "↕"; }
+    else if (type === "تمريرة حاسمة") { theme = "assist"; symbol = "A"; }
+    else if (type.includes("ركلة جزاء")) { theme = "penalty"; symbol = "◎"; }
+    else if (["بداية المباراة", "نهاية الشوط", "نهاية المباراة"].includes(type)) { theme = "phase"; symbol = "◉"; }
+    const assistLabel = lang.startsWith("fr") ? "Passe" : lang.startsWith("en") ? "Assist" : "صناعة";
+    return { label: dictionary[type] || type, theme, symbol, assistLabel };
+  }
+
+  function broadcastEventMarkup(event) {
+    const match = getMatch(event.match_id);
+    const team = getTeam(event.team_id);
+    const player = getPlayer(event.player_id);
+    const assist = assistEventName(event);
+    const tournament = getTournament(match?.tournament_id);
+    const details = broadcastEventDetails(event);
+    const minute = event.minute ?? match?.current_minute ?? match?.minute;
+    const playerName = player?.name || event.player_name || (event.team_id ? "لاعب غير محدد" : "");
+    const primaryImage = player?.photo_url || team?.logo_url || tournament?.logo_url || state.settings.logo_url;
+    const imageAlt = playerName || team?.name || tournament?.name || details.label;
+    const assistCopy = assist ? `${details.assistLabel} · ${assist}` : "";
+    const note = event.note && !playerName ? event.note : "";
+    return `<article class="broadcast-event-card broadcast-event-${details.theme}" data-broadcast-event-id="${escapeHtml(event.id || "")}" role="status">
+      <span class="broadcast-event-glow" aria-hidden="true"></span>
+      <span class="broadcast-event-visual">${image(primaryImage, imageAlt, { eager: true })}${player?.photo_url && team?.logo_url ? `<span class="broadcast-event-team-logo">${image(team.logo_url, team.name, { eager: true })}</span>` : ""}<i>${details.symbol}</i></span>
+      <span class="broadcast-event-copy">
+        <small>${escapeHtml(team?.name || tournament?.short_name || "كأس أغشوركيت")}</small>
+        <strong>${escapeHtml(details.label)}</strong>
+        ${playerName ? `<b>${escapeHtml(playerName)}</b>` : ""}
+        ${assistCopy ? `<em>${escapeHtml(assistCopy)}</em>` : note ? `<em>${escapeHtml(note)}</em>` : ""}
+      </span>
+      ${minute == null ? "" : `<time>${escapeHtml(minute)}<sup>′</sup></time>`}
+    </article>`;
+  }
+
+  function playNextBroadcastEvent() {
+    const container = document.getElementById("matchLiveStream");
+    const layer = container?.querySelector("[data-broadcast-event-layer]");
+    if (!layer || !broadcastEvents.queue.length) {
+      broadcastEvents.timer = 0;
+      return;
+    }
+    const event = broadcastEvents.queue.shift();
+    layer.innerHTML = broadcastEventMarkup(event);
+    const card = layer.firstElementChild;
+    if (!card) return;
+    requestAnimationFrame(() => card.classList.add("is-visible"));
+    const hold = broadcastEventDetails(event).theme === "goal" ? 6500 : 4600;
+    broadcastEvents.timer = window.setTimeout(() => {
+      card.classList.remove("is-visible");
+      card.classList.add("is-leaving");
+      broadcastEvents.timer = window.setTimeout(() => {
+        if (card.isConnected) card.remove();
+        broadcastEvents.timer = 0;
+        playNextBroadcastEvent();
+      }, 520);
+    }, hold);
+  }
+
+  function showBroadcastEvent(event) {
+    if (!event?.id || broadcastEvents.seen.has(event.id)) return;
+    const match = getMatch(event.match_id);
+    if (!match || !hasLiveStream(match)) return;
+    const parts = parseRoute();
+    if (parts[0] !== "match" || parts[1] !== event.match_id || !document.getElementById("matchLiveStream")) return;
+    broadcastEvents.seen.add(event.id);
+    if (broadcastEvents.seen.size > 120) broadcastEvents.seen.delete(broadcastEvents.seen.values().next().value);
+    broadcastEvents.queue.push(event);
+    if (!broadcastEvents.timer) playNextBroadcastEvent();
+  }
+
+  function resetBroadcastEvents() {
+    window.clearTimeout(broadcastEvents.timer);
+    broadcastEvents.timer = 0;
+    broadcastEvents.queue.length = 0;
+  }
+
+  function patchLiveEvent(payload) {
+    const change = payload?.eventType;
+    const incoming = payload?.new;
+    const previousIndex = state.events.findIndex((item) => item.id === (incoming?.id || payload?.old?.id));
+    const previous = previousIndex >= 0 ? state.events[previousIndex] : null;
+    const matchId = incoming?.match_id || previous?.match_id;
+    if (!matchId) return false;
+
+    if (change === "INSERT" && incoming) {
+      if (previousIndex < 0) state.events.push(incoming);
+      showBroadcastEvent(incoming);
+    } else if (change === "UPDATE" && incoming) {
+      if (previousIndex >= 0) state.events[previousIndex] = { ...previous, ...incoming };
+      else state.events.push(incoming);
+    } else if (change === "DELETE" && previousIndex >= 0) {
+      state.events.splice(previousIndex, 1);
+    } else return false;
+
+    const parts = parseRoute();
+    if (parts[0] !== "match" || parts[1] !== matchId) return false;
+    const match = getMatch(matchId);
+    const content = main.querySelector("[data-match-tab-content]");
+    if (match && content) content.innerHTML = matchTabContent(match, parts[2] || "summary");
+    return true;
+  }
+
   function renderMatch(id, tab = "summary") {
     const match = getMatch(id);
     if (!match) return renderNotFound();
     const tournament = getTournament(match.tournament_id);
     const home = teamForSide(match, "a");
     const away = teamForSide(match, "b");
-    const events = getEvents(id);
     const tabs = [["summary", "الملخص"], ["timeline", "الأحداث"], ["stats", "الإحصائيات"], ["lineups", "التشكيلة"]];
-    const content = tab === "timeline" ? eventTimeline(events) : tab === "stats" ? matchStatistics(match, events) : tab === "lineups" ? matchLineups(match) : matchSummary(match, events);
+    const content = matchTabContent(match, tab);
     const streamLive = hasLiveStream(match);
     const labels = liveStreamCopy();
     const streamAction = streamLive ? `<button class="watch-stream-button" type="button" data-stream-jump="matchLiveStream"><span class="live-dot" aria-hidden="true"></span>${escapeHtml(labels.watch)}</button>` : "";
-    main.innerHTML = `<div class="page-shell"><section class="match-center-hero" style="--t-accent:${escapeHtml(tournament?.accent_color || "#c7ff37")}"><div class="match-center-heading"><button class="back-button" type="button" data-route="tournament/${tournament?.slug || ""}/matches">${icon("back")} ${escapeHtml(tournament?.short_name || "المباريات")}</button><button class="icon-button" type="button" data-share="${location.href}" aria-label="مشاركة المباراة">${icon("share")}</button></div><div class="match-center-teams"><div class="match-center-team" data-route="team/${home.id}"><span class="team-logo-large">${image(home.logo_url, home.name, { eager: true })}</span><b>${escapeHtml(home.name)}</b></div><div class="match-center-score">${scoreMarkup(match)}<span class="status-pill ${statusClass(match.status)}">${streamLive ? '<span class="live-dot" aria-hidden="true"></span>LIVE · ' : ""}${escapeHtml(match.status)}</span></div><div class="match-center-team" data-route="team/${away.id}"><span class="team-logo-large">${image(away.logo_url, away.name, { eager: true })}</span><b>${escapeHtml(away.name)}</b></div></div><div class="match-facts"><span>${icon("calendar", "button-icon")} ${escapeHtml(formatDate(match.match_date))}</span><span>${icon("clock", "button-icon")} ${escapeHtml(formatTime(match.match_time))}</span>${match.venue ? `<span>${icon("pin", "button-icon")} ${escapeHtml(match.venue)}</span>` : ""}<span>${escapeHtml(match.stage || match.round_name || "المباراة")}</span>${streamAction}</div></section>${liveStreamBlock(match, home, away, tournament)}<div class="section-block app-tabs">${tabs.map(([key, label]) => `<button type="button" class="${tab === key ? "active" : ""}" data-route="match/${match.id}/${key}">${label}</button>`).join("")}</div>${content}</div>`;
+    main.innerHTML = `<div class="page-shell"><section class="match-center-hero" style="--t-accent:${escapeHtml(tournament?.accent_color || "#c7ff37")}"><div class="match-center-heading"><button class="back-button" type="button" data-route="tournament/${tournament?.slug || ""}/matches">${icon("back")} ${escapeHtml(tournament?.short_name || "المباريات")}</button><button class="icon-button" type="button" data-share="${location.href}" aria-label="مشاركة المباراة">${icon("share")}</button></div><div class="match-center-teams"><div class="match-center-team" data-route="team/${home.id}"><span class="team-logo-large">${image(home.logo_url, home.name, { eager: true })}</span><b>${escapeHtml(home.name)}</b></div><div class="match-center-score">${scoreMarkup(match)}<span class="status-pill ${statusClass(match.status)}">${streamLive ? '<span class="live-dot" aria-hidden="true"></span>LIVE · ' : ""}${escapeHtml(match.status)}</span></div><div class="match-center-team" data-route="team/${away.id}"><span class="team-logo-large">${image(away.logo_url, away.name, { eager: true })}</span><b>${escapeHtml(away.name)}</b></div></div><div class="match-facts"><span>${icon("calendar", "button-icon")} ${escapeHtml(formatDate(match.match_date))}</span><span>${icon("clock", "button-icon")} ${escapeHtml(formatTime(match.match_time))}</span>${match.venue ? `<span>${icon("pin", "button-icon")} ${escapeHtml(match.venue)}</span>` : ""}<span>${escapeHtml(match.stage || match.round_name || "المباراة")}</span>${streamAction}</div></section>${liveStreamBlock(match, home, away, tournament)}<div class="section-block app-tabs">${tabs.map(([key, label]) => `<button type="button" class="${tab === key ? "active" : ""}" data-route="match/${match.id}/${key}">${label}</button>`).join("")}</div><div data-match-tab-content>${content}</div></div>`;
     if (streamLive) queueMicrotask(() => window.AGCH_LIVE_STREAM?.mount("matchLiveStream"));
   }
 
@@ -709,6 +854,7 @@
     if (state.error && !state.tournaments.length) return renderError(state.error);
     const parts = parseRoute();
     const activeStream = document.getElementById("matchLiveStream");
+    resetBroadcastEvents();
     if (activeStream) window.AGCH_LIVE_STREAM?.destroy(activeStream);
     updateNavigation(parts[0]); updateDocumentTitle(parts);
     if (parts[0] === "home") renderHome();
@@ -812,7 +958,7 @@
     const refresh = () => { clearTimeout(timer); timer = setTimeout(() => loadData(true), 500); };
     state.channel = db.channel("premium-public-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, (payload) => { if (!patchLiveMatch(payload)) refresh(); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "match_events" }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "match_events" }, (payload) => { if (!patchLiveEvent(payload)) refresh(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "teams" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "players" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "news" }, refresh)
