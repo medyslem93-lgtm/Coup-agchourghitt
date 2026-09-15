@@ -17,7 +17,7 @@
   const toast=(m,ok=true)=>{const t=$('toast');if(!t)return; t.textContent=m;t.style.borderColor=ok?'#32634c':'#813c42';t.style.background=ok?'#193d2d':'#431e22';t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2300)};
   const confirmDelete=(label)=>window.confirm(`هل أنت متأكد من حذف ${label}؟`);
   const show=(html)=>{$('panel').innerHTML=html;$('sheet').classList.add('on')};
-  const close=()=>{$('sheet').classList.remove('on');$('panel').innerHTML=''};
+  const close=()=>{window.dispatchEvent(new CustomEvent('admin:panel-close'));$('sheet').classList.remove('on');$('panel').innerHTML=''};
   const val=id=>$(id)?.value?.trim?.()??'';
   const nullable=v=>v===''?null:v;
   const debounce=(fn,ms=300)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}};
