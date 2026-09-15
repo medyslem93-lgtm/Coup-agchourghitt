@@ -560,14 +560,15 @@
   }
 
   function hasLiveStream(match) {
-    return Boolean(match?.stream_enabled && match.stream_status === "live" && match.stream_url && match.status !== FINISHED);
+    const sourceReady = match?.stream_type === "livekit" || Boolean(match?.stream_url);
+    return Boolean(match?.stream_enabled && match.stream_status === "live" && sourceReady && match.status !== FINISHED);
   }
 
   function liveStreamBlock(match, home, away) {
     if (!hasLiveStream(match)) return "";
     const labels = liveStreamCopy();
     const minute = match.current_minute ?? match.minute;
-    return `<section id="matchLiveStream" class="live-stream-card" data-stream-enabled="true" data-stream-status="${escapeHtml(match.stream_status)}" data-stream-type="${escapeHtml(match.stream_type || "")}" data-stream-url="${escapeHtml(match.stream_url || "")}" aria-label="${escapeHtml(labels.title)}">
+    return `<section id="matchLiveStream" class="live-stream-card" data-stream-enabled="true" data-stream-status="${escapeHtml(match.stream_status)}" data-stream-type="${escapeHtml(match.stream_type || "")}" data-stream-url="${escapeHtml(match.stream_url || "")}" data-match-id="${escapeHtml(match.id)}" aria-label="${escapeHtml(labels.title)}">
       <div class="live-stream-head">
         <div><span class="live-stream-kicker"><i aria-hidden="true"></i>${escapeHtml(labels.live)}${minute != null ? ` · ${escapeHtml(minute)}′` : ""}</span><strong>${escapeHtml(home.name)} ${score(match.score_a)} - ${score(match.score_b)} ${escapeHtml(away.name)}</strong></div>
         <span class="live-stream-badge">LIVE</span>

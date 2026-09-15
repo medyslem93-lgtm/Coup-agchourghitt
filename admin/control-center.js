@@ -229,9 +229,11 @@
         <button data-center-event="ركلة جزاء ضائعة" type="button">⊘ جزاء ضائعة</button>
         <button data-center-event="نهاية الشوط" type="button">◷ نهاية الشوط</button>
       </div>
+      <div id="livekitCameraBox"></div>
       <div class="savebar"><button class="ghost" data-center-lineup="${match.id}" type="button">إدارة التشكيلات</button><button class="ghost" data-center-stats="${match.id}" type="button">إحصائيات المباراة</button></div>
     `);
     const panel = $("panel");
+    window.AGCH_LIVEKIT_CAMERA?.mount(match.id, $("livekitCameraBox"));
     panel.querySelectorAll("[data-center-status]").forEach((button) => button.addEventListener("click", async () => {
       const status = button.dataset.centerStatus;
       if (["انتهت", "ملغاة"].includes(status) && !confirm(`تأكيد تغيير حالة المباراة إلى «${status}»؟`)) return;

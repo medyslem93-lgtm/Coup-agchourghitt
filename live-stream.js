@@ -28,7 +28,9 @@
     },
   };
 
+  const LIVEKIT_SDK = "https://cdn.jsdelivr.net/npm/livekit-client@2.15.6/dist/livekit-client.umd.min.js";
   let hlsLoader = null;
+  let liveKitLoader = null;
   const activePlayers = new WeakMap();
 
   function locale() {
@@ -78,8 +80,8 @@
 
   function destroy(container) {
     const player = activePlayers.get(container);
-    if (player?.destroy) player.destroy();
     activePlayers.delete(container);
+    if (player?.destroy) player.destroy();
     container.querySelectorAll("iframe,video").forEach((node) => {
       try {
         if (node.tagName === "VIDEO") {
@@ -145,6 +147,21 @@
     return hlsLoader;
   }
 
+  function loadLiveKit() {
+    if (window.LivekitClient) return Promise.resolve(window.LivekitClient);
+    if (liveKitLoader) return liveKitLoader;
+    liveKitLoader = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = LIVEKIT_SDK;
+      script.async = true;
+      script.crossOrigin = "anonymous";
+      script.onload = () => window.LivekitClient ? resolve(window.LivekitClient) : reject(new Error("LiveKit unavailable"));
+      script.onerror = () => reject(new Error("LiveKit failed to load"));
+      document.head.appendChild(script);
+    });
+    return liveKitLoader;
+  }
+
   async function hls(container, source) {
     const video = document.createElement("video");
     video.controls = true;
@@ -199,6 +216,99 @@
     }
   }
 
+  async function liveKit(container, matchId) {
+    const stage = container.querySelector("[data-stream-stage]");
+    if (!stage || !matchId) return message(container, copy().unavailable);
+
+    try {
+      const [LK, tokenResponse] = await Promise.all([
+        loadLiveKit(),
+        fetch("/api/livekit-token", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            matchId,
+            identity: `viewer-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+            role: "viewer",
+          }),
+        }),
+      ]);
+      const auth = await tokenResponse.json().catch(() => ({}));
+      if (!tokenResponse.ok || !auth.url || !auth.token) throw new Error(auth.error || "token_failed");
+
+      const room = new LK.Room({ adaptiveStream: true, autoSubscribe: true });
+      let disposed = false;
+      let receivedTrack = false;
+      const media = new Set();
+      const attachedTracks = new Set();
+      const attach = (track) => {
+        const trackId = track?.sid || track?.mediaStreamTrack?.id;
+        if (trackId && attachedTracks.has(trackId)) return;
+        if (trackId) attachedTracks.add(trackId);
+        const element = track.attach();
+        media.add(element);
+        element.autoplay = true;
+        if (element.tagName === "VIDEO") {
+          element.controls = true;
+          element.playsInline = true;
+          element.setAttribute("webkit-playsinline", "");
+          stage.querySelectorAll("video").forEach((node) => node.remove());
+          stage.prepend(element);
+        } else {
+          element.hidden = true;
+          stage.appendChild(element);
+          element.play?.().catch(() => {
+            const unlock = document.createElement("button");
+            unlock.type = "button";
+            unlock.className = "livekit-audio-unlock";
+            unlock.textContent = locale() === "ar" ? "تشغيل الصوت" : locale() === "fr" ? "Activer le son" : "Enable audio";
+            unlock.onclick = () => element.play().then(() => unlock.remove()).catch(() => {});
+            stage.appendChild(unlock);
+          });
+        }
+        receivedTrack = true;
+        container.classList.add("stream-ready");
+      };
+      const detach = (track) => {
+        const trackId = track?.sid || track?.mediaStreamTrack?.id;
+        if (trackId) attachedTracks.delete(trackId);
+        track.detach().forEach((element) => {
+        media.delete(element);
+        element.remove();
+        });
+      };
+
+      room.on(LK.RoomEvent.TrackSubscribed, attach);
+      room.on(LK.RoomEvent.TrackUnsubscribed, detach);
+      room.on(LK.RoomEvent.Disconnected, () => {
+        if (!disposed && document.contains(container)) message(container, copy().unavailable);
+      });
+
+      activePlayers.set(container, {
+        destroy() {
+          disposed = true;
+          media.forEach((element) => element.remove());
+          media.clear();
+          attachedTracks.clear();
+          room.disconnect();
+        },
+      });
+      await room.connect(auth.url, auth.token);
+
+      room.remoteParticipants.forEach((participant) => {
+        participant.trackPublications.forEach((publication) => {
+          if (publication.track) attach(publication.track);
+        });
+      });
+
+      setTimeout(() => {
+        if (document.contains(container) && !receivedTrack) message(container, copy().unavailable);
+      }, 15000);
+    } catch {
+      message(container, copy().unavailable);
+    }
+  }
+
   function render(container, input = {}) {
     if (!container) return;
     destroy(container);
@@ -206,12 +316,13 @@
     const enabled = input.enabled === true || input.enabled === "true";
     const status = String(input.status || "offline").toLowerCase();
     const type = String(input.type || "").toLowerCase();
-    const url = safeHttpsUrl(input.url);
     if (!enabled || status !== "live") {
       container.hidden = true;
       return;
     }
     container.hidden = false;
+    if (type === "livekit") return liveKit(container, input.matchId);
+    const url = safeHttpsUrl(input.url);
     if (!url) return message(container, copy().unavailable);
 
     if (type === "youtube") {
@@ -237,6 +348,7 @@
       status: container.dataset.streamStatus,
       type: container.dataset.streamType,
       url: container.dataset.streamUrl,
+      matchId: container.dataset.matchId,
     });
   }
 
@@ -257,5 +369,6 @@
     youtubeEmbed,
     facebookEmbed,
     safeHttpsUrl,
+    liveKit,
   };
 })();

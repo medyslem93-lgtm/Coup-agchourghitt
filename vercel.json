@@ -3,9 +3,9 @@
   "outputDirectory": "dist",
   "cleanUrls": false,
   "rewrites": [
-    { "source": "/admin", "destination": "/admin-dashboard.html" },
-    { "source": "/admin/", "destination": "/admin-dashboard.html" },
-    { "source": "/admin/index", "destination": "/admin-dashboard.html" },
+    { "source": "/admin", "destination": "/admin/index.html" },
+    { "source": "/admin/", "destination": "/admin/index.html" },
+    { "source": "/admin/index", "destination": "/admin/index.html" },
     { "source": "/visitors", "destination": "/visitors/index.html" },
     { "source": "/visitors/", "destination": "/visitors/index.html" }
   ],

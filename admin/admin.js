@@ -116,9 +116,10 @@
       <section class="stream-admin-card"><div class="stream-admin-heading"><div><span>LIVE STREAM</span><h3>البث المباشر</h3></div><span class="stream-security-note">للمشرفين فقط</span></div>
         <div class="row two"><div class="field"><label>تفعيل البث</label><select id="mfStreamEnabled"><option value="false" ${!m?.stream_enabled?'selected':''}>معطّل</option><option value="true" ${m?.stream_enabled?'selected':''}>مفعّل</option></select></div><div class="field"><label>حالة البث</label><select id="mfStreamStatus">${[['offline','غير متصل'],['scheduled','مجدول'],['live','مباشر'],['ended','انتهى']].map(([value,label])=>`<option value="${value}" ${(m?.stream_status||'offline')===value?'selected':''}>${label}</option>`).join('')}</select></div></div>
         <div class="field"><label>رابط البث الآمن (HTTPS)</label><input id="mfStreamUrl" type="url" dir="ltr" inputmode="url" autocomplete="off" placeholder="https://youtube.com/watch?v=... أو https://.../stream.m3u8" value="${esc(m?.stream_url||'')}"><small>يدعم YouTube Live وFacebook وHLS بصيغة m3u8 وروابط Embed المسموحة.</small></div>
-        <div class="row two"><div class="field"><label>نوع البث</label><select id="mfStreamType"><option value="">تحديد تلقائي</option>${[['youtube','YouTube Live'],['facebook','Facebook Live'],['hls','HLS (.m3u8)'],['embed','Embed']].map(([value,label])=>`<option value="${value}" ${m?.stream_type===value?'selected':''}>${label}</option>`).join('')}</select></div><div class="field stream-preview-action"><label>المعاينة</label><button id="previewStream" type="button" class="ghost">معاينة البث</button></div></div>
+        <div class="row two"><div class="field"><label>نوع البث</label><select id="mfStreamType"><option value="">تحديد تلقائي</option>${[['youtube','YouTube Live'],['facebook','Facebook Live'],['hls','HLS (.m3u8)'],['embed','Embed'],['livekit','كاميرا الهاتف (LiveKit)']].map(([value,label])=>`<option value="${value}" ${m?.stream_type===value?'selected':''}>${label}</option>`).join('')}</select></div><div class="field stream-preview-action"><label>المعاينة</label><button id="previewStream" type="button" class="ghost">معاينة البث</button></div></div>
         <div id="mfStreamPreview" class="live-stream-card admin-stream-preview" hidden><div class="live-stream-stage" data-stream-stage></div></div>
       </section>
+      ${m?'<div id="livekitCameraBox"></div>':'<div class="card muted">احفظ المباراة أولًا، ثم افتحها من جديد لبدء البث بكاميرا الهاتف.</div>'}
       <div class="savebar"><button id="saveMatch" class="primary">حفظ المباراة</button><button class="ghost" data-close>إلغاء</button></div>`);
     const fillTeams=()=>{const tournament_id=val('mfTournament'),arr=S.teams.filter(t=>t.tournament_id===tournament_id),opts=arr.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');$('mfA').innerHTML=opts;$('mfB').innerHTML=opts;if(m){$('mfA').value=m.team_a_id;$('mfB').value=m.team_b_id}};
     $('mfTournament').onchange=fillTeams;
@@ -126,6 +127,7 @@
     $('mfStreamUrl').addEventListener('blur',()=>{if(!$('mfStreamType').value)$('mfStreamType').value=detectStreamType(val('mfStreamUrl'))});
     $('previewStream').onclick=previewMatchStream;
     $('saveMatch').onclick=()=>saveMatch(m?.id||null);
+    if(m)window.AGCH_LIVEKIT_CAMERA?.mount(m.id,$('livekitCameraBox'));
   }
   async function saveMatch(id){
     const team_a_id=val('mfA'),team_b_id=val('mfB'),tournament_id=val('mfTournament'),tour=tournament(tournament_id),category=tour?.division;
@@ -135,9 +137,9 @@
     const stream_url=nullable(val('mfStreamUrl'));
     const stream_type=nullable(val('mfStreamType')||detectStreamType(stream_url));
     let stream_status=val('mfStreamStatus')||'offline';if(val('mfStatus')==='انتهت'&&stream_status==='live')stream_status='ended';
-    if(stream_enabled&&(!stream_url||!stream_type))return toast('أدخل رابط البث واختر نوعه قبل التفعيل',false);
+    if(stream_enabled&&(!stream_type||(stream_type!=='livekit'&&!stream_url)))return toast('أدخل رابط البث واختر نوعه قبل التفعيل',false);
     if(stream_url){try{const parsed=new URL(stream_url);if(parsed.protocol!=='https:')throw new Error('https')}catch{return toast('رابط البث يجب أن يكون رابط HTTPS صحيحًا',false)}}
-    if(stream_type&&!['youtube','facebook','hls','embed'].includes(stream_type))return toast('نوع البث غير مدعوم',false);
+    if(stream_type&&!['youtube','facebook','hls','embed','livekit'].includes(stream_type))return toast('نوع البث غير مدعوم',false);
     if(!['offline','scheduled','live','ended'].includes(stream_status))return toast('حالة البث غير صحيحة',false);
     const payload={team_a_id,team_b_id,tournament_id,category,group_name:nullable(val('mfGroup')),stage:nullable(val('mfStage')),round_name:nullable(val('mfRound')),match_date:nullable(val('mfDate')),match_time:nullable(val('mfTime')),venue:nullable(val('mfVenue')),status:val('mfStatus'),score_a:val('mfScoreA')===''?null:Number(val('mfScoreA')),score_b:val('mfScoreB')===''?null:Number(val('mfScoreB')),stream_enabled,stream_url,stream_type,stream_status,updated_at:new Date().toISOString()};
     const button=$('saveMatch');

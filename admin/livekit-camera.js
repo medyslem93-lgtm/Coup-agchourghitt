@@ -1,22 +1,66 @@
 (() => {
   'use strict';
   const SDK='https://cdn.jsdelivr.net/npm/livekit-client@2.15.6/dist/livekit-client.umd.min.js';
-  let sdkPromise, room, previewStream, currentMatchId, facing='environment';
+  let sdkPromise, room, previewStream, currentMatchId, facing='environment', busy=false;
   const $=id=>document.getElementById(id);
   const loadSdk=()=>window.LivekitClient?Promise.resolve(window.LivekitClient):(sdkPromise||(sdkPromise=new Promise((ok,no)=>{const s=document.createElement('script');s.src=SDK;s.async=true;s.crossOrigin='anonymous';s.onload=()=>window.LivekitClient?ok(window.LivekitClient):no(new Error('تعذر تحميل LiveKit'));s.onerror=()=>no(new Error('تعذر تحميل LiveKit'));document.head.appendChild(s)})));
-  const session=async()=>{const sb=window.AGCH_SUPABASE_CLIENT||window.aghDb;if(!sb)throw new Error('جلسة الإدارة غير متاحة');const {data}=await sb.auth.getSession();if(!data?.session?.access_token)throw new Error('يجب تسجيل الدخول كمسؤول');return data.session.access_token};
-  const token=async(matchId)=>{const access=await session();const r=await fetch('/api/livekit-token',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${access}`},body:JSON.stringify({room:`match-${matchId}`,identity:`camera-${Date.now()}`,role:'publisher'})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'تعذر إنشاء جلسة البث');return j};
+  const client=()=>window.adminControl?.client||window.AGCH_SUPABASE_CLIENT||window.aghDb;
+  const state=(text,ok=true)=>{const el=$('lkState');if(el){el.textContent=text;el.style.color=ok?'#177a54':'#b42318'}};
+  const session=async()=>{const sb=client();if(!sb)throw new Error('جلسة الإدارة غير متاحة');const {data}=await sb.auth.getSession();if(!data?.session?.access_token)throw new Error('يجب تسجيل الدخول كمسؤول');return data.session.access_token};
+  const token=async(matchId)=>{const access=await session();const r=await fetch('/api/livekit-token',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${access}`},body:JSON.stringify({matchId,identity:`camera-${Date.now()}`,role:'publisher'})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error==='livekit_not_configured'?'خدمة البث غير مهيأة على الخادم':j.error||'تعذر إنشاء جلسة البث');return j};
   const stopPreview=()=>{previewStream?.getTracks().forEach(t=>t.stop());previewStream=null;const v=$('lkCameraPreview');if(v)v.srcObject=null};
-  async function openCamera(){facing=$('lkFacing')?.value||facing;stopPreview();previewStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing}},audio:true});const v=$('lkCameraPreview');if(v){v.srcObject=previewStream;v.muted=true;await v.play().catch(()=>{})}$('lkStart')?.removeAttribute('disabled')}
-  async function start(){
-    if(!currentMatchId)throw new Error('لم يتم تحديد المباراة');if(!previewStream)await openCamera();
-    const LK=await loadSdk(),auth=await token(currentMatchId);room=new LK.Room({adaptiveStream:true,dynacast:true});await room.connect(auth.url,auth.token);
-    const video=previewStream.getVideoTracks()[0],audio=previewStream.getAudioTracks()[0];if(video)await room.localParticipant.publishTrack(video,{source:LK.Track.Source.Camera});if(audio)await room.localParticipant.publishTrack(audio,{source:LK.Track.Source.Microphone});
-    const sb=window.AGCH_SUPABASE_CLIENT||window.aghDb;const streamUrl=`https://livekit.agchourghit.invalid/match-${currentMatchId}`;const {error}=await sb.from('matches').update({stream_enabled:true,stream_status:'live',stream_type:'livekit',stream_url:streamUrl,updated_at:new Date().toISOString()}).eq('id',currentMatchId);if(error)throw error;
-    $('lkStart').disabled=true;$('lkStop').disabled=false;$('lkState').textContent='🔴 البث مباشر الآن';
+  async function openCamera(){
+    if(!navigator.mediaDevices?.getUserMedia)throw new Error('هذا المتصفح لا يدعم الوصول إلى الكاميرا');
+    facing=$('lkFacing')?.value||facing; stopPreview();
+    previewStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing}},audio:true});
+    const v=$('lkCameraPreview'); if(v){v.srcObject=previewStream;v.muted=true;await v.play().catch(()=>{})}
+    $('lkStart')?.removeAttribute('disabled');
+    state('الكاميرا والميكروفون جاهزان');
   }
-  async function stop(){try{room?.disconnect()}catch{}room=null;stopPreview();const sb=window.AGCH_SUPABASE_CLIENT||window.aghDb;if(currentMatchId)await sb.from('matches').update({stream_status:'ended',stream_enabled:false,updated_at:new Date().toISOString()}).eq('id',currentMatchId);if($('lkStart'))$('lkStart').disabled=false;if($('lkStop'))$('lkStop').disabled=true;if($('lkState'))$('lkState').textContent='تم إيقاف البث'}
-  function mount(matchId){currentMatchId=matchId;const host=$('livekitCameraBox');if(!host)return;host.innerHTML=`<div style="margin-top:16px;padding:14px;border:1px solid #dce4ed;border-radius:16px;background:#f8fafc"><b>📷 بث مباشر من كاميرا الهاتف</b><p style="font-size:12px;color:#64748b">يبقى YouTube وFacebook وHLS وEmbed متاحًا كما هو. هذا الخيار يبث الكاميرا والميكروفون مباشرة عبر LiveKit.</p><video id="lkCameraPreview" playsinline muted style="width:100%;max-height:320px;background:#0b1220;border-radius:12px;object-fit:cover"></video><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><select id="lkFacing"><option value="environment">الكاميرا الخلفية</option><option value="user">الكاميرا الأمامية</option></select><button type="button" class="ghost" id="lkOpen">فتح الكاميرا</button><button type="button" class="primary" id="lkStart" disabled>🔴 بدء البث</button><button type="button" class="danger" id="lkStop" disabled>إيقاف البث</button></div><small id="lkState"></small></div>`;$('lkOpen').onclick=()=>openCamera().catch(e=>alert(e.message));$('lkFacing').onchange=()=>openCamera().catch(e=>alert(e.message));$('lkStart').onclick=()=>start().catch(e=>alert(e.message));$('lkStop').onclick=()=>stop().catch(e=>alert(e.message))}
-  document.addEventListener('click',e=>{const b=e.target.closest('[data-edit-match]');if(!b)return;setTimeout(()=>{const save=$('saveMatch');if(!save||$('livekitCameraBox'))return;const box=document.createElement('div');box.id='livekitCameraBox';save.closest('.savebar')?.before(box);mount(b.dataset.editMatch)},80)});
-  window.addEventListener('beforeunload',()=>{try{room?.disconnect()}catch{}stopPreview()});window.AGCH_LIVEKIT_CAMERA={mount,openCamera,start,stop};
+  async function start(){
+    if(!currentMatchId)throw new Error('لم يتم تحديد المباراة');
+    if(busy)return;busy=true;
+    try{
+      if(!previewStream)await openCamera();
+      state('جارٍ بدء البث…');
+      const LK=await loadSdk(), auth=await token(currentMatchId);
+      room=new LK.Room({adaptiveStream:true,dynacast:true});
+      await room.connect(auth.url,auth.token);
+      const video=previewStream.getVideoTracks()[0], audio=previewStream.getAudioTracks()[0];
+      if(video)await room.localParticipant.publishTrack(video,{source:LK.Track.Source.Camera});
+      if(audio)await room.localParticipant.publishTrack(audio,{source:LK.Track.Source.Microphone});
+      const sb=client();
+      const {error}=await sb.from('matches').update({stream_enabled:true,stream_status:'live',stream_type:'livekit',stream_url:null,updated_at:new Date().toISOString()}).eq('id',currentMatchId);
+      if(error){await room.disconnect();room=null;throw error}
+      if($('mfStreamEnabled'))$('mfStreamEnabled').value='true';
+      if($('mfStreamStatus'))$('mfStreamStatus').value='live';
+      if($('mfStreamType'))$('mfStreamType').value='livekit';
+      if($('mfStreamUrl'))$('mfStreamUrl').value='';
+      $('lkStart').disabled=true;$('lkStop').disabled=false;state('🔴 البث مباشر الآن');
+      await window.adminControl?.loadAll(true);
+    }finally{busy=false}
+  }
+  async function stop(){
+    if(busy)return;busy=true;
+    try{
+      try{await room?.disconnect()}catch{} room=null; stopPreview();
+      const sb=client();
+      if(currentMatchId){const {error}=await sb.from('matches').update({stream_status:'ended',stream_enabled:false,updated_at:new Date().toISOString()}).eq('id',currentMatchId);if(error)throw error}
+      if($('mfStreamEnabled'))$('mfStreamEnabled').value='false';
+      if($('mfStreamStatus'))$('mfStreamStatus').value='ended';
+      if($('lkStart'))$('lkStart').disabled=false;if($('lkStop'))$('lkStop').disabled=true;state('تم إيقاف البث');
+      await window.adminControl?.loadAll(true);
+    }finally{busy=false}
+  }
+  function mount(matchId,hostArg){
+    currentMatchId=matchId;
+    const host=hostArg||document.getElementById('livekitCameraBox');if(!host)return;
+    const match=window.adminControl?.state?.matches?.find(item=>item.id===matchId);
+    const isLive=Boolean(match?.stream_enabled&&match?.stream_status==='live'&&match?.stream_type==='livekit');
+    host.innerHTML=`<div class="livekit-camera-card"><div class="livekit-camera-heading"><div><span>PHONE CAMERA</span><b>📷 بث مباشر من كاميرا الهاتف</b></div><em>${isLive?'مباشر الآن':'جاهز عند الطلب'}</em></div><p>يبقى YouTube وFacebook وHLS وEmbed متاحًا. افتح الكاميرا ثم ابدأ البث، ويظهر الفيديو فورًا في صفحة المباراة.</p><video id="lkCameraPreview" playsinline muted></video><div class="livekit-camera-actions"><select id="lkFacing"><option value="environment">الكاميرا الخلفية</option><option value="user">الكاميرا الأمامية</option></select><button type="button" class="ghost" id="lkOpen">فتح الكاميرا</button><button type="button" class="primary" id="lkStart" disabled>🔴 بدء البث</button><button type="button" class="danger" id="lkStop" ${isLive?'':'disabled'}>إيقاف البث</button></div><small id="lkState">${isLive?'البث مسجل كمباشر. افتح الكاميرا ثم اضغط بدء البث لإعادة الاتصال من هذا الجهاز.':'لن تُرسل الكاميرا أو الميكروفون قبل الضغط على «بدء البث».'}</small></div>`;
+    const run=(fn,restore=false)=>async(event)=>{const control=event?.currentTarget;if(control)control.disabled=true;try{await fn()}catch(error){state(error?.message||'تعذر تنفيذ العملية',false)}finally{if(control&&restore)control.disabled=false}};
+    $('lkOpen').onclick=run(openCamera,true);$('lkFacing').onchange=run(openCamera,true);$('lkStart').onclick=run(start);$('lkStop').onclick=run(stop);
+  }
+  window.addEventListener('beforeunload',()=>{try{room?.disconnect()}catch{} stopPreview()});
+  window.AGCH_LIVEKIT_CAMERA={mount,openCamera,start,stop};
 })();
