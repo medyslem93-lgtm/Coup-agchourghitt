@@ -9,6 +9,7 @@ const files = [
   "index.html",
   "styles.css",
   "public-app.js",
+  "welcome-screen.js",
   "live-stream.js",
   "livekit-viewer.js",
   "config.js",
