@@ -19,6 +19,7 @@ const files = [
   "visitors",
   "referees-section.js",
   "referees-section.css",
+  "referee-system-v2.js",
   "middle-round-three-draw.js",
   "middle-round-three-draw.css",
   "breaking-news-live.js",
