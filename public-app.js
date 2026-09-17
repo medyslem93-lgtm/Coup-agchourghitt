@@ -6,7 +6,7 @@
   const searchLayer = document.getElementById("searchLayer");
   const searchInput = document.getElementById("globalSearch");
   const searchResults = document.getElementById("searchResults");
-  const CACHE_KEY = "aghchorguit-premium-v1";
+  const CACHE_KEY = "aghchorguit-premium-v2";
   const FAVORITES_KEY = "aghchorguit-favorite-teams";
   const SELECTED_TOURNAMENT_KEY = "aghchorguit-selected-tournament";
   const GOAL_TYPES = ["هدف", "ركلة جزاء مسجلة"];
@@ -34,6 +34,19 @@
     error: null,
     channel: null,
   };
+
+  const indexes = {
+    teams: new Map(),
+    players: new Map(),
+    tournaments: new Map(),
+  };
+  let lastPayloadJson = "";
+
+  function rebuildIndexes() {
+    indexes.teams = new Map(state.teams.map((item) => [item.id, item]));
+    indexes.players = new Map(state.players.map((item) => [item.id, item]));
+    indexes.tournaments = new Map(state.tournaments.map((item) => [item.id, item]));
+  }
 
   const broadcastEvents = {
     queue: [],
@@ -107,12 +120,9 @@
     return `<span class="${className}">${escapeHtml(initials(player?.name))}</span>`;
   }
 
-  const teamMap = () => new Map(state.teams.map((team) => [team.id, team]));
-  const playerMap = () => new Map(state.players.map((player) => [player.id, player]));
-  const tournamentMap = () => new Map(state.tournaments.map((tournament) => [tournament.id, tournament]));
-  const getTeam = (id) => teamMap().get(id);
-  const getPlayer = (id) => playerMap().get(id);
-  const getTournament = (id) => tournamentMap().get(id);
+  const getTeam = (id) => indexes.teams.get(id);
+  const getPlayer = (id) => indexes.players.get(id);
+  const getTournament = (id) => indexes.tournaments.get(id);
   const getMatch = (id) => state.matches.find((match) => match.id === id);
   const getEvents = (matchId) => state.events.filter((event) => event.match_id === matchId);
 
@@ -988,6 +998,7 @@
 
   function hydrate(payload) {
     Object.keys(payload || {}).forEach((key) => { if (key in state && payload[key] != null) state[key] = payload[key]; });
+    rebuildIndexes();
     if (!getTournament(state.selectedTournamentId)) selectTournament(state.tournaments[0]?.id || "", false);
     state.loading = false; state.error = null;
     applySettings(); renderRoute();
@@ -995,8 +1006,11 @@
 
   function restoreCache() {
     try {
-      const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || "null");
-      if (cached?.savedAt && Date.now() - cached.savedAt < 15 * 60 * 1000 && cached.payload?.tournaments?.length) hydrate(cached.payload);
+      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+      if (cached?.savedAt && Date.now() - cached.savedAt < 6 * 60 * 60 * 1000 && cached.payload?.tournaments?.length) {
+        lastPayloadJson = JSON.stringify(cached.payload);
+        hydrate(cached.payload);
+      }
     } catch { /* cache is optional */ }
   }
 
@@ -1030,8 +1044,14 @@
       if (coreError) throw coreError;
       const payload = {};
       Object.entries(results).forEach(([key, result]) => { payload[key] = result.error ? [] : (key === "settings" ? result.data || {} : result.data || []); });
+      const payloadJson = JSON.stringify(payload);
+      if (silent && lastPayloadJson === payloadJson) {
+        document.getElementById("connectionState").hidden = true;
+        return;
+      }
+      lastPayloadJson = payloadJson;
       hydrate(payload);
-      try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), payload })); } catch { /* storage quota is non-fatal */ }
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), payload })); } catch { /* storage quota is non-fatal */ }
       document.getElementById("connectionState").hidden = true;
     } catch (error) {
       console.error("Tournament data load failed", error);
