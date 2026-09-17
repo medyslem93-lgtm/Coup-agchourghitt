@@ -59,6 +59,15 @@
   }
 
   function renderAll(){renderDashboard();renderTournaments();renderTeams();renderPlayers();renderMatches();renderEvents();renderRefs();renderNews();renderAwards();renderSettings();renderMedia();window.dispatchEvent(new CustomEvent('admin:data',{detail:S}))}
+  function patchMatch(id,patch){
+    const current=match(id);
+    if(!current)return false;
+    Object.assign(current,patch);
+    renderDashboard();
+    renderMatches();
+    window.dispatchEvent(new CustomEvent('admin:match-patch',{detail:{state:S,match:current}}));
+    return true;
+  }
   function renderDashboard(){
     if($('stTournaments'))$('stTournaments').textContent=S.tournaments.length;
     if($('stTeams'))$('stTeams').textContent=S.teams.length;
@@ -190,7 +199,7 @@
     const {error}=await sb.from('matches').update(payload).eq('id',id);
     if(error)return toast('تعذر تحديث حالة المباراة',false);
     toast('تم تحديث حالة المباراة');
-    await loadAll(true);
+    patchMatch(id,payload);
   }
   async function deleteMatch(id){if(!confirmDelete('هذه المباراة'))return;const {error}=await sb.from('matches').delete().eq('id',id);if(error)return toast('تعذر حذف المباراة لوجود بيانات مرتبطة بها',false);toast('تم حذف المباراة');await loadAll(true)}
 
@@ -272,8 +281,8 @@
     if($('addTournament'))$('addTournament').onclick=()=>tournamentForm();if($('addTeam'))$('addTeam').onclick=()=>teamForm();if($('addPlayer'))$('addPlayer').onclick=()=>playerForm();if($('addMatch'))$('addMatch').onclick=()=>matchForm();if($('addEvent'))$('addEvent').onclick=()=>eventForm();if($('addRef'))$('addRef').onclick=()=>refForm();if($('addNews'))$('addNews').onclick=()=>newsForm();if($('addAward'))$('addAward').onclick=()=>awardForm();if($('addMedia'))$('addMedia').onclick=mediaForm;
     document.addEventListener('click',e=>{const c=e.target.closest('[data-close]');if(c){close();return}const te=e.target.closest('[data-edit-tournament]');if(te)return tournamentForm(te.dataset.editTournament);const td=e.target.closest('[data-delete-tournament]');if(td)return deleteTournament(td.dataset.deleteTournament);const a=e.target.closest('[data-edit-team]');if(a)return teamForm(a.dataset.editTeam);const b=e.target.closest('[data-delete-team]');if(b)return deleteTeam(b.dataset.deleteTeam);const p=e.target.closest('[data-edit-player]');if(p)return playerForm(p.dataset.editPlayer);const pd=e.target.closest('[data-delete-player]');if(pd)return deletePlayer(pd.dataset.deletePlayer);const ps=e.target.closest('[data-player-events]');if(ps)return playerStatsSheet(ps.dataset.playerEvents);const mf=e.target.closest('[data-edit-match]');if(mf)return matchForm(mf.dataset.editMatch);const md=e.target.closest('[data-delete-match]');if(md)return deleteMatch(md.dataset.deleteMatch);const ms=e.target.closest('[data-start-match]');if(ms)return setMatchStatus(ms.dataset.startMatch,'مباشر');const me=e.target.closest('[data-finish-match]');if(me)return setMatchStatus(me.dataset.finishMatch,'انتهت');const mx=e.target.closest('[data-match-events]');if(mx)return openEventsForMatch(mx.dataset.matchEvents);const ee=e.target.closest('[data-edit-event]');if(ee)return eventForm(ee.dataset.editEvent);const ed=e.target.closest('[data-delete-event]');if(ed)return deleteEvent(ed.dataset.deleteEvent);const rf=e.target.closest('[data-edit-ref]');if(rf)return refForm(rf.dataset.editRef);const rd=e.target.closest('[data-delete-ref]');if(rd)return deleteRef(rd.dataset.deleteRef);const nf=e.target.closest('[data-edit-news]');if(nf)return newsForm(nf.dataset.editNews);const nd=e.target.closest('[data-delete-news]');if(nd)return deleteNews(nd.dataset.deleteNews);const af=e.target.closest('[data-edit-award]');if(af)return awardForm(af.dataset.editAward);const ad=e.target.closest('[data-delete-award]');if(ad)return deleteAward(ad.dataset.deleteAward);const dm=e.target.closest('[data-delete-media]');if(dm)return deleteMedia(dm.dataset.deleteMedia);if(e.target.id==='sheet')close()});
   }
-  function subscribe(){if(liveChannel)sb.removeChannel(liveChannel);const reload=debounce(()=>loadAll(true),450);liveChannel=sb.channel('admin-live').on('postgres_changes',{event:'*',schema:'public',table:'tournaments'},reload).on('postgres_changes',{event:'*',schema:'public',table:'teams'},reload).on('postgres_changes',{event:'*',schema:'public',table:'players'},reload).on('postgres_changes',{event:'*',schema:'public',table:'matches'},reload).on('postgres_changes',{event:'*',schema:'public',table:'match_events'},reload).on('postgres_changes',{event:'*',schema:'public',table:'news'},reload).on('postgres_changes',{event:'*',schema:'public',table:'referee_assignments'},reload).on('postgres_changes',{event:'*',schema:'public',table:'awards'},reload).on('postgres_changes',{event:'*',schema:'public',table:'site_settings'},reload).subscribe(status=>window.dispatchEvent(new CustomEvent('admin:connection',{detail:status})))}
+  function subscribe(){if(liveChannel)sb.removeChannel(liveChannel);const reload=debounce(()=>loadAll(true),450);const matchChange=payload=>{if(payload.eventType==='UPDATE'&&payload.new?.id&&patchMatch(payload.new.id,payload.new))return;reload()};liveChannel=sb.channel('admin-live').on('postgres_changes',{event:'*',schema:'public',table:'tournaments'},reload).on('postgres_changes',{event:'*',schema:'public',table:'teams'},reload).on('postgres_changes',{event:'*',schema:'public',table:'players'},reload).on('postgres_changes',{event:'*',schema:'public',table:'matches'},matchChange).on('postgres_changes',{event:'*',schema:'public',table:'match_events'},reload).on('postgres_changes',{event:'*',schema:'public',table:'news'},reload).on('postgres_changes',{event:'*',schema:'public',table:'referee_assignments'},reload).on('postgres_changes',{event:'*',schema:'public',table:'awards'},reload).on('postgres_changes',{event:'*',schema:'public',table:'site_settings'},reload).subscribe(status=>window.dispatchEvent(new CustomEvent('admin:connection',{detail:status})))}
 
-  window.adminControl={state:S,client:sb,loadAll,activateTab,toast,show,close};
+  window.adminControl={state:S,client:sb,loadAll,patchMatch,activateTab,toast,show,close};
   (async()=>{if(!await guard())return;bindStatic();await loadAll(true);refreshTeamFilters();renderPlayers();renderEvents();subscribe()})();
 })();

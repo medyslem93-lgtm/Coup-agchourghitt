@@ -6,6 +6,14 @@ const DEFAULT_SUPABASE_URL = 'https://pncjlbsflsgshmzgiiqu.supabase.co';
 const DEFAULT_SUPABASE_PUBLIC_KEY = 'sb_publishable_fnl_v042_IqkcFPpP5oVLA_F_CrpRZX';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+function cleanEnv(name) {
+  const raw = String(process.env[name] || '').trim();
+  if (raw.length >= 2 && ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'")))) {
+    return raw.slice(1, -1).trim();
+  }
+  return raw;
+}
+
 async function fetchMatch(matchId, headers) {
   const supabaseUrl = process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
   const response = await fetch(`${supabaseUrl}/rest/v1/matches?id=eq.${encodeURIComponent(matchId)}&select=id,status,stream_enabled,stream_status,stream_type&limit=1`, { headers });
@@ -18,9 +26,9 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
 
-  const url = String(process.env.LIVEKIT_URL || '').trim();
-  const apiKey = process.env.LIVEKIT_API_KEY;
-  const apiSecret = process.env.LIVEKIT_API_SECRET;
+  const url = cleanEnv('LIVEKIT_URL').replace(/\/+$/, '');
+  const apiKey = cleanEnv('LIVEKIT_API_KEY');
+  const apiSecret = cleanEnv('LIVEKIT_API_SECRET');
   if (!/^wss:\/\//i.test(url) || !apiKey || !apiSecret) return res.status(503).json({ error: 'livekit_not_configured' });
 
   let body = req.body || {};
@@ -64,6 +72,7 @@ export default async function handler(req, res) {
   const payload = b64url(JSON.stringify({
     iss: apiKey,
     sub: identity,
+    iat: now,
     nbf: now - 5,
     exp: now + (role === 'publisher' ? 7200 : 3600),
     jti: crypto.randomUUID(),

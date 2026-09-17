@@ -10,6 +10,7 @@
   const sidebar = $("adminSidebar");
   const backdrop = $("sidebarBackdrop");
   let lastState = null;
+  let visitorsUpdatedAt = 0;
 
   function setText(id, value) {
     const element = $(id);
@@ -151,6 +152,8 @@
 
   async function updateVisitors() {
     if (!admin?.client) return;
+    if (Date.now() - visitorsUpdatedAt < 60000) return;
+    visitorsUpdatedAt = Date.now();
     const { count, error } = await admin.client.from("site_visits").select("id", { count: "exact", head: true });
     if (!error) setText("stVisitors", new Intl.NumberFormat("ar").format(count || 0));
   }
@@ -165,7 +168,7 @@
       return false;
     }
     admin.toast(message);
-    await admin.loadAll(true);
+    admin.patchMatch?.(matchId, { ...payload, updated_at: new Date().toISOString() });
     return true;
   }
 
@@ -305,6 +308,13 @@
     }
   });
   addEventListener("admin:data", (event) => render(event.detail));
+  addEventListener("admin:match-patch", (event) => {
+    const state = event.detail?.state;
+    if (!state) return;
+    lastState = state;
+    setText("stLive", state.matches.filter((match) => match.status === "مباشر").length);
+    renderTodayMatches(state);
+  });
   addEventListener("admin:connection", (event) => setConnection(event.detail));
   addEventListener("online", () => setConnection("online"));
   addEventListener("offline", () => setConnection("offline"));
