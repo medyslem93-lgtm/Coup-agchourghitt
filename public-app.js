@@ -688,7 +688,18 @@
     const parts = parseRoute();
     const container = document.getElementById("matchLiveStream");
     const sameTeams = previous.team_a_id === next.team_a_id && previous.team_b_id === next.team_b_id && previous.tournament_id === next.tournament_id;
-    if (parts[0] === "match" && parts[1] !== next.id && document.getElementById("matchLiveStream")) return true;
+    if (parts[0] !== "match" || parts[1] !== next.id) {
+      document.querySelectorAll(`[data-route="match/${next.id}"]`).forEach((card) => {
+        const scoreHost = card.querySelector(".match-score, .score-block");
+        if (scoreHost) scoreHost.innerHTML = scoreMarkup(next, scoreHost.classList.contains("match-score"));
+        const pill = card.querySelector(".status-pill");
+        if (pill) {
+          pill.className = `status-pill ${statusClass(next.status)}`;
+          pill.innerHTML = `${next.stream_enabled && next.stream_status === "live" ? '<span class="live-dot"></span>LIVE · ' : ""}${escapeHtml(next.status)}`;
+        }
+      });
+      return true;
+    }
     if (parts[0] !== "match" || parts[1] !== next.id || !container || !sameTeams || !hasLiveStream(next)) return false;
 
     const home = teamForSide(next, "a");

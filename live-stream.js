@@ -221,22 +221,26 @@
     if (!stage || !matchId) return message(container, copy().unavailable);
 
     try {
+      const tokenAbort = new AbortController();
+      const tokenTimeout = setTimeout(() => tokenAbort.abort(), 12000);
+      const tokenRequest = fetch("/api/livekit-token", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          matchId,
+          identity: `viewer-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+          role: "viewer",
+        }),
+        signal: tokenAbort.signal,
+      }).finally(() => clearTimeout(tokenTimeout));
       const [LK, tokenResponse] = await Promise.all([
         loadLiveKit(),
-        fetch("/api/livekit-token", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            matchId,
-            identity: `viewer-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-            role: "viewer",
-          }),
-        }),
+        tokenRequest,
       ]);
       const auth = await tokenResponse.json().catch(() => ({}));
       if (!tokenResponse.ok || !auth.url || !auth.token) throw new Error(auth.error || "token_failed");
 
-      const room = new LK.Room({ adaptiveStream: true, autoSubscribe: true });
+      const room = new LK.Room({ adaptiveStream: true, autoSubscribe: true, disconnectOnPageLeave: true });
       let disposed = false;
       let receivedTrack = false;
       const media = new Set();
