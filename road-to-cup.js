@@ -12,6 +12,7 @@
 
   const teamCache = new Map();
   const tournamentCache = new Map();
+  const selectedTournamentStage = new Map();
   let channel = null;
   let currentKey = '';
 
@@ -33,11 +34,29 @@
     return s.includes('دوري المجموعات') || s.includes('مرحله المجموعات') || s.includes('مرحله الضمان') || s === 'المجموعات';
   }
 
+  function isFinalStage(label = '') {
+    const s = norm(label);
+    return s === 'النهائي' || s === 'نهائي' || s === 'المباراه النهائيه' || s === 'المباراة النهائية';
+  }
+
+  function stageRank(label = '') {
+    const s = norm(label);
+    if (s.includes('الدور الاول') || s.includes('الدور 1')) return 10;
+    if (s.includes('الدور الثاني') || s.includes('الدور 2')) return 20;
+    if (s.includes('دور 16') || s.includes('دور الـ16') || s.includes('ثمن')) return 30;
+    if (s.includes('ربع النهائي') || s.includes('ربع نهائي')) return 40;
+    if (s.includes('نصف النهائي') || s.includes('نصف نهائي')) return 50;
+    if (s.includes('المركز الثالث') || s.includes('تحديد المركز الثالث')) return 60;
+    if (isFinalStage(label)) return 70;
+    if (s.includes('الفاصله') || s.includes('قرعه الثلاثه')) return 25;
+    return 35;
+  }
+
   function isKnockoutMatch(m) {
     const label = m.stage || m.round_name || '';
     if (!label || isNonKnockout(label)) return false;
     const s = norm(label);
-    return ['نهائي','ربع','نصف','دور 16','دور الـ16','ثمن','الدور الاول','الدور الثاني','الفاصله','قرعه الثلاثه','المركز الثالث'].some(k => s.includes(norm(k)));
+    return isFinalStage(label) || ['ربع','نصف','دور 16','دور الـ16','ثمن','الدور الاول','الدور الثاني','الفاصله','قرعه الثلاثه','المركز الثالث'].some(k => s.includes(norm(k)));
   }
 
   const stageLabel = m => m.stage || m.round_name || 'مرحلة إقصائية';
@@ -82,7 +101,7 @@
     if (m.status !== 'انتهت') return statusText(m);
     const w = winnerId(m);
     if (!w) return 'انتهت';
-    if (norm(stageLabel(m)).includes('النهائي') && w === teamId) return '🏆 بطل';
+    if (isFinalStage(stageLabel(m)) && w === teamId) return '🏆 بطل';
     return w === teamId ? '✅ تأهل' : '❌ خرج';
   }
 
@@ -95,7 +114,7 @@
     const b = sideName(m,'team_b');
     const win = winnerId(m);
     const penalties = penaltyLine(m);
-    const final = norm(stageLabel(m)).includes('النهائي');
+    const final = isFinalStage(stageLabel(m));
     return `<article class="rtc-match ${final ? 'is-final' : ''}" data-rtc-match="${esc(m.id)}" tabindex="0">
       <div class="rtc-match-head"><span>${esc(stageLabel(m))}</span><b>${esc(statusText(m))}</b></div>
       <div class="rtc-team-row ${win === m.team_a_id ? 'is-winner' : ''}">${logo(a)}<span>${esc(a.name)}</span><strong>${['قادمة','مؤجلة','ملغاة'].includes(m.status) ? '' : (m.score_a ?? '')}</strong></div>
@@ -133,13 +152,9 @@
     if (!force && tournamentCache.has(slug)) return tournamentCache.get(slug);
     const { data:tournament, error:tError } = await db.from('tournaments').select('id,name,short_name,slug,division,season,status,accent_color').eq('slug',slug).single();
     if (tError) throw tError;
-    const [matchRes, qualRes] = await Promise.all([
-      db.from('matches').select(`id,tournament_id,team_a_id,team_b_id,team_a_placeholder,team_b_placeholder,match_date,match_time,stage,round_name,status,score_a,score_b,minute,display_order,qualifier_note,home_penalty_score,away_penalty_score,team_a:teams!matches_team_a_id_fkey(id,name,logo_url),team_b:teams!matches_team_b_id_fkey(id,name,logo_url)`).eq('tournament_id',tournament.id).order('display_order'),
-      db.from('qualification_events').select('id,tournament_id,stage,participant_team_id,participant_label,opponent_label,status,event_date,event_time,display_order,team:teams!qualification_events_participant_team_id_fkey(id,name,logo_url)').eq('tournament_id',tournament.id).order('display_order')
-    ]);
-    if (matchRes.error) throw matchRes.error;
-    if (qualRes.error) throw qualRes.error;
-    const result = { tournament, matches:matchRes.data || [], qualifications:qualRes.data || [] };
+    const { data:matches, error:matchError } = await db.from('matches').select(`id,tournament_id,team_a_id,team_b_id,team_a_placeholder,team_b_placeholder,match_date,match_time,stage,round_name,status,score_a,score_b,minute,display_order,qualifier_note,home_penalty_score,away_penalty_score,team_a:teams!matches_team_a_id_fkey(id,name,logo_url),team_b:teams!matches_team_b_id_fkey(id,name,logo_url)`).eq('tournament_id',tournament.id).order('display_order');
+    if (matchError) throw matchError;
+    const result = { tournament, matches:matches || [] };
     tournamentCache.set(slug,result);
     return result;
   }
@@ -155,32 +170,51 @@
       visible.push(item);
       if (item.kind === 'match' && item.status === 'انتهت' && winnerId(item) && winnerId(item) !== data.team.id) break;
     }
-    const champion = visible.some(i => i.kind === 'match' && norm(stageLabel(i)).includes('النهائي') && winnerId(i) === data.team.id);
+    const champion = visible.some(i => i.kind === 'match' && isFinalStage(stageLabel(i)) && winnerId(i) === data.team.id);
     return `<section class="rtc-shell rtc-road-shell">${champion ? `<div class="rtc-champion">🏆 بطل ${esc(data.team.tournament?.short_name || data.team.tournament?.name || 'كأس أغشوركيت')}</div>` : ''}<div class="rtc-title"><span>ROAD TO THE CUP</span><h2>طريق ${esc(data.team.name)} إلى الكأس</h2></div><div class="rtc-road">${visible.map((item,i)=>`<div class="rtc-road-step"><div class="rtc-stage-badge">${esc(item.stage || item.round_name || 'مرحلة')}<strong>${item.kind === 'qualification' ? `✅ ${esc(item.status || 'تأهل')}` : esc(teamStageState(item,data.team.id))}</strong></div>${item.kind === 'qualification' ? qualificationCard(item) : matchCard(item)}${i < visible.length-1 ? '<div class="rtc-arrow">↓</div>' : ''}</div>`).join('')}</div></section>`;
   }
 
   function groupStages(data) {
-    const all = [
-      ...data.matches.filter(isKnockoutMatch).map(m => ({kind:'match',label:stageLabel(m),...m})),
-      ...data.qualifications.map(e => ({kind:'qualification',label:e.stage || 'تأهل',...e}))
-    ];
     const map = new Map();
-    all.forEach(item => { if (!map.has(item.label)) map.set(item.label,[]); map.get(item.label).push(item); });
-    return [...map.entries()].sort((a,b)=>Math.min(...a[1].map(itemOrder))-Math.min(...b[1].map(itemOrder)));
+    data.matches.filter(isKnockoutMatch).forEach(m => {
+      const label = stageLabel(m);
+      if (!map.has(label)) map.set(label,[]);
+      map.get(label).push(m);
+    });
+    return [...map.entries()].map(([label,items]) => ({
+      label,
+      items: items.sort((a,b)=>itemOrder(a)-itemOrder(b)),
+      rank: stageRank(label),
+      order: Math.min(...items.map(itemOrder)),
+    })).sort((a,b)=>a.rank-b.rank || a.order-b.order || a.label.localeCompare(b.label,'ar'));
   }
 
   function championFrom(matches) {
-    const final = matches.filter(m => norm(stageLabel(m)).includes('النهائي') && m.status === 'انتهت').sort((a,b)=>itemOrder(b)-itemOrder(a))[0];
+    const final = matches.filter(m => isFinalStage(stageLabel(m)) && m.status === 'انتهت').sort((a,b)=>itemOrder(b)-itemOrder(a))[0];
     if (!final) return null;
     const id = winnerId(final);
     return id === final.team_a_id ? final.team_a : id === final.team_b_id ? final.team_b : null;
   }
 
-  function bracketMarkup(data) {
+  function defaultStageLabel(data, stages) {
+    const saved = selectedTournamentStage.get(data.tournament.slug);
+    if (saved && stages.some(s=>s.label===saved)) return saved;
+    const live = stages.find(s=>s.items.some(m=>m.status==='مباشر'));
+    if (live) return live.label;
+    const active = [...stages].reverse().find(s=>s.items.some(m=>m.status==='قادمة' || m.status==='مؤجلة'));
+    if (active) return active.label;
+    const finished = [...stages].reverse().find(s=>s.items.some(m=>m.status==='انتهت'));
+    return finished?.label || stages[stages.length-1]?.label || stages[0]?.label || '';
+  }
+
+  function bracketMarkup(data, requestedLabel = '') {
     const stages = groupStages(data);
     if (!stages.length) return `<section class="rtc-shell rtc-bracket-shell"><div class="rtc-title"><span>TOURNAMENT BRACKET</span><h2>طريق النهائي</h2></div><div class="rtc-empty">لم تبدأ الأدوار الإقصائية بعد.</div></section>`;
+    const selected = stages.find(s=>s.label===requestedLabel) || stages.find(s=>s.label===defaultStageLabel(data,stages)) || stages[0];
+    selectedTournamentStage.set(data.tournament.slug, selected.label);
     const champion = championFrom(data.matches);
-    return `<section class="rtc-shell rtc-bracket-shell">${champion ? `<div class="rtc-champion">🏆 البطل <span>${logo(champion)}${esc(champion.name)}</span></div>` : ''}<div class="rtc-title"><span>TOURNAMENT BRACKET</span><h2>طريق النهائي</h2><p>${esc(data.tournament.name)}</p></div><div class="rtc-bracket">${stages.map(([label,items])=>`<section class="rtc-round ${norm(label).includes('النهائي') ? 'is-final-round' : ''}"><div class="rtc-round-head"><b>${esc(label)}</b><span>${items.length} ${items.length===1?'عنصر':'عناصر'}</span></div><div class="rtc-round-list">${items.map(item=>item.kind === 'qualification' ? qualificationCard(item) : matchCard(item)).join('')}</div></section>`).join('')}</div></section>`;
+    const tabs = stages.map((stage,index)=>`<button type="button" class="rtc-stage-tab ${stage.label===selected.label?'is-active':''}" data-rtc-stage-index="${index}" aria-pressed="${stage.label===selected.label?'true':'false'}">${esc(stage.label)}</button>`).join('');
+    return `<section class="rtc-shell rtc-bracket-shell">${champion ? `<div class="rtc-champion">🏆 البطل <span>${logo(champion)}${esc(champion.name)}</span></div>` : ''}<div class="rtc-title"><span>TOURNAMENT BRACKET</span><h2>طريق النهائي</h2><p>${esc(data.tournament.name)}</p></div><div class="rtc-stage-tabs" role="tablist" aria-label="أدوار البطولة">${tabs}</div><div class="rtc-bracket"><section class="rtc-round ${isFinalStage(selected.label)?'is-final-round':''}" data-rtc-selected-stage="${esc(selected.label)}"><div class="rtc-round-head"><b>${esc(selected.label)}</b><span>${selected.items.length} ${selected.items.length===1?'مباراة':'مباريات'}</span></div><div class="rtc-round-list">${selected.items.map(matchCard).join('')}</div></section></div></section>`;
   }
 
   function ensureTeamRoot() {
@@ -202,6 +236,12 @@
   const loading = (root,text) => root.innerHTML=`<div class="rtc-loading"><i></i><i></i><i></i><span>${esc(text)}</span></div>`;
   const errorState = (root,msg) => root.innerHTML=`<div class="rtc-error">${esc(msg)}<button type="button" data-rtc-retry>إعادة المحاولة</button></div>`;
 
+  function scrollActiveStage(root, smooth = false) {
+    const active = root?.querySelector('.rtc-stage-tab.is-active');
+    if (!active) return;
+    requestAnimationFrame(()=>active.scrollIntoView({behavior:smooth?'smooth':'auto',block:'nearest',inline:'center'}));
+  }
+
   function setupRealtime(cacheKey,tournamentId,teamId=null) {
     if (channel) db.removeChannel(channel);
     channel = db.channel(`rtc-${cacheKey}`)
@@ -215,8 +255,7 @@
       })
       .on('postgres_changes',{event:'*',schema:'public',table:'qualification_events',filter:`tournament_id=eq.${tournamentId}`},payload=>{
         if (teamId && ![payload.old?.participant_team_id,payload.new?.participant_team_id].includes(teamId)) return;
-        if (teamId) teamCache.delete(teamId); else tournamentCache.delete(cacheKey);
-        scheduleMount(true);
+        if (teamId) { teamCache.delete(teamId); scheduleMount(true); }
       }).subscribe();
   }
 
@@ -234,7 +273,7 @@
         const root=ensureTournamentRoot(); if (!root) return;
         const key=`tour:${route.slug}`; if (currentKey!==key) { currentKey=key; loading(root,'جاري تحميل مخطط البطولة…'); }
         const data=await fetchTournamentBracket(route.slug,force); if (parseRoute()?.slug!==route.slug) return;
-        root.innerHTML=bracketMarkup(data); setupRealtime(route.slug,data.tournament.id);
+        root.innerHTML=bracketMarkup(data); scrollActiveStage(root,false); setupRealtime(route.slug,data.tournament.id);
       }
     } catch (e) {
       console.error('Road to Cup load failed',e);
@@ -246,7 +285,25 @@
   function scheduleMount(force=false) { clearTimeout(scheduleMount.t); scheduleMount.t=setTimeout(()=>mount(force),80); }
   function openMatch(el) { if (el?.dataset.rtcMatch) location.hash=`#match/${el.dataset.rtcMatch}`; }
 
-  document.addEventListener('click',e=>{ const card=e.target.closest('[data-rtc-match]'); if (card) return openMatch(card); if (e.target.closest('[data-rtc-retry]')) scheduleMount(true); });
+  document.addEventListener('click',e=>{
+    const stageButton=e.target.closest('[data-rtc-stage-index]');
+    if (stageButton) {
+      const route=parseRoute();
+      const data=route?.type==='tournament' ? tournamentCache.get(route.slug) : null;
+      const root=document.getElementById('tournamentBracketRoot');
+      const stages=data ? groupStages(data) : [];
+      const stage=stages[Number(stageButton.dataset.rtcStageIndex)];
+      if (data && root && stage) {
+        selectedTournamentStage.set(route.slug,stage.label);
+        root.innerHTML=bracketMarkup(data,stage.label);
+        scrollActiveStage(root,true);
+      }
+      return;
+    }
+    const card=e.target.closest('[data-rtc-match]');
+    if (card) return openMatch(card);
+    if (e.target.closest('[data-rtc-retry]')) scheduleMount(true);
+  });
   document.addEventListener('keydown',e=>{ const card=e.target.closest?.('[data-rtc-match]'); if (card && (e.key==='Enter'||e.key===' ')) { e.preventDefault(); openMatch(card); } });
   window.addEventListener('hashchange',()=>{ currentKey=''; scheduleMount(false); });
   new MutationObserver(()=>{ const r=parseRoute(); if (!r) return; if (r.type==='team' && !document.getElementById('roadToCupRoot')) scheduleMount(false); if (r.type==='tournament' && r.tab==='overview' && !document.getElementById('tournamentBracketRoot')) scheduleMount(false); }).observe(document.getElementById('appMain'),{childList:true,subtree:true});
