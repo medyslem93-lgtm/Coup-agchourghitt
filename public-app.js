@@ -595,6 +595,33 @@
     return goals.length === 1 ? goals[0] : null;
   }
 
+  function matchMediaGoalTransition(match, asset, event) {
+    const home = teamForSide(match, "a");
+    const away = teamForSide(match, "b");
+    const tournament = getTournament(match.tournament_id);
+    const team = getTeam(event.team_id);
+    const player = getPlayer(event.player_id);
+    const scorer = player?.name || event.player_name || "مسجل الهدف";
+    const homeScore = asset.score_a == null ? score(match.score_a) : score(asset.score_a);
+    const awayScore = asset.score_b == null ? score(match.score_b) : score(asset.score_b);
+    const minute = event.minute ?? asset.captured_minute;
+    const tournamentLogo = tournament?.logo_url || state.settings.logo_url;
+    return `<div class="recap-goal-transition" data-goal-transition aria-hidden="true">
+      <span class="recap-goal-wipe recap-goal-wipe-a"></span><span class="recap-goal-wipe recap-goal-wipe-b"></span>
+      <div class="recap-goal-lockup">
+        <span class="recap-goal-kicker">GOAL MOMENT · ${escapeHtml(tournament?.short_name || "كأس أغشوركيت")}</span>
+        <span class="recap-goal-team-mark">${image(team?.logo_url || tournamentLogo, team?.name || "الفريق", { eager: true })}</span>
+        <strong>هــــدف!</strong><b>${escapeHtml(scorer)}</b>
+        ${minute == null ? "" : `<em>الدقيقة ${escapeHtml(minute)}′</em>`}
+      </div>
+      <div class="recap-goal-scorebar" aria-label="${escapeHtml(`${home.name} ${homeScore} - ${awayScore} ${away.name}`)}">
+        <span class="recap-goal-side"><b>${escapeHtml(home.name)}</b><i>${image(home.logo_url, home.name, { eager: true })}</i></span>
+        <strong>${homeScore}</strong><i class="recap-goal-cup">${image(tournamentLogo, tournament?.name || "البطولة", { eager: true })}</i><strong>${awayScore}</strong>
+        <span class="recap-goal-side recap-goal-away"><i>${image(away.logo_url, away.name, { eager: true })}</i><b>${escapeHtml(away.name)}</b></span>
+      </div>
+    </div>`;
+  }
+
   function matchMediaItem(match, asset, index, events) {
     const home = teamForSide(match, "a");
     const away = teamForSide(match, "b");
@@ -606,7 +633,7 @@
       ? `<video src="${url}" controls playsinline preload="metadata" aria-label="${escapeHtml(label)}">متصفحك لا يدعم تشغيل الفيديو.</video>`
       : `<img src="${url}" alt="${escapeHtml(asset.caption || `صورة المباراة ${index + 1}`)}" loading="lazy" decoding="async">`;
     const eventOverlay = goalEvent
-      ? `<div class="recap-video-event-layer" data-recap-video-event aria-live="polite">${broadcastEventMarkup(goalEvent)}</div>`
+      ? `<div class="recap-video-event-layer" data-recap-video-event aria-live="polite">${matchMediaGoalTransition(match, asset, goalEvent)}${broadcastEventMarkup(goalEvent)}</div>`
       : "";
     return `<figure class="match-recap-media ${isVideo ? "is-video" : "is-image"}">${media}${matchMediaScorebug(match, asset)}${eventOverlay}<figcaption><span>${isVideo ? "لقطة فيديو" : "صورة المباراة"}</span><b>${escapeHtml(label)}</b></figcaption></figure>`;
   }
@@ -621,22 +648,28 @@
       figure.dataset.eventMounted = "true";
       let shown = false;
       let hideTimer = 0;
+      let transitionTimer = 0;
       const hide = () => {
         window.clearTimeout(hideTimer);
         card.classList.remove("is-visible");
         card.classList.add("is-leaving");
+        layer.classList.remove("is-running");
       };
       const reset = () => {
         window.clearTimeout(hideTimer);
+        window.clearTimeout(transitionTimer);
         shown = false;
+        layer.classList.remove("is-running");
         card.classList.remove("is-visible", "is-leaving");
       };
       const reveal = () => {
         if (shown || video.currentTime < 0.65) return;
         shown = true;
         card.classList.remove("is-leaving");
-        requestAnimationFrame(() => card.classList.add("is-visible"));
-        hideTimer = window.setTimeout(hide, 6200);
+        layer.classList.remove("is-running");
+        requestAnimationFrame(() => layer.classList.add("is-running"));
+        transitionTimer = window.setTimeout(() => card.classList.add("is-visible"), 2350);
+        hideTimer = window.setTimeout(hide, 7600);
       };
       video.addEventListener("timeupdate", reveal, { passive: true });
       video.addEventListener("playing", reveal, { passive: true });
