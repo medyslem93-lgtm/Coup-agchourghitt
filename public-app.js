@@ -687,7 +687,7 @@
     const mediaItems = published ? matchMedia(match.id) : [];
     const scoreOrTime = match.status === "قادمة"
       ? `<time>${escapeHtml(formatTime(match.match_time))}</time><small>${escapeHtml(formatDate(match.match_date, true))}</small>`
-      : `<strong>${score(match.score_a)}<i>–</i>${score(match.score_b)}</strong><small>${escapeHtml(match.status)}</small>`;
+      : `<strong dir="ltr"><span class="recap-score-away">${score(match.score_b)}</span><i>–</i><span class="recap-score-home">${score(match.score_a)}</span></strong><small>${escapeHtml(match.status)}</small>`;
     const goalRows = scoringEvents.map((event) => {
       const scorer = playerEventName(event);
       const team = getTeam(event.team_id);
