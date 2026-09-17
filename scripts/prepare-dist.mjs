@@ -67,6 +67,7 @@ if (!adminIndex.includes("breaking-news-admin.js")) {
 
 await mkdir(resolve(output, "vendor"), { recursive: true });
 await cp(resolve(root, "node_modules/@supabase/supabase-js/dist/umd/supabase.js"),resolve(output, "vendor/supabase.js"));
+await cp(resolve(root, "node_modules/tus-js-client/dist/tus.min.js"),resolve(output, "vendor/tus.js"));
 
 const deployedHtmlFiles = ["index.html", "admin/index.html", "admin/login.html", "visitors/index.html"];
 const missingReferences = [];

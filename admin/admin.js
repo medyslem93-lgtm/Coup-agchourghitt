@@ -165,7 +165,9 @@
     if(!['offline','scheduled','live','ended'].includes(stream_status))return toast('حالة البث غير صحيحة',false);
     const galleryFiles=Array.from($('mfGallery')?.files||[]);
     if(galleryFiles.length>12)return toast('يمكن رفع 12 ملفًا كحد أقصى في كل مرة',false);
-    const invalidMedia=galleryFiles.find(file=>!file.type.startsWith('image/')&&!['video/mp4','video/webm','video/quicktime'].includes(file.type));
+    const emptyMedia=galleryFiles.find(file=>!Number(file?.size));
+    if(emptyMedia)return toast(`الملف ${emptyMedia.name||'المحدد'} بلا محتوى. نزّله على الهاتف أولًا ثم اختره من جديد`,false);
+    const invalidMedia=galleryFiles.find(file=>!mediaInfo(file).valid);
     if(invalidMedia)return toast(`صيغة الملف ${invalidMedia.name} غير مدعومة`,false);
     const payload={team_a_id,team_b_id,tournament_id,category,group_name:nullable(val('mfGroup')),stage:nullable(val('mfStage')),round_name:nullable(val('mfRound')),match_date:nullable(val('mfDate')),match_time:nullable(val('mfTime')),venue:nullable(val('mfVenue')),status:val('mfStatus'),score_a:val('mfScoreA')===''?null:Number(val('mfScoreA')),score_b:val('mfScoreB')===''?null:Number(val('mfScoreB')),stream_enabled,stream_url,stream_type,stream_status,recap_title:nullable(val('mfRecapTitle')),recap_text:nullable(val('mfRecapText')),recap_published:val('mfRecapPublished')==='true',updated_at:new Date().toISOString()};
     const button=$('saveMatch');
@@ -183,8 +185,8 @@
       for(let index=0;index<galleryFiles.length;index+=1){
         const file=galleryFiles[index];
         button.textContent=`جارٍ رفع الوسائط ${index+1}/${galleryFiles.length}...`;
-        const type=file.type.startsWith('video/')?'video':'image';
-        await uploadFile(file,`match-${type}`,savedId,caption,'match',{media_type:type,captured_minute,score_a,score_b});
+        const type=mediaInfo(file).isVideo?'video':'image';
+        await uploadFile(file,`match-${type}`,savedId,caption,'match',{media_type:type,captured_minute,score_a,score_b},percent=>{button.textContent=`جارٍ رفع الوسائط ${index+1}/${galleryFiles.length} · ${percent}%`});
       }
       toast(galleryFiles.length?'تم حفظ المباراة ورفع الوسائط بنجاح':'تم حفظ المباراة وتحديث البث والملخص');
       close();
@@ -252,25 +254,45 @@
 
   function renderMedia(){if(!$('mediaList'))return;$('mediaList').innerHTML=S.media.length?S.media.map(m=>`<div class="item media-library-item">${mediaPreview(m,m.caption||m.kind||'وسائط')}<div class="meta"><b>${esc(m.caption||m.kind||'وسائط')}</b><small>${mediaType(m)==='video'?'فيديو':'صورة'} · ${esc(m.path)}${m.captured_minute!=null?` · الدقيقة ${esc(m.captured_minute)}`:''}</small></div><div class="actions"><button class="danger" data-delete-media="${m.id}">حذف</button></div></div>`).join(''):'<div class="empty card">لا توجد ملفات مرفوعة من لوحة الإدارة</div>'}
   function mediaForm(){show(`<div class="panel-head"><h2>رفع صورة أو فيديو</h2><button class="ghost" data-close>إغلاق</button></div><div class="field"><label>الملف</label><input id="medFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"></div><div class="field"><label>نوع الوسائط</label><select id="medKind"><option value="general">وسائط عامة</option><option value="team-logo">شعار فريق</option><option value="player-photo">صورة لاعب</option><option value="news">وسائط خبر</option></select></div><div class="field"><label>وصف</label><input id="medCaption"></div><div class="savebar"><button id="saveMedia" class="primary">رفع الملف</button><button class="ghost" data-close>إلغاء</button></div>`);$('saveMedia').onclick=async()=>{const f=$('medFile').files[0];if(!f)return toast('اختر صورة أو فيديو',false);try{await uploadFile(f,val('medKind')||'general',null,val('medCaption'));toast('تم رفع الملف');close();await loadAll(true)}catch(e){toast('تعذر رفع الملف: '+e.message,false)}}}
-  async function uploadFile(file,kind='general',entityId=null,caption=null,entityType=null,metadata={}){
-    const isImage=Boolean(file?.type?.startsWith('image/'));
-    const isVideo=['video/mp4','video/webm','video/quicktime'].includes(file?.type);
-    if(!isImage&&!isVideo)throw new Error('يجب أن يكون الملف صورة أو فيديو MP4 / WebM / MOV');
-    const sizeLimit=isVideo?50*1024*1024:12*1024*1024;
-    if(file.size>sizeLimit)throw new Error(isVideo?'حجم الفيديو يجب ألا يتجاوز 50 ميغابايت':'حجم الصورة يجب ألا يتجاوز 12 ميغابايت');
-    const ext=(file.name.split('.').pop()||(isVideo?'mp4':'jpg')).toLowerCase(),path=`${kind}/${crypto.randomUUID()}.${ext}`;
-    let uploadBody=file;
-    if(typeof file?.arrayBuffer==='function'){
-      const bytes=new Uint8Array(await file.arrayBuffer());
-      if(!bytes.byteLength)throw new Error('الملف المحدد فارغ أو لم يُحمّل من الجهاز بشكل صحيح');
-      uploadBody=bytes;
-    }else if(!file?.size){
-      throw new Error('الملف المحدد فارغ أو غير متاح للرفع');
+  function mediaInfo(file){
+    const ext=(file?.name?.split('.').pop()||'').toLowerCase(),declared=(file?.type||'').toLowerCase();
+    const types={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif',mp4:'video/mp4',webm:'video/webm',mov:'video/quicktime'};
+    const contentType=declared||types[ext]||'';
+    const isImage=contentType.startsWith('image/')&&['image/jpeg','image/png','image/webp','image/gif'].includes(contentType);
+    const isVideo=['video/mp4','video/webm','video/quicktime'].includes(contentType);
+    return{ext:ext||(isVideo?'mp4':'jpg'),contentType,isImage,isVideo,valid:isImage||isVideo};
+  }
+  let tusLoader=null;
+  function ensureTus(){
+    if(window.tus?.Upload)return Promise.resolve(window.tus);
+    if(tusLoader)return tusLoader;
+    tusLoader=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='/vendor/tus.js?v=4.3.1';script.async=true;script.onload=()=>window.tus?.Upload?resolve(window.tus):reject(new Error('تعذر تشغيل الرفع المتدرج'));script.onerror=()=>reject(new Error('تعذر تحميل أداة رفع الفيديو'));document.head.appendChild(script)});
+    return tusLoader;
+  }
+  async function uploadResumable(file,path,contentType,onProgress){
+    const tus=await ensureTus(),{data:{session},error:sessionError}=await sb.auth.getSession();
+    if(sessionError||!session?.access_token)throw new Error('انتهت جلسة الإدارة. سجّل الدخول ثم أعد المحاولة');
+    const projectId=new URL(cfg.supabaseUrl).hostname.split('.')[0];
+    return new Promise((resolve,reject)=>{const upload=new tus.Upload(file,{endpoint:`https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`,retryDelays:[0,3000,5000,10000,20000],headers:{authorization:`Bearer ${session.access_token}`,apikey:cfg.supabaseKey,'x-upsert':'false'},uploadDataDuringCreation:true,removeFingerprintOnSuccess:true,metadata:{bucketName:cfg.mediaBucket,objectName:path,contentType,cacheControl:'31536000'},chunkSize:6*1024*1024,onProgress:(sent,total)=>onProgress?.(Math.min(100,Math.round(sent/total*100))),onError:error=>{const body=error?.originalResponse?.getBody?.();reject(new Error(body||error?.message||'تعذر رفع الفيديو'))},onSuccess:resolve});upload.start()});
+  }
+  async function uploadFile(file,kind='general',entityId=null,caption=null,entityType=null,metadata={},onProgress=null){
+    const info=mediaInfo(file);
+    if(!info.valid)throw new Error('يجب أن يكون الملف صورة أو فيديو MP4 / WebM / MOV');
+    if(!Number(file?.size))throw new Error('الملف بلا محتوى. نزّله على الهاتف أولًا ثم اختره من جديد');
+    const sizeLimit=info.isVideo?50*1024*1024:12*1024*1024;
+    if(file.size>sizeLimit)throw new Error(info.isVideo?'حجم الفيديو يجب ألا يتجاوز 50 ميغابايت':'حجم الصورة يجب ألا يتجاوز 12 ميغابايت');
+    const path=`${kind}/${crypto.randomUUID()}.${info.ext}`;
+    if(file.size>6*1024*1024){
+      await uploadResumable(file,path,info.contentType,onProgress);
+    }else{
+      const bytes=await file.arrayBuffer();
+      if(!bytes.byteLength)throw new Error('لم يتمكن الهاتف من قراءة محتوى الملف. احفظه محليًا ثم اختره من جديد');
+      const {error}=await sb.storage.from(cfg.mediaBucket).upload(path,bytes,{upsert:false,contentType:info.contentType,cacheControl:'31536000'});
+      if(error)throw error;
+      onProgress?.(100);
     }
-    const {error}=await sb.storage.from(cfg.mediaBucket).upload(path,uploadBody,{upsert:false,contentType:file.type||'application/octet-stream',cacheControl:'31536000'});
-    if(error)throw error;
     const public_url=sb.storage.from(cfg.mediaBucket).getPublicUrl(path).data.publicUrl;
-    const record={bucket:cfg.mediaBucket,path,public_url,kind,entity_type:entityType||null,entity_id:entityId||null,caption:caption||null,media_type:isVideo?'video':'image',...metadata};
+    const record={bucket:cfg.mediaBucket,path,public_url,kind,entity_type:entityType||null,entity_id:entityId||null,caption:caption||null,media_type:info.isVideo?'video':'image',...metadata};
     const {error:recordError}=await sb.from('media_assets').insert(record);
     if(recordError){await sb.storage.from(cfg.mediaBucket).remove([path]);throw recordError}
     return public_url;

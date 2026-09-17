@@ -8,6 +8,7 @@
     "check": "npm run build"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.116.0"
+    "@supabase/supabase-js": "2.116.0",
+    "tus-js-client": "4.3.1"
   }
 }
