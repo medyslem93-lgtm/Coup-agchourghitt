@@ -49,3 +49,14 @@ button,input,select,textarea{font:inherit}button{color:inherit}a{color:inherit}
 .admin-stream-preview .stream-unavailable p{margin:8px 0 0}
 @media(max-width:640px){.stream-admin-card{padding:14px;border-radius:18px}.stream-admin-heading{align-items:flex-start}.admin-stream-preview .stream-unavailable{min-height:170px}}
 .livekit-camera-card{margin-top:16px;padding:16px;border:1px solid rgba(53,209,125,.2);border-radius:20px;background:linear-gradient(145deg,rgba(53,209,125,.06),rgba(212,175,80,.035)),var(--surface);display:grid;gap:12px}.livekit-camera-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.livekit-camera-heading>div{display:grid;gap:3px}.livekit-camera-heading span{color:var(--gold-soft);font-size:9px;font-weight:900;letter-spacing:1.2px}.livekit-camera-heading b{font-size:15px}.livekit-camera-heading em{padding:6px 9px;border-radius:999px;background:rgba(53,209,125,.1);color:var(--green);font-size:10px;font-style:normal;font-weight:800}.livekit-camera-card p{margin:0;color:var(--muted);font-size:11px;line-height:1.8}.livekit-camera-card video{display:block;width:100%;max-height:360px;aspect-ratio:16/9;border-radius:15px;background:#050805;object-fit:cover}.livekit-camera-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.livekit-camera-actions select,.livekit-camera-actions button{min-height:44px}.livekit-camera-card>small{min-height:20px;color:var(--muted);font-size:10px;font-weight:700}@media(max-width:640px){.livekit-camera-card{padding:13px;border-radius:17px}.livekit-camera-actions{display:grid;grid-template-columns:1fr 1fr}.livekit-camera-actions select{grid-column:1/-1}.livekit-camera-actions button:last-of-type{grid-column:1/-1}}
+
+/* Match recap publishing */
+.recap-admin-card{margin-top:16px;padding:18px;border:1px solid rgba(212,175,80,.24);border-radius:22px;background:linear-gradient(145deg,rgba(212,175,80,.075),rgba(185,244,77,.02)),var(--surface)}
+.recap-admin-card .field small{display:block;margin-top:6px;color:var(--muted);font-size:10px;line-height:1.6}
+.admin-match-gallery{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:14px}
+.admin-match-gallery figure{position:relative;min-width:0;margin:0;overflow:hidden;border:1px solid var(--line);border-radius:16px;background:#070a08;aspect-ratio:4/3}
+.admin-match-gallery img{display:block;width:100%;height:100%;object-fit:cover}
+.admin-match-gallery figcaption{position:absolute;inset:auto 0 0;padding:24px 9px 8px;background:linear-gradient(transparent,rgba(0,0,0,.9));color:#fff;font-size:8px;font-weight:800}
+.admin-match-gallery button{position:absolute;inset:7px auto auto 7px;min-height:31px;padding:5px 8px;font-size:8px}
+.recap-empty-admin{margin-top:12px;border:1px dashed var(--line);border-radius:15px}
+@media(max-width:640px){.recap-admin-card{padding:14px;border-radius:18px}.admin-match-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}

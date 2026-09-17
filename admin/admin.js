@@ -109,6 +109,7 @@
   }
   function matchForm(id=null){
     const m=id?match(id):null;
+    const gallery=m?S.media.filter(x=>x.entity_id===m.id&&(x.entity_type==='match'||String(x.kind||'').startsWith('match-'))):[];
     show(`<div class="panel-head"><h2>${m?'تعديل المباراة':'إنشاء مباراة'}</h2><button class="ghost" data-close>إغلاق</button></div>
       <div class="row two"><div class="field"><label>البطولة</label><select id="mfTournament">${S.tournaments.map(t=>`<option value="${t.id}" ${m?.tournament_id===t.id?'selected':''}>${esc(t.short_name)} · ${esc(t.season)}</option>`).join('')}</select></div><div class="field"><label>المجموعة</label><input id="mfGroup" value="${esc(m?.group_name||'')}"></div></div>
       <div class="row two"><div class="field"><label>الفريق الأول</label><select id="mfA"></select></div><div class="field"><label>الفريق الثاني</label><select id="mfB"></select></div></div>
@@ -120,6 +121,12 @@
         <div id="mfStreamPreview" class="live-stream-card admin-stream-preview" hidden><div class="live-stream-stage" data-stream-stage></div></div>
       </section>
       ${m?'<div id="livekitCameraBox"></div>':'<div class="card muted">احفظ المباراة أولًا، ثم افتحها من جديد لبدء البث بكاميرا الهاتف.</div>'}
+      <section class="recap-admin-card"><div class="stream-admin-heading"><div><span>MATCH STORY</span><h3>الملخص المصور</h3></div><span class="stream-security-note">يظهر داخل صفحة المباراة</span></div>
+        <div class="row two"><div class="field"><label>عنوان الملخص</label><input id="mfRecapTitle" value="${esc(m?.recap_title||'')}" placeholder="مثال: انتصار مثير في الدقائق الأخيرة"></div><div class="field"><label>حالة النشر</label><select id="mfRecapPublished"><option value="false" ${!m?.recap_published?'selected':''}>مسودة مخفية</option><option value="true" ${m?.recap_published?'selected':''}>منشور للزوار</option></select></div></div>
+        <div class="field"><label>تقرير المباراة</label><textarea id="mfRecapText" rows="6" placeholder="اكتب ملخصًا حقيقيًا للمباراة، أبرز الفرص والأهداف وما حدث في اللقاء...">${esc(m?.recap_text||'')}</textarea></div>
+        <div class="row two"><div class="field"><label>صور المباراة</label><input id="mfGallery" type="file" accept="image/*" multiple><small>يمكن اختيار عدة صور مرة واحدة. تُحفظ في Supabase Storage.</small></div><div class="field"><label>وصف الصور الجديدة</label><input id="mfGalleryCaption" value="" placeholder="مثال: لحظة تسجيل هدف الفوز"></div></div>
+        ${gallery.length?`<div class="admin-match-gallery">${gallery.map(x=>`<figure data-media-item="${x.id}"><img src="${esc(mediaUrl(x.public_url))}" alt="${esc(x.caption||'صورة المباراة')}"><figcaption>${esc(x.caption||'صورة المباراة')}</figcaption><button type="button" class="danger" data-delete-media="${x.id}">حذف</button></figure>`).join('')}</div>`:'<div class="empty recap-empty-admin">لم تُرفع صور لهذه المباراة بعد.</div>'}
+      </section>
       <div class="savebar"><button id="saveMatch" class="primary">حفظ المباراة</button><button class="ghost" data-close>إلغاء</button></div>`);
     const fillTeams=()=>{const tournament_id=val('mfTournament'),arr=S.teams.filter(t=>t.tournament_id===tournament_id),opts=arr.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');$('mfA').innerHTML=opts;$('mfB').innerHTML=opts;if(m){$('mfA').value=m.team_a_id;$('mfB').value=m.team_b_id}};
     $('mfTournament').onchange=fillTeams;
@@ -141,15 +148,23 @@
     if(stream_url){try{const parsed=new URL(stream_url);if(parsed.protocol!=='https:')throw new Error('https')}catch{return toast('رابط البث يجب أن يكون رابط HTTPS صحيحًا',false)}}
     if(stream_type&&!['youtube','facebook','hls','embed','livekit'].includes(stream_type))return toast('نوع البث غير مدعوم',false);
     if(!['offline','scheduled','live','ended'].includes(stream_status))return toast('حالة البث غير صحيحة',false);
-    const payload={team_a_id,team_b_id,tournament_id,category,group_name:nullable(val('mfGroup')),stage:nullable(val('mfStage')),round_name:nullable(val('mfRound')),match_date:nullable(val('mfDate')),match_time:nullable(val('mfTime')),venue:nullable(val('mfVenue')),status:val('mfStatus'),score_a:val('mfScoreA')===''?null:Number(val('mfScoreA')),score_b:val('mfScoreB')===''?null:Number(val('mfScoreB')),stream_enabled,stream_url,stream_type,stream_status,updated_at:new Date().toISOString()};
+    const galleryFiles=Array.from($('mfGallery')?.files||[]);
+    if(galleryFiles.length>12)return toast('يمكن رفع 12 صورة كحد أقصى في كل مرة',false);
+    const payload={team_a_id,team_b_id,tournament_id,category,group_name:nullable(val('mfGroup')),stage:nullable(val('mfStage')),round_name:nullable(val('mfRound')),match_date:nullable(val('mfDate')),match_time:nullable(val('mfTime')),venue:nullable(val('mfVenue')),status:val('mfStatus'),score_a:val('mfScoreA')===''?null:Number(val('mfScoreA')),score_b:val('mfScoreB')===''?null:Number(val('mfScoreB')),stream_enabled,stream_url,stream_type,stream_status,recap_title:nullable(val('mfRecapTitle')),recap_text:nullable(val('mfRecapText')),recap_published:val('mfRecapPublished')==='true',updated_at:new Date().toISOString()};
     const button=$('saveMatch');
     button.disabled=true;
     button.textContent='جارٍ الحفظ...';
-    const {error}=await(id?sb.from('matches').update(payload).eq('id',id):sb.from('matches').insert(payload));
-    if(error){button.disabled=false;button.textContent='حفظ المباراة';return toast('تعذر حفظ المباراة: '+error.message,false)}
-    toast('تم حفظ المباراة وتحديث البث');
-    close();
-    await loadAll(true);
+    let saved=false;
+    try{
+      const query=id?sb.from('matches').update(payload).eq('id',id).select('id').single():sb.from('matches').insert(payload).select('id').single();
+      const {data,error}=await query;if(error)throw error;
+      const savedId=id||data?.id;if(!savedId)throw new Error('تعذر تحديد المباراة المحفوظة');saved=true;
+      const caption=nullable(val('mfGalleryCaption'));
+      for(const file of galleryFiles)await uploadFile(file,'match-gallery',savedId,caption,'match');
+      toast(galleryFiles.length?'تم حفظ المباراة ورفع صور الملخص':'تم حفظ المباراة وتحديث البث والملخص');
+      close();
+      await loadAll(true);
+    }catch(error){toast((saved?'تم حفظ المباراة، لكن تعذر رفع بعض الصور: ':'تعذر حفظ المباراة: ')+(error?.message||''),false);if(saved){close();await loadAll(true)}}finally{if(button?.isConnected){button.disabled=false;button.textContent='حفظ المباراة'}}
   }
   async function setMatchStatus(id,status){
     const payload={status,updated_at:new Date().toISOString()};
@@ -212,8 +227,8 @@
 
   function renderMedia(){if(!$('mediaList'))return;$('mediaList').innerHTML=S.media.length?S.media.map(m=>`<div class="item">${img(m.public_url,m.caption||m.kind||'صورة')}<div class="meta"><b>${esc(m.caption||m.kind||'صورة')}</b><small>${esc(m.path)}</small></div><div class="actions"><button class="danger" data-delete-media="${m.id}">حذف</button></div></div>`).join(''):'<div class="empty card">لا توجد ملفات مرفوعة من لوحة الإدارة</div>'}
   function mediaForm(){show(`<div class="panel-head"><h2>رفع صورة</h2><button class="ghost" data-close>إغلاق</button></div><div class="field"><label>الصورة</label><input id="medFile" type="file" accept="image/*"></div><div class="field"><label>نوع الصورة</label><select id="medKind"><option value="general">صورة عامة</option><option value="team-logo">شعار فريق</option><option value="player-photo">صورة لاعب</option><option value="news">صورة خبر</option></select></div><div class="field"><label>وصف</label><input id="medCaption"></div><div class="savebar"><button id="saveMedia" class="primary">رفع الصورة</button><button class="ghost" data-close>إلغاء</button></div>`);$('saveMedia').onclick=async()=>{const f=$('medFile').files[0];if(!f)return toast('اختر صورة',false);try{await uploadFile(f,val('medKind')||'general',null,val('medCaption'));toast('تم رفع الصورة');close();await loadAll(true)}catch(e){toast('تعذر رفع الصورة: '+e.message,false)}}}
-  async function uploadFile(file,kind='general',entityId=null,caption=null){if(!file?.type?.startsWith('image/'))throw new Error('الملف يجب أن يكون صورة');const ext=(file.name.split('.').pop()||'jpg').toLowerCase(),path=`${kind}/${crypto.randomUUID()}.${ext}`;const {error}=await sb.storage.from(cfg.mediaBucket).upload(path,file,{upsert:false,contentType:file.type});if(error)throw error;const public_url=sb.storage.from(cfg.mediaBucket).getPublicUrl(path).data.publicUrl;await sb.from('media_assets').insert({bucket:cfg.mediaBucket,path,public_url,kind,entity_id:entityId||null,caption:caption||null});return public_url}
-  async function deleteMedia(id){const m=byId(S.media,id);if(!confirmDelete('هذه الصورة'))return;const {error}=await sb.storage.from(m.bucket||cfg.mediaBucket).remove([m.path]);if(error)return toast('تعذر حذف الملف',false);await sb.from('media_assets').delete().eq('id',id);toast('تم حذف الصورة');await loadAll(true)}
+  async function uploadFile(file,kind='general',entityId=null,caption=null,entityType=null){if(!file?.type?.startsWith('image/'))throw new Error('الملف يجب أن يكون صورة');if(file.size>12*1024*1024)throw new Error('حجم الصورة يجب ألا يتجاوز 12 ميغابايت');const ext=(file.name.split('.').pop()||'jpg').toLowerCase(),path=`${kind}/${crypto.randomUUID()}.${ext}`;const {error}=await sb.storage.from(cfg.mediaBucket).upload(path,file,{upsert:false,contentType:file.type,cacheControl:'31536000'});if(error)throw error;const public_url=sb.storage.from(cfg.mediaBucket).getPublicUrl(path).data.publicUrl;const {error:recordError}=await sb.from('media_assets').insert({bucket:cfg.mediaBucket,path,public_url,kind,entity_type:entityType||null,entity_id:entityId||null,caption:caption||null});if(recordError){await sb.storage.from(cfg.mediaBucket).remove([path]);throw recordError}return public_url}
+  async function deleteMedia(id){const m=byId(S.media,id);if(!m||!confirmDelete('هذه الصورة'))return;const item=document.querySelector(`[data-media-item="${id}"]`);const {error}=await sb.storage.from(m.bucket||cfg.mediaBucket).remove([m.path]);if(error)return toast('تعذر حذف الملف',false);const {error:recordError}=await sb.from('media_assets').delete().eq('id',id);if(recordError)return toast('تعذر حذف سجل الصورة: '+recordError.message,false);item?.remove();toast('تم حذف الصورة');await loadAll(true)}
 
   function activateTab(id){document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));document.body.classList.remove('sidebar-open');const sidebar=$('adminSidebar');if(sidebar)sidebar.classList.remove('open');}
   function bindStatic(){

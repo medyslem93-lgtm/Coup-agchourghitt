@@ -25,6 +25,7 @@
     playerStats: [],
     news: [],
     awards: [],
+    media: [],
     settings: {},
     selectedTournamentId: localStorage.getItem(SELECTED_TOURNAMENT_KEY) || "",
     matchStatusFilter: "الكل",
@@ -521,7 +522,45 @@
     const assists = events.filter((event) => event.type === "تمريرة حاسمة").length + goals.filter((event) => event.assist_player_id).length;
     const yellow = events.filter((event) => event.type === "بطاقة صفراء").length;
     const red = events.filter((event) => event.type === "بطاقة حمراء").length;
-    return `<div class="summary-grid"><div><div class="event-summary"><div class="event-summary-card"><span>الأهداف</span><strong>${goals.length}</strong></div><div class="event-summary-card"><span>صناعة الأهداف</span><strong>${assists}</strong></div><div class="event-summary-card"><span>بطاقات صفراء</span><strong>${yellow}</strong></div><div class="event-summary-card"><span>بطاقات حمراء</span><strong>${red}</strong></div></div></div><div class="content-card"><div class="leader-card-head"><h3>أبرز أحداث المباراة</h3><span class="soft-badge">${events.length} حدث</span></div>${eventTimeline(events.slice(0, 8))}</div></div>`;
+    return `${matchRecap(match, events)}<div class="summary-grid"><div><div class="event-summary"><div class="event-summary-card"><span>الأهداف</span><strong>${goals.length}</strong></div><div class="event-summary-card"><span>صناعة الأهداف</span><strong>${assists}</strong></div><div class="event-summary-card"><span>بطاقات صفراء</span><strong>${yellow}</strong></div><div class="event-summary-card"><span>بطاقات حمراء</span><strong>${red}</strong></div></div></div><div class="content-card"><div class="leader-card-head"><h3>أبرز أحداث المباراة</h3><span class="soft-badge">${events.length} حدث</span></div>${eventTimeline(events.slice(0, 8))}</div></div>`;
+  }
+
+  function matchMedia(matchId) {
+    return state.media
+      .filter((asset) => asset.entity_id === matchId && (asset.entity_type === "match" || String(asset.kind || "").startsWith("match-")))
+      .sort((a, b) => String(a.created_at || "").localeCompare(String(b.created_at || "")));
+  }
+
+  function matchRecap(match, events) {
+    const home = teamForSide(match, "a");
+    const away = teamForSide(match, "b");
+    const tournament = getTournament(match.tournament_id);
+    const scoringEvents = events.filter((event) => ["هدف", "هدف عكسي", "ركلة جزاء مسجلة"].includes(event.type));
+    const published = Boolean(match.recap_published);
+    const photos = published ? matchMedia(match.id) : [];
+    const scoreOrTime = match.status === "قادمة"
+      ? `<time>${escapeHtml(formatTime(match.match_time))}</time><small>${escapeHtml(formatDate(match.match_date, true))}</small>`
+      : `<strong>${score(match.score_a)}<i>–</i>${score(match.score_b)}</strong><small>${escapeHtml(match.status)}</small>`;
+    const goalRows = scoringEvents.map((event) => {
+      const scorer = playerEventName(event);
+      const team = getTeam(event.team_id);
+      const assist = assistEventName(event);
+      return `<li><span>${image(team?.logo_url, team?.name || "الفريق")}</span><b>${escapeHtml(scorer || "لاعب غير محدد")}</b><em>${event.minute == null ? "—" : `${escapeHtml(event.minute)}′`}</em>${assist ? `<small>صناعة · ${escapeHtml(assist)}</small>` : ""}</li>`;
+    }).join("");
+    const gallery = photos.length ? `<div class="match-recap-gallery" aria-label="صور المباراة">${photos.map((photo, index) => `<figure><img src="${escapeHtml(imageUrl(photo.public_url))}" alt="${escapeHtml(photo.caption || `صورة المباراة ${index + 1}`)}" loading="lazy" decoding="async"><figcaption>${escapeHtml(photo.caption || `${home.name} × ${away.name}`)}</figcaption></figure>`).join("")}</div>` : "";
+    const editorial = published && (match.recap_title || match.recap_text || photos.length)
+      ? `<div class="match-recap-story"><span class="eyebrow">MATCH STORY</span><h3>${escapeHtml(match.recap_title || `ملخص ${home.name} × ${away.name}`)}</h3>${match.recap_text ? `<p>${escapeHtml(match.recap_text).replace(/\n/g, "<br>")}</p>` : ""}${gallery}</div>`
+      : `<div class="match-recap-empty"><span>${icon("news")}</span><div><b>الملخص المصور</b><p>${match.status === "قادمة" ? "سيُنشر ملخص المباراة والصور هنا بعد انطلاق اللقاء." : "سيُنشر التقرير والصور الرسمية لهذه المباراة هنا فور اعتمادها."}</p></div></div>`;
+    return `<section class="match-recap" style="--recap-accent:${escapeHtml(tournament?.accent_color || "#c7ff37")}">
+      <div class="match-recap-heading"><div><span>OFFICIAL MATCH RECAP</span><h2>ملخص المباراة</h2></div><span class="soft-badge">${escapeHtml(tournament?.short_name || tournament?.name || "كأس أغشوركيت")}</span></div>
+      <div class="match-recap-scoreboard">
+        <div class="recap-team recap-home"><span>${image(home.logo_url, home.name, { eager: true })}</span><b>${escapeHtml(home.name)}</b></div>
+        <div class="recap-score">${scoreOrTime}<img src="${escapeHtml(imageUrl(tournament?.logo_url || state.settings.logo_url))}" alt="${escapeHtml(tournament?.name || "البطولة")}" loading="lazy"></div>
+        <div class="recap-team recap-away"><span>${image(away.logo_url, away.name, { eager: true })}</span><b>${escapeHtml(away.name)}</b></div>
+      </div>
+      ${goalRows ? `<ol class="match-recap-goals">${goalRows}</ol>` : ""}
+      ${editorial}
+    </section>`;
   }
 
   function statValue(stats, key, fallback) {
@@ -582,8 +621,10 @@
     if (!hasLiveStream(match)) return "";
     const labels = liveStreamCopy();
     const minute = match.current_minute ?? match.minute ?? 0;
+    const clock = `${String(Math.max(0, Number(minute) || 0)).padStart(2, "0")}:00`;
+    const phase = Number(minute) > 90 ? "وقت إضافي" : Number(minute) > 45 ? "الشوط الثاني" : "الشوط الأول";
     const tournamentLogo = tournament?.logo_url || state.settings.logo_url || "assets/tournament.jpg";
-    return `<section id="matchLiveStream" class="live-stream-card" data-stream-enabled="true" data-stream-status="${escapeHtml(match.stream_status)}" data-stream-type="${escapeHtml(match.stream_type || "")}" data-stream-url="${escapeHtml(match.stream_url || "")}" data-match-id="${escapeHtml(match.id)}" aria-label="${escapeHtml(labels.title)}">
+    return `<section id="matchLiveStream" class="live-stream-card" style="--broadcast-accent:${escapeHtml(tournament?.accent_color || "#c7ff37")}" data-stream-enabled="true" data-stream-status="${escapeHtml(match.stream_status)}" data-stream-type="${escapeHtml(match.stream_type || "")}" data-stream-url="${escapeHtml(match.stream_url || "")}" data-match-id="${escapeHtml(match.id)}" aria-label="${escapeHtml(labels.title)}">
       <div class="live-stream-head">
         <div><span class="live-stream-kicker"><i aria-hidden="true"></i><span data-stream-kicker-text>${escapeHtml(labels.live)} · ${escapeHtml(minute)}′</span></span><strong data-stream-summary>${escapeHtml(home.name)} ${score(match.score_a)} - ${score(match.score_b)} ${escapeHtml(away.name)}</strong></div>
         <span class="live-stream-badge">LIVE</span>
@@ -591,12 +632,13 @@
       <div class="live-stream-stage" data-stream-stage>
         <div class="live-stream-media" data-stream-media><div class="stream-loader" aria-hidden="true"></div></div>
         <div class="broadcast-scorebug" data-broadcast-scorebug role="status" aria-live="polite" aria-label="${escapeHtml(`${home.name} ${score(match.score_a)} - ${score(match.score_b)} ${away.name}، الدقيقة ${minute}`)}">
+          <div class="scorebug-competition"><span>${escapeHtml(tournament?.short_name || "كأس أغشوركيت")}</span><b data-broadcast-period>${escapeHtml(phase)}</b></div>
           <div class="scorebug-main">
             <span class="scorebug-team scorebug-home"><span class="scorebug-crest">${image(home.logo_url, home.name, { eager: true })}</span><b>${escapeHtml(home.name)}</b></span>
             <span class="scorebug-score"><strong data-broadcast-home-score>${score(match.score_a)}</strong><span class="scorebug-cup">${image(tournamentLogo, tournament?.name || "كأس أغشوركيت", { eager: true })}</span><strong data-broadcast-away-score>${score(match.score_b)}</strong></span>
             <span class="scorebug-team scorebug-away"><b>${escapeHtml(away.name)}</b><span class="scorebug-crest">${image(away.logo_url, away.name, { eager: true })}</span></span>
           </div>
-          <span class="scorebug-clock"><i aria-hidden="true"></i><b>LIVE</b><time data-broadcast-minute>${escapeHtml(minute)}′</time></span>
+          <span class="scorebug-clock"><i aria-hidden="true"></i><b>LIVE</b><time data-broadcast-minute>${escapeHtml(clock)}</time></span>
         </div>
         <div class="broadcast-event-layer" data-broadcast-event-layer aria-live="assertive" aria-atomic="true"></div>
       </div>
@@ -621,10 +663,13 @@
     const away = teamForSide(next, "b");
     const labels = liveStreamCopy();
     const minute = next.current_minute ?? next.minute ?? 0;
+    const clock = `${String(Math.max(0, Number(minute) || 0)).padStart(2, "0")}:00`;
+    const phase = Number(minute) > 90 ? "وقت إضافي" : Number(minute) > 45 ? "الشوط الثاني" : "الشوط الأول";
     const setText = (selector, value) => { const element = container.querySelector(selector); if (element) element.textContent = value; };
     setText("[data-broadcast-home-score]", score(next.score_a));
     setText("[data-broadcast-away-score]", score(next.score_b));
-    setText("[data-broadcast-minute]", `${minute}′`);
+    setText("[data-broadcast-minute]", clock);
+    setText("[data-broadcast-period]", phase);
     setText("[data-stream-kicker-text]", `${labels.live} · ${minute}′`);
     setText("[data-stream-summary]", `${home.name} ${score(next.score_a)} - ${score(next.score_b)} ${away.name}`);
     const scorebug = container.querySelector("[data-broadcast-scorebug]");
@@ -932,6 +977,7 @@
       playerStats: db.from("player_tournament_stats").select("*"),
       news: db.from("news").select("*").order("featured", { ascending: false }).order("sort_order").order("publish_date", { ascending: false }),
       awards: db.from("awards").select("*"),
+      media: db.from("media_assets").select("*").eq("entity_type", "match").order("created_at", { ascending: true }),
       settings: db.from("site_settings").select("*").eq("id", "main").maybeSingle(),
     };
     try {
@@ -967,6 +1013,7 @@
       .on("postgres_changes", { event: "*", schema: "public", table: "teams" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "players" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "news" }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "media_assets" }, refresh)
       .subscribe();
   }
 
