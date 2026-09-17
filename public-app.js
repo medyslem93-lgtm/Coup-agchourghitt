@@ -531,13 +531,45 @@
       .sort((a, b) => String(a.created_at || "").localeCompare(String(b.created_at || "")));
   }
 
+  function matchMediaType(asset) {
+    return asset?.media_type === "video" || String(asset?.kind || "").includes("video") || /\.(mp4|webm|mov|m4v)(\?|$)/i.test(asset?.public_url || asset?.path || "") ? "video" : "image";
+  }
+
+  function matchMediaScorebug(match, asset) {
+    const home = teamForSide(match, "a");
+    const away = teamForSide(match, "b");
+    const tournament = getTournament(match.tournament_id);
+    const homeScore = asset.score_a == null ? score(match.score_a) : score(asset.score_a);
+    const awayScore = asset.score_b == null ? score(match.score_b) : score(asset.score_b);
+    const minute = asset.captured_minute == null ? match.minute : asset.captured_minute;
+    const timeLabel = minute == null ? (match.status === "انتهت" ? "FT" : formatTime(match.match_time)) : `${minute}:00`;
+    return `<div class="recap-media-scorebug" aria-label="${escapeHtml(`${home.name} ${homeScore} - ${awayScore} ${away.name}، ${timeLabel}`)}">
+      <span class="recap-media-team recap-media-home"><i>${image(home.logo_url, home.name)}</i><b>${escapeHtml(home.name)}</b></span>
+      <span class="recap-media-result"><strong>${homeScore}</strong><i>${image(tournament?.logo_url || state.settings.logo_url, tournament?.name || "البطولة")}</i><strong>${awayScore}</strong></span>
+      <span class="recap-media-team recap-media-away"><b>${escapeHtml(away.name)}</b><i>${image(away.logo_url, away.name)}</i></span>
+      <time>${escapeHtml(timeLabel)}</time>
+    </div>`;
+  }
+
+  function matchMediaItem(match, asset, index) {
+    const home = teamForSide(match, "a");
+    const away = teamForSide(match, "b");
+    const label = asset.caption || `${home.name} × ${away.name}`;
+    const url = escapeHtml(imageUrl(asset.public_url));
+    const isVideo = matchMediaType(asset) === "video";
+    const media = isVideo
+      ? `<video src="${url}" controls playsinline preload="metadata" aria-label="${escapeHtml(label)}">متصفحك لا يدعم تشغيل الفيديو.</video>`
+      : `<img src="${url}" alt="${escapeHtml(asset.caption || `صورة المباراة ${index + 1}`)}" loading="lazy" decoding="async">`;
+    return `<figure class="match-recap-media ${isVideo ? "is-video" : "is-image"}">${media}${matchMediaScorebug(match, asset)}<figcaption><span>${isVideo ? "لقطة فيديو" : "صورة المباراة"}</span><b>${escapeHtml(label)}</b></figcaption></figure>`;
+  }
+
   function matchRecap(match, events) {
     const home = teamForSide(match, "a");
     const away = teamForSide(match, "b");
     const tournament = getTournament(match.tournament_id);
     const scoringEvents = events.filter((event) => ["هدف", "هدف عكسي", "ركلة جزاء مسجلة"].includes(event.type));
     const published = Boolean(match.recap_published);
-    const photos = published ? matchMedia(match.id) : [];
+    const mediaItems = published ? matchMedia(match.id) : [];
     const scoreOrTime = match.status === "قادمة"
       ? `<time>${escapeHtml(formatTime(match.match_time))}</time><small>${escapeHtml(formatDate(match.match_date, true))}</small>`
       : `<strong>${score(match.score_a)}<i>–</i>${score(match.score_b)}</strong><small>${escapeHtml(match.status)}</small>`;
@@ -547,10 +579,10 @@
       const assist = assistEventName(event);
       return `<li><span>${image(team?.logo_url, team?.name || "الفريق")}</span><b>${escapeHtml(scorer || "لاعب غير محدد")}</b><em>${event.minute == null ? "—" : `${escapeHtml(event.minute)}′`}</em>${assist ? `<small>صناعة · ${escapeHtml(assist)}</small>` : ""}</li>`;
     }).join("");
-    const gallery = photos.length ? `<div class="match-recap-gallery" aria-label="صور المباراة">${photos.map((photo, index) => `<figure><img src="${escapeHtml(imageUrl(photo.public_url))}" alt="${escapeHtml(photo.caption || `صورة المباراة ${index + 1}`)}" loading="lazy" decoding="async"><figcaption>${escapeHtml(photo.caption || `${home.name} × ${away.name}`)}</figcaption></figure>`).join("")}</div>` : "";
-    const editorial = published && (match.recap_title || match.recap_text || photos.length)
+    const gallery = mediaItems.length ? `<div class="match-recap-gallery" aria-label="صور وفيديوهات المباراة">${mediaItems.map((asset, index) => matchMediaItem(match, asset, index)).join("")}</div>` : "";
+    const editorial = published && (match.recap_title || match.recap_text || mediaItems.length)
       ? `<div class="match-recap-story"><span class="eyebrow">MATCH STORY</span><h3>${escapeHtml(match.recap_title || `ملخص ${home.name} × ${away.name}`)}</h3>${match.recap_text ? `<p>${escapeHtml(match.recap_text).replace(/\n/g, "<br>")}</p>` : ""}${gallery}</div>`
-      : `<div class="match-recap-empty"><span>${icon("news")}</span><div><b>الملخص المصور</b><p>${match.status === "قادمة" ? "سيُنشر ملخص المباراة والصور هنا بعد انطلاق اللقاء." : "سيُنشر التقرير والصور الرسمية لهذه المباراة هنا فور اعتمادها."}</p></div></div>`;
+      : `<div class="match-recap-empty"><span>${icon("news")}</span><div><b>الملخص المصور</b><p>${match.status === "قادمة" ? "سيُنشر ملخص المباراة والصور واللقطات هنا بعد انطلاق اللقاء." : "سيُنشر التقرير والصور والفيديوهات الرسمية لهذه المباراة هنا فور اعتمادها."}</p></div></div>`;
     return `<section class="match-recap" style="--recap-accent:${escapeHtml(tournament?.accent_color || "#c7ff37")}">
       <div class="match-recap-heading"><div><span>OFFICIAL MATCH RECAP</span><h2>ملخص المباراة</h2></div><span class="soft-badge">${escapeHtml(tournament?.short_name || tournament?.name || "كأس أغشوركيت")}</span></div>
       <div class="match-recap-scoreboard">
