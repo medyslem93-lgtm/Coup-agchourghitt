@@ -1,11 +1,11 @@
-const CACHE = "agchorguit-premium-v22-20260916-intro";
+const CACHE = "agchorguit-premium-v23-20260917-mobile";
 const CORE = [
   "./",
   "index.html",
   "styles.css?v=20260915-mobile2",
   "referees-section.css?v=20260915-1",
   "team-calendar-v2.css?v=20260915-1",
-  "road-to-cup.css?v=20260915-1",
+  "road-to-cup.css?v=20260917-mobile1",
   "motm-v5.css?v=20260915-1",
   "team-of-week-v6.css?v=20260915-1",
   "goal-of-round-v7.css?v=20260915-1",
@@ -42,8 +42,6 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Admin pages and their assets must always go straight to Vercel.
-  // Never serve the public-site offline fallback for an admin navigation.
   if (
     url.pathname === "/admin" ||
     url.pathname.startsWith("/admin/") ||
