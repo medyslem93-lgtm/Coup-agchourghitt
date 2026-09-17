@@ -259,7 +259,15 @@
     const sizeLimit=isVideo?50*1024*1024:12*1024*1024;
     if(file.size>sizeLimit)throw new Error(isVideo?'حجم الفيديو يجب ألا يتجاوز 50 ميغابايت':'حجم الصورة يجب ألا يتجاوز 12 ميغابايت');
     const ext=(file.name.split('.').pop()||(isVideo?'mp4':'jpg')).toLowerCase(),path=`${kind}/${crypto.randomUUID()}.${ext}`;
-    const {error}=await sb.storage.from(cfg.mediaBucket).upload(path,file,{upsert:false,contentType:file.type,cacheControl:'31536000'});
+    let uploadBody=file;
+    if(typeof file?.arrayBuffer==='function'){
+      const bytes=new Uint8Array(await file.arrayBuffer());
+      if(!bytes.byteLength)throw new Error('الملف المحدد فارغ أو لم يُحمّل من الجهاز بشكل صحيح');
+      uploadBody=bytes;
+    }else if(!file?.size){
+      throw new Error('الملف المحدد فارغ أو غير متاح للرفع');
+    }
+    const {error}=await sb.storage.from(cfg.mediaBucket).upload(path,uploadBody,{upsert:false,contentType:file.type||'application/octet-stream',cacheControl:'31536000'});
     if(error)throw error;
     const public_url=sb.storage.from(cfg.mediaBucket).getPublicUrl(path).data.publicUrl;
     const record={bucket:cfg.mediaBucket,path,public_url,kind,entity_type:entityType||null,entity_id:entityId||null,caption:caption||null,media_type:isVideo?'video':'image',...metadata};
