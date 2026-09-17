@@ -561,16 +561,88 @@
     </div>`;
   }
 
-  function matchMediaItem(match, asset, index) {
+  function matchMediaGoalEvent(match, asset, events) {
+    const goals = events
+      .filter((event) => ["هدف", "هدف عكسي", "ركلة جزاء مسجلة"].includes(event.type))
+      .sort((a, b) => Number(a.minute ?? 999) - Number(b.minute ?? 999));
+    if (!goals.length) return null;
+    const capturedMinute = asset.captured_minute == null ? null : Number(asset.captured_minute);
+    const capturedScoreA = asset.score_a == null ? null : Number(asset.score_a);
+    const capturedScoreB = asset.score_b == null ? null : Number(asset.score_b);
+    let runningA = 0;
+    let runningB = 0;
+    const scoredGoals = goals.map((event) => {
+      let scoringTeamId = event.team_id;
+      if (event.type === "هدف عكسي") scoringTeamId = event.team_id === match.team_a_id ? match.team_b_id : match.team_a_id;
+      if (scoringTeamId === match.team_a_id) runningA += 1;
+      if (scoringTeamId === match.team_b_id) runningB += 1;
+      return { event, scoreA: runningA, scoreB: runningB };
+    });
+    if (Number.isFinite(capturedScoreA) && Number.isFinite(capturedScoreB)) {
+      const scoreMatches = scoredGoals.filter((item) => item.scoreA === capturedScoreA && item.scoreB === capturedScoreB);
+      if (scoreMatches.length) {
+        if (!Number.isFinite(capturedMinute)) return scoreMatches.at(-1).event;
+        return scoreMatches.sort((a, b) => Math.abs(Number(a.event.minute ?? 999) - capturedMinute) - Math.abs(Number(b.event.minute ?? 999) - capturedMinute))[0].event;
+      }
+    }
+    if (Number.isFinite(capturedMinute)) {
+      const ranked = goals
+        .filter((event) => event.minute != null)
+        .map((event) => ({ event, distance: Math.abs(Number(event.minute) - capturedMinute) }))
+        .sort((a, b) => a.distance - b.distance);
+      if (ranked[0]?.distance <= 2) return ranked[0].event;
+    }
+    return goals.length === 1 ? goals[0] : null;
+  }
+
+  function matchMediaItem(match, asset, index, events) {
     const home = teamForSide(match, "a");
     const away = teamForSide(match, "b");
     const label = asset.caption || `${home.name} × ${away.name}`;
     const url = escapeHtml(imageUrl(asset.public_url));
     const isVideo = matchMediaType(asset) === "video";
+    const goalEvent = isVideo ? matchMediaGoalEvent(match, asset, events) : null;
     const media = isVideo
       ? `<video src="${url}" controls playsinline preload="metadata" aria-label="${escapeHtml(label)}">متصفحك لا يدعم تشغيل الفيديو.</video>`
       : `<img src="${url}" alt="${escapeHtml(asset.caption || `صورة المباراة ${index + 1}`)}" loading="lazy" decoding="async">`;
-    return `<figure class="match-recap-media ${isVideo ? "is-video" : "is-image"}">${media}${matchMediaScorebug(match, asset)}<figcaption><span>${isVideo ? "لقطة فيديو" : "صورة المباراة"}</span><b>${escapeHtml(label)}</b></figcaption></figure>`;
+    const eventOverlay = goalEvent
+      ? `<div class="recap-video-event-layer" data-recap-video-event aria-live="polite">${broadcastEventMarkup(goalEvent)}</div>`
+      : "";
+    return `<figure class="match-recap-media ${isVideo ? "is-video" : "is-image"}">${media}${matchMediaScorebug(match, asset)}${eventOverlay}<figcaption><span>${isVideo ? "لقطة فيديو" : "صورة المباراة"}</span><b>${escapeHtml(label)}</b></figcaption></figure>`;
+  }
+
+  function mountRecapVideoEvents(root = main) {
+    root.querySelectorAll(".match-recap-media.is-video").forEach((figure) => {
+      if (figure.dataset.eventMounted === "true") return;
+      const video = figure.querySelector("video");
+      const layer = figure.querySelector("[data-recap-video-event]");
+      const card = layer?.querySelector(".broadcast-event-card");
+      if (!video || !card) return;
+      figure.dataset.eventMounted = "true";
+      let shown = false;
+      let hideTimer = 0;
+      const hide = () => {
+        window.clearTimeout(hideTimer);
+        card.classList.remove("is-visible");
+        card.classList.add("is-leaving");
+      };
+      const reset = () => {
+        window.clearTimeout(hideTimer);
+        shown = false;
+        card.classList.remove("is-visible", "is-leaving");
+      };
+      const reveal = () => {
+        if (shown || video.currentTime < 0.65) return;
+        shown = true;
+        card.classList.remove("is-leaving");
+        requestAnimationFrame(() => card.classList.add("is-visible"));
+        hideTimer = window.setTimeout(hide, 6200);
+      };
+      video.addEventListener("timeupdate", reveal, { passive: true });
+      video.addEventListener("playing", reveal, { passive: true });
+      video.addEventListener("seeking", () => { if (video.currentTime < 0.4) reset(); }, { passive: true });
+      video.addEventListener("ended", reset, { passive: true });
+    });
   }
 
   function matchRecap(match, events) {
@@ -589,7 +661,7 @@
       const assist = assistEventName(event);
       return `<li><span>${image(team?.logo_url, team?.name || "الفريق")}</span><b>${escapeHtml(scorer || "لاعب غير محدد")}</b><em>${event.minute == null ? "—" : `${escapeHtml(event.minute)}′`}</em>${assist ? `<small>صناعة · ${escapeHtml(assist)}</small>` : ""}</li>`;
     }).join("");
-    const gallery = mediaItems.length ? `<div class="match-recap-gallery" aria-label="صور وفيديوهات المباراة">${mediaItems.map((asset, index) => matchMediaItem(match, asset, index)).join("")}</div>` : "";
+    const gallery = mediaItems.length ? `<div class="match-recap-gallery" aria-label="صور وفيديوهات المباراة">${mediaItems.map((asset, index) => matchMediaItem(match, asset, index, events)).join("")}</div>` : "";
     const editorial = published && (match.recap_title || match.recap_text || mediaItems.length)
       ? `<div class="match-recap-story"><span class="eyebrow">MATCH STORY</span><h3>${escapeHtml(match.recap_title || `ملخص ${home.name} × ${away.name}`)}</h3>${match.recap_text ? `<p>${escapeHtml(match.recap_text).replace(/\n/g, "<br>")}</p>` : ""}${gallery}</div>`
       : `<div class="match-recap-empty"><span>${icon("news")}</span><div><b>الملخص المصور</b><p>${match.status === "قادمة" ? "سيُنشر ملخص المباراة والصور واللقطات هنا بعد انطلاق اللقاء." : "سيُنشر التقرير والصور والفيديوهات الرسمية لهذه المباراة هنا فور اعتمادها."}</p></div></div>`;
@@ -865,7 +937,10 @@
     if (parts[0] !== "match" || parts[1] !== matchId) return false;
     const match = getMatch(matchId);
     const content = main.querySelector("[data-match-tab-content]");
-    if (match && content) content.innerHTML = matchTabContent(match, parts[2] || "summary");
+    if (match && content) {
+      content.innerHTML = matchTabContent(match, parts[2] || "summary");
+      queueMicrotask(() => mountRecapVideoEvents(content));
+    }
     return true;
   }
 
@@ -881,7 +956,10 @@
     const labels = liveStreamCopy();
     const streamAction = streamLive ? `<button class="watch-stream-button" type="button" data-stream-jump="matchLiveStream"><span class="live-dot" aria-hidden="true"></span>${escapeHtml(labels.watch)}</button>` : "";
     main.innerHTML = `<div class="page-shell"><section class="match-center-hero" style="--t-accent:${escapeHtml(tournament?.accent_color || "#c7ff37")}"><div class="match-center-heading"><button class="back-button" type="button" data-route="tournament/${tournament?.slug || ""}/matches">${icon("back")} ${escapeHtml(tournament?.short_name || "المباريات")}</button><button class="icon-button" type="button" data-share="${location.href}" aria-label="مشاركة المباراة">${icon("share")}</button></div><div class="match-center-teams"><div class="match-center-team" data-route="team/${home.id}"><span class="team-logo-large">${image(home.logo_url, home.name, { eager: true })}</span><b>${escapeHtml(home.name)}</b></div><div class="match-center-score">${scoreMarkup(match)}<span class="status-pill ${statusClass(match.status)}">${streamLive ? '<span class="live-dot" aria-hidden="true"></span>LIVE · ' : ""}${escapeHtml(match.status)}</span></div><div class="match-center-team" data-route="team/${away.id}"><span class="team-logo-large">${image(away.logo_url, away.name, { eager: true })}</span><b>${escapeHtml(away.name)}</b></div></div><div class="match-facts"><span>${icon("calendar", "button-icon")} ${escapeHtml(formatDate(match.match_date))}</span><span>${icon("clock", "button-icon")} ${escapeHtml(formatTime(match.match_time))}</span>${match.venue ? `<span>${icon("pin", "button-icon")} ${escapeHtml(match.venue)}</span>` : ""}<span>${escapeHtml(match.stage || match.round_name || "المباراة")}</span>${streamAction}</div></section>${liveStreamBlock(match, home, away, tournament)}<div class="section-block app-tabs">${tabs.map(([key, label]) => `<button type="button" class="${tab === key ? "active" : ""}" data-route="match/${match.id}/${key}">${label}</button>`).join("")}</div><div data-match-tab-content>${content}</div></div>`;
-    if (streamLive) queueMicrotask(() => window.AGCH_LIVE_STREAM?.mount("matchLiveStream"));
+    queueMicrotask(() => {
+      mountRecapVideoEvents(main);
+      if (streamLive) window.AGCH_LIVE_STREAM?.mount("matchLiveStream");
+    });
   }
 
   function renderStats(type = "scorers") {

@@ -725,6 +725,8 @@ a { color: inherit; }
 .match-recap-gallery>figure:hover>img{transform:scale(1.035)}
 .match-recap-gallery .is-video{grid-column:1/-1;aspect-ratio:16/9}
 .match-recap-gallery video{background:#000;object-fit:contain}
+.recap-video-event-layer{position:absolute;z-index:6;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:12px 14px 11%;overflow:hidden;direction:rtl;pointer-events:none}
+.recap-video-event-layer .broadcast-event-card{width:min(500px,96%)}
 .match-recap-gallery figcaption{position:absolute;z-index:3;inset:auto 0 0;display:grid;gap:2px;padding:28px 12px 9px;background:linear-gradient(transparent,rgba(0,0,0,.92));color:#fff;pointer-events:none}
 .match-recap-gallery figcaption span{color:var(--recap-accent);font-size:7px;font-weight:1000;letter-spacing:.8px}
 .match-recap-gallery figcaption b{overflow:hidden;text-overflow:ellipsis;font-size:9px;white-space:nowrap}
