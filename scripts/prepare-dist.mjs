@@ -45,6 +45,7 @@ const files = [
   "standings-fairplay-v9.js",
   "standings-fairplay-v9.css",
   "team-cards-events-hotfix.js",
+  "retired-dual-champions.js",
 ];
 
 await rm(output, { recursive: true, force: true });
