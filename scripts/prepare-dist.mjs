@@ -10,6 +10,7 @@ const files = [
   "styles.css",
   "public-app.js",
   "match-media-score-fix.js",
+  "match-media-ui-fix.js",
   "welcome-screen.js",
   "referee-system-v2.js",
   "live-stream.js",
