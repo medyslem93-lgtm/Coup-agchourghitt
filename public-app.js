@@ -545,13 +545,38 @@
     return asset?.media_type === "video" || String(asset?.kind || "").includes("video") || /\.(mp4|webm|mov|m4v)(\?|$)/i.test(asset?.public_url || asset?.path || "") ? "video" : "image";
   }
 
-  function matchMediaScorebug(match, asset) {
+  function matchMediaScoreState(match, asset, events = []) {
+    const rawMinute = asset?.captured_minute;
+    const capturedMinute = rawMinute == null || rawMinute === "" ? null : Number(rawMinute);
+    if (Number.isFinite(capturedMinute)) {
+      let homeScore = 0;
+      let awayScore = 0;
+      events
+        .filter((event) => ["هدف", "هدف عكسي", "ركلة جزاء مسجلة"].includes(event.type) && event.minute != null && Number(event.minute) <= capturedMinute)
+        .sort((a, b) => Number(a.minute) - Number(b.minute) || String(a.created_at || "").localeCompare(String(b.created_at || "")))
+        .forEach((event) => {
+          let scoringTeamId = event.team_id;
+          if (event.type === "هدف عكسي") scoringTeamId = event.team_id === match.team_a_id ? match.team_b_id : match.team_a_id;
+          if (scoringTeamId === match.team_a_id) homeScore += 1;
+          if (scoringTeamId === match.team_b_id) awayScore += 1;
+        });
+      return { homeScore, awayScore, minute: capturedMinute };
+    }
+    return {
+      homeScore: asset?.score_a == null ? score(match.score_a) : score(asset.score_a),
+      awayScore: asset?.score_b == null ? score(match.score_b) : score(asset.score_b),
+      minute: match.minute == null ? null : Number(match.minute),
+    };
+  }
+
+  function matchMediaScorebug(match, asset, events = []) {
     const home = teamForSide(match, "a");
     const away = teamForSide(match, "b");
     const tournament = getTournament(match.tournament_id);
-    const homeScore = asset.score_a == null ? score(match.score_a) : score(asset.score_a);
-    const awayScore = asset.score_b == null ? score(match.score_b) : score(asset.score_b);
-    const minute = asset.captured_minute == null ? match.minute : asset.captured_minute;
+    const snapshot = matchMediaScoreState(match, asset, events);
+    const homeScore = snapshot.homeScore;
+    const awayScore = snapshot.awayScore;
+    const minute = snapshot.minute;
     const timeLabel = minute == null ? (match.status === "انتهت" ? "FT" : formatTime(match.match_time)) : `${minute}:00`;
     return `<div class="recap-media-scorebug" aria-label="${escapeHtml(`${home.name} ${homeScore} - ${awayScore} ${away.name}، ${timeLabel}`)}">
       <span class="recap-media-team recap-media-home"><i>${image(home.logo_url, home.name)}</i><b>${escapeHtml(home.name)}</b></span>
@@ -595,15 +620,16 @@
     return goals.length === 1 ? goals[0] : null;
   }
 
-  function matchMediaGoalTransition(match, asset, event) {
+  function matchMediaGoalTransition(match, asset, event, events = []) {
     const home = teamForSide(match, "a");
     const away = teamForSide(match, "b");
     const tournament = getTournament(match.tournament_id);
     const team = getTeam(event.team_id);
     const player = getPlayer(event.player_id);
     const scorer = player?.name || event.player_name || "مسجل الهدف";
-    const homeScore = asset.score_a == null ? score(match.score_a) : score(asset.score_a);
-    const awayScore = asset.score_b == null ? score(match.score_b) : score(asset.score_b);
+    const snapshot = matchMediaScoreState(match, asset, events);
+    const homeScore = snapshot.homeScore;
+    const awayScore = snapshot.awayScore;
     const minute = event.minute ?? asset.captured_minute;
     const tournamentLogo = tournament?.logo_url || state.settings.logo_url;
     return `<div class="recap-goal-transition" data-goal-transition aria-hidden="true">
@@ -633,9 +659,9 @@
       ? `<video src="${url}" controls playsinline preload="metadata" aria-label="${escapeHtml(label)}">متصفحك لا يدعم تشغيل الفيديو.</video>`
       : `<img src="${url}" alt="${escapeHtml(asset.caption || `صورة المباراة ${index + 1}`)}" loading="lazy" decoding="async">`;
     const eventOverlay = goalEvent
-      ? `<div class="recap-video-event-layer" data-recap-video-event aria-live="polite">${matchMediaGoalTransition(match, asset, goalEvent)}${broadcastEventMarkup(goalEvent)}</div>`
+      ? `<div class="recap-video-event-layer" data-recap-video-event aria-live="polite">${matchMediaGoalTransition(match, asset, goalEvent, events)}${broadcastEventMarkup(goalEvent)}</div>`
       : "";
-    return `<figure class="match-recap-media ${isVideo ? "is-video" : "is-image"}">${media}${matchMediaScorebug(match, asset)}${eventOverlay}<figcaption><span>${isVideo ? "لقطة فيديو" : "صورة المباراة"}</span><b>${escapeHtml(label)}</b></figcaption></figure>`;
+    return `<figure class="match-recap-media ${isVideo ? "is-video" : "is-image"}">${media}${matchMediaScorebug(match, asset, events)}${eventOverlay}<figcaption><span>${isVideo ? "لقطة فيديو" : "صورة المباراة"}</span><b>${escapeHtml(label)}</b></figcaption></figure>`;
   }
 
   function mountRecapVideoEvents(root = main) {
