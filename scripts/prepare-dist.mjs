@@ -61,8 +61,11 @@ const adminIndexPath = resolve(output, "admin/index.html");
 let adminIndex = await readFile(adminIndexPath, "utf8");
 if (!adminIndex.includes("breaking-news-admin.js")) {
   adminIndex = adminIndex.replace("</body>", '<script src="/admin/breaking-news-admin.js?v=20260910-1"></script></body>');
-  await writeFile(adminIndexPath, adminIndex);
 }
+if (!adminIndex.includes("retired-category.js")) {
+  adminIndex = adminIndex.replace("</body>", '<script src="/admin/retired-category.js?v=20260918-1"></script></body>');
+}
+await writeFile(adminIndexPath, adminIndex);
 
 await mkdir(resolve(output, "vendor"), { recursive: true });
 await cp(resolve(root, "node_modules/@supabase/supabase-js/dist/umd/supabase.js"),resolve(output, "vendor/supabase.js"));
