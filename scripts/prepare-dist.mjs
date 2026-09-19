@@ -9,6 +9,8 @@ const files = [
   "index.html",
   "styles.css",
   "public-app.js",
+  "fan-experience.js",
+  "fan-experience.css",
   "match-media-score-fix.js",
   "match-media-ui-fix.js",
   "welcome-screen.js",
@@ -60,9 +62,11 @@ publicIndex = publicIndex
   .replace(/<style>html\.agh-welcome-pending[\s\S]*?<\/style>\s*/i, "")
   .replace(/<script>try\{if\(localStorage\.getItem\('agh_welcome_2026_v1'\)[\s\S]*?<\/script>\s*/i, "")
   .replace(/<script src=["']welcome-screen\.js[^"']*["']><\/script>\s*/i, "")
-  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260919-pot3")
+  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260919-fan1")
   .replace(/player-of-tournament\.css\?v=[^"']+/g, "player-of-tournament.css?v=20260919-3")
-  .replace(/player-of-tournament\.js\?v=[^"']+/g, "player-of-tournament.js?v=20260919-3");
+  .replace(/player-of-tournament\.js\?v=[^"']+/g, "player-of-tournament.js?v=20260919-3")
+  .replace(/fan-experience\.css\?v=[^"']+/g, "fan-experience.css?v=20260919-1")
+  .replace(/fan-experience\.js\?v=[^"']+/g, "fan-experience.js?v=20260919-1");
 if (!publicIndex.includes("breaking-news-live.js")) {
   publicIndex = publicIndex.replace("</body>", '<script src="breaking-news-live.js?v=20260910-1"></script></body>');
 }
