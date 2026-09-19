@@ -73,11 +73,12 @@
       if (['tournaments','matches','watch','following','follows','profile'].includes(r || '')) card.hidden = true;
     });
     const title = main.querySelector('.agh-dir-page-head h1');
-    if (title) title.textContent = 'المزيد';
+    if (title && title.textContent !== 'المزيد') title.textContent = 'المزيد';
     const hero = main.querySelector('.agh-dir-hero h2');
-    if (hero) hero.textContent = 'الأقسام الأخرى';
+    if (hero && hero.textContent !== 'الأقسام الأخرى') hero.textContent = 'الأقسام الأخرى';
+    const introText = 'الفرق واللاعبون والحكام والإحصائيات والأخبار؛ الأقسام التي لا تحتاجها في الشريط الرئيسي.';
     const intro = main.querySelector('.agh-dir-page-head p');
-    if (intro) intro.textContent = 'الفرق واللاعبون والحكام والإحصائيات والأخبار؛ الأقسام التي لا تحتاجها في الشريط الرئيسي.';
+    if (intro && intro.textContent !== introText) intro.textContent = introText;
   }
 
   function profileFollowingHub() {
