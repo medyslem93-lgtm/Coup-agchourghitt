@@ -1,4 +1,4 @@
-const CACHE = "agchorguit-premium-v29-20260918-media-goal-download";
+const CACHE = "agchorguit-premium-v30-20260919-visitors";
 const CORE = [
   "./",
   "index.html",
@@ -12,7 +12,6 @@ const CORE = [
   "public-app.js?v=20260918-recap2",
   "match-media-score-fix.js?v=20260918-2",
   "road-to-cup.js?v=20260917-stages1",
-  "welcome-screen.js?v=20260916-intro1",
   "featured-final-hotfix.js?v=20260915-final2",
   "live-stream.js?v=20260915-score1",
   "config.js",
