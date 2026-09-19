@@ -46,6 +46,8 @@ const files = [
   "standings-fairplay-v9.css",
   "team-cards-events-hotfix.js",
   "retired-dual-champions.js",
+  "player-of-tournament.js",
+  "player-of-tournament.css",
 ];
 
 await rm(output, { recursive: true, force: true });
@@ -58,9 +60,15 @@ publicIndex = publicIndex
   .replace(/<style>html\.agh-welcome-pending[\s\S]*?<\/style>\s*/i, "")
   .replace(/<script>try\{if\(localStorage\.getItem\('agh_welcome_2026_v1'\)[\s\S]*?<\/script>\s*/i, "")
   .replace(/<script src=["']welcome-screen\.js[^"']*["']><\/script>\s*/i, "")
-  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260919-visitors1");
+  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260919-pot1");
 if (!publicIndex.includes("breaking-news-live.js")) {
   publicIndex = publicIndex.replace("</body>", '<script src="breaking-news-live.js?v=20260910-1"></script></body>');
+}
+if (!publicIndex.includes("player-of-tournament.css")) {
+  publicIndex = publicIndex.replace("</head>", '<link rel="stylesheet" href="player-of-tournament.css?v=20260919-1"></head>');
+}
+if (!publicIndex.includes("player-of-tournament.js")) {
+  publicIndex = publicIndex.replace("</body>", '<script src="player-of-tournament.js?v=20260919-1"></script></body>');
 }
 await writeFile(publicIndexPath, publicIndex);
 
@@ -74,6 +82,12 @@ if (!adminIndex.includes("retired-category.js")) {
 }
 if (!adminIndex.includes("visitors-panel.js")) {
   adminIndex = adminIndex.replace("</body>", '<script src="/admin/visitors-panel.js?v=20260919-1"></script></body>');
+}
+if (!adminIndex.includes("player-of-tournament-admin.css")) {
+  adminIndex = adminIndex.replace("</head>", '<link rel="stylesheet" href="/admin/player-of-tournament-admin.css?v=20260919-1"></head>');
+}
+if (!adminIndex.includes("player-of-tournament-admin.js")) {
+  adminIndex = adminIndex.replace("</body>", '<script src="/admin/player-of-tournament-admin.js?v=20260919-1"></script></body>');
 }
 await writeFile(adminIndexPath, adminIndex);
 
