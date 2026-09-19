@@ -11,6 +11,7 @@ const files = [
   "public-app.js",
   "fan-experience.js",
   "fan-experience.css",
+  "fan-route-guard.js",
   "match-media-score-fix.js",
   "match-media-ui-fix.js",
   "welcome-screen.js",
@@ -66,7 +67,8 @@ publicIndex = publicIndex
   .replace(/player-of-tournament\.css\?v=[^"']+/g, "player-of-tournament.css?v=20260919-3")
   .replace(/player-of-tournament\.js\?v=[^"']+/g, "player-of-tournament.js?v=20260919-3")
   .replace(/fan-experience\.css\?v=[^"']+/g, "fan-experience.css?v=20260919-1")
-  .replace(/fan-experience\.js\?v=[^"']+/g, "fan-experience.js?v=20260919-1");
+  .replace(/fan-experience\.js\?v=[^"']+/g, "fan-experience.js?v=20260919-1")
+  .replace(/fan-route-guard\.js\?v=[^"']+/g, "fan-route-guard.js?v=20260919-1");
 if (!publicIndex.includes("breaking-news-live.js")) {
   publicIndex = publicIndex.replace("</body>", '<script src="breaking-news-live.js?v=20260910-1"></script></body>');
 }
