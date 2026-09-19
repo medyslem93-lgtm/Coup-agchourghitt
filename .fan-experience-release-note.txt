@@ -1,6 +1,0 @@
-Fan experience release 2026-09-19
-- Additive JS/CSS only; existing public-app.js and database schema are untouched.
-- Adds local device fan profile without email requirement.
-- Adds Watch hub for live streams, recaps and media already stored in Supabase.
-- Adds player follow actions and personalized home/follows sections.
-- Vercel preview build validates fan-experience.js with node --check and production bundle asset checks.
