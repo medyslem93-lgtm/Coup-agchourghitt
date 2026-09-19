@@ -1,4 +1,4 @@
-const CACHE = "agchorguit-premium-v30-20260919-visitors";
+const CACHE = "agchorguit-premium-v31-20260919-tournament-hub";
 const CORE = [
   "./",
   "index.html",
@@ -9,7 +9,12 @@ const CORE = [
   "team-of-week-v6.css?v=20260915-1",
   "goal-of-round-v7.css?v=20260915-1",
   "standings-fairplay-v9.css?v=20260915-1",
+  "fan-experience.css?v=20260919-1",
+  "tournament-experience.css?v=20260919-2",
   "public-app.js?v=20260918-recap2",
+  "fan-experience.js?v=20260919-1",
+  "fan-route-guard.js?v=20260919-1",
+  "tournament-experience.js?v=20260919-2",
   "match-media-score-fix.js?v=20260918-2",
   "road-to-cup.js?v=20260917-stages1",
   "featured-final-hotfix.js?v=20260915-final2",
