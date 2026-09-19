@@ -54,10 +54,15 @@ await Promise.all(files.map((entry) => cp(resolve(root, entry), resolve(output, 
 
 const publicIndexPath = resolve(output, "index.html");
 let publicIndex = await readFile(publicIndexPath, "utf8");
+publicIndex = publicIndex
+  .replace(/<style>html\.agh-welcome-pending[\s\S]*?<\/style>\s*/i, "")
+  .replace(/<script>try\{if\(localStorage\.getItem\('agh_welcome_2026_v1'\)[\s\S]*?<\/script>\s*/i, "")
+  .replace(/<script src=["']welcome-screen\.js[^"']*["']><\/script>\s*/i, "")
+  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260919-visitors1");
 if (!publicIndex.includes("breaking-news-live.js")) {
   publicIndex = publicIndex.replace("</body>", '<script src="breaking-news-live.js?v=20260910-1"></script></body>');
-  await writeFile(publicIndexPath, publicIndex);
 }
+await writeFile(publicIndexPath, publicIndex);
 
 const adminIndexPath = resolve(output, "admin/index.html");
 let adminIndex = await readFile(adminIndexPath, "utf8");
@@ -66,6 +71,9 @@ if (!adminIndex.includes("breaking-news-admin.js")) {
 }
 if (!adminIndex.includes("retired-category.js")) {
   adminIndex = adminIndex.replace("</body>", '<script src="/admin/retired-category.js?v=20260918-1"></script></body>');
+}
+if (!adminIndex.includes("visitors-panel.js")) {
+  adminIndex = adminIndex.replace("</body>", '<script src="/admin/visitors-panel.js?v=20260919-1"></script></body>');
 }
 await writeFile(adminIndexPath, adminIndex);
 
