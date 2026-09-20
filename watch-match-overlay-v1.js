@@ -6,7 +6,7 @@
 
   const db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, {
     auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: { 'x-client-info': 'aghchorguit-watch-match-overlay-v1' } },
+    global: { headers: { 'x-client-info': 'aghchorguit-watch-match-overlay-v2' } },
   });
 
   const state = {
@@ -16,16 +16,14 @@
     pollTimer: 0,
     eventTimer: 0,
     fired: new Set(),
+    seenEventIds: new Set(),
     events: [],
     match: null,
     teamA: null,
     teamB: null,
     tournament: null,
+    asset: null,
   };
-
-  const esc = (value = '') => String(value ?? '').replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[c]));
 
   const cleanUrl = (value = '') => {
     try {
@@ -39,6 +37,7 @@
 
   const asNumber = (...values) => {
     for (const value of values) {
+      if (value === null || value === undefined || value === '') continue;
       const n = Number(value);
       if (Number.isFinite(n)) return n;
     }
@@ -59,10 +58,23 @@
     e?.event_type ?? e?.type ?? e?.kind ?? e?.action ?? e?.event ?? '',
   ).trim().toLowerCase();
 
-  const isGoal = (e) => {
+  function eventMeta(e) {
     const t = eventType(e);
-    return /goal|هدف|penalty_goal|penalty goal|ركلة جزاء.*هدف|هدف.*جزاء|own_goal|own goal|هدف عكسي/.test(t);
-  };
+    if (/هدف عكسي|own[_ ]?goal/.test(t)) return { key: 'goal', icon: '⚽', label: 'هدف عكسي!' };
+    if (/ركلة جزاء مسجلة|penalty[_ ]?goal|penalty goal/.test(t)) return { key: 'goal', icon: '⚽', label: 'هدف من ركلة جزاء!' };
+    if (/هدف|goal/.test(t)) return { key: 'goal', icon: '⚽', label: 'هدف!' };
+    if (/بطاقة صفراء|yellow/.test(t)) return { key: 'yellow', icon: '🟨', label: 'بطاقة صفراء' };
+    if (/بطاقة حمراء|red/.test(t)) return { key: 'red', icon: '🟥', label: 'بطاقة حمراء' };
+    if (/تبديل|substitution|sub\b/.test(t)) return { key: 'sub', icon: '🔁', label: 'تبديل' };
+    if (/بداية المباراة|kick.?off|match start/.test(t)) return { key: 'start', icon: '▶', label: 'بداية المباراة' };
+    if (/نهاية الشوط|half.?time|end half/.test(t)) return { key: 'half', icon: '⏸', label: 'نهاية الشوط' };
+    if (/نهاية المباراة|full.?time|match end/.test(t)) return { key: 'final', icon: '✅', label: 'نهاية المباراة' };
+    if (/var/.test(t)) return { key: 'var', icon: '📺', label: 'VAR' };
+    if (/تمريرة حاسمة|assist/.test(t)) return { key: 'assist', icon: '🎯', label: 'تمريرة حاسمة' };
+    return null;
+  }
+
+  const isGoal = (e) => eventMeta(e)?.key === 'goal';
 
   const eventTeamId = (e) =>
     e?.scoring_team_id ?? e?.beneficiary_team_id ?? e?.team_id ?? e?.club_id ?? null;
@@ -89,15 +101,10 @@
     const s = String(match?.status || '').trim();
     const streamLive = match?.stream_enabled && String(match?.stream_status || '').toLowerCase() === 'live';
     if (s === 'مباشر' || /live|مباشر/.test(s.toLowerCase()) || streamLive) return 'LIVE';
-    if (s === 'انتهت' || /finished|final|ft|منته/.test(s.toLowerCase())) {
-      const k = String(asset?.kind || '').toLowerCase();
-      return /summary|recap|highlight|ملخص|هدف|goal/.test(k) ? 'ملخص' : 'FT';
-    }
-    return /summary|recap|highlight|ملخص|هدف|goal/.test(String(asset?.kind || '').toLowerCase()) ? 'ملخص' : (s || 'فيديو');
-  }
-
-  function logo(team) {
-    return esc(team?.logo_url || 'assets/logo-placeholder.svg');
+    const k = `${asset?.kind || ''} ${asset?.caption || ''}`.toLowerCase();
+    if (/summary|recap|highlight|ملخص|لقطة|هدف|goal/.test(k)) return 'ملخص';
+    if (s === 'انتهت' || /finished|final|ft|منته/.test(s.toLowerCase())) return 'FT';
+    return s || 'فيديو';
   }
 
   function ensureStyles() {
@@ -105,26 +112,33 @@
     const style = document.createElement('style');
     style.id = 'aghMatchOverlayStyles';
     style.textContent = `
-      .agh-watch-match-overlay{position:absolute;inset:0;z-index:3;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:12px 12px 58px;color:#fff;font-family:Cairo,sans-serif;text-shadow:0 1px 3px rgba(0,0,0,.55)}
+      .agh-watch-match-overlay{position:absolute;inset:0;z-index:3;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:12px 12px 58px;color:#fff;font-family:Cairo,sans-serif;text-shadow:0 1px 3px rgba(0,0,0,.58)}
       .agh-watch-overlay-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-left:48px}
-      .agh-watch-overlay-chip{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:5px 9px;border-radius:999px;background:rgba(5,8,7,.72);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(9px);font-size:10px;font-weight:900;white-space:nowrap}
+      .agh-watch-overlay-chip{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:5px 9px;border-radius:999px;background:rgba(5,8,7,.74);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(9px);font-size:10px;font-weight:900;white-space:nowrap}
       .agh-watch-overlay-status.is-live{background:#d92323;border-color:#ff5656;box-shadow:0 0 0 4px rgba(217,35,35,.12)}
       .agh-watch-overlay-status.is-live:before{content:"";width:6px;height:6px;border-radius:50%;background:#fff;animation:aghOverlayPulse 1.2s ease-in-out infinite}
       @keyframes aghOverlayPulse{50%{opacity:.25}}
-      .agh-watch-overlay-bottom{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:9px;width:min(620px,96%);margin:0 auto;padding:9px 11px;border-radius:16px;background:linear-gradient(180deg,rgba(7,10,8,.74),rgba(5,7,6,.88));border:1px solid rgba(255,255,255,.13);backdrop-filter:blur(12px);box-shadow:0 12px 34px rgba(0,0,0,.24)}
+      .agh-watch-overlay-bottom{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:9px;width:min(620px,96%);margin:0 auto;padding:9px 11px;border-radius:16px;background:linear-gradient(180deg,rgba(7,10,8,.76),rgba(5,7,6,.9));border:1px solid rgba(255,255,255,.13);backdrop-filter:blur(12px);box-shadow:0 12px 34px rgba(0,0,0,.24)}
       .agh-watch-overlay-team{display:flex;align-items:center;gap:7px;min-width:0;font-size:11px;font-weight:900}
       .agh-watch-overlay-team:last-child{justify-content:flex-end}
       .agh-watch-overlay-team img{width:29px;height:29px;flex:0 0 29px;object-fit:contain;border-radius:50%;background:#fff;padding:2px}
       .agh-watch-overlay-team span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .agh-watch-overlay-score{display:flex;align-items:center;justify-content:center;min-width:66px;padding:5px 8px;border-radius:10px;background:#0a0d0b;border:1px solid rgba(199,255,55,.26);font:1000 18px/1 Arial,sans-serif;direction:ltr;letter-spacing:.5px;color:#fff}
-      .agh-watch-overlay-event{position:absolute;left:50%;bottom:126px;transform:translateX(-50%);width:min(390px,82%);padding:11px 13px;border-radius:15px;background:linear-gradient(135deg,rgba(13,17,14,.96),rgba(25,31,27,.96));border:1px solid rgba(199,255,55,.35);box-shadow:0 18px 45px rgba(0,0,0,.38);display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:9px;animation:aghGoalIn .3s ease both}
+      .agh-watch-overlay-score{display:flex;align-items:center;justify-content:center;min-width:66px;padding:5px 8px;border-radius:10px;background:#0a0d0b;border:1px solid rgba(199,255,55,.26);font:1000 18px/1 Arial,sans-serif;direction:ltr;letter-spacing:.5px;color:#fff;transition:transform .2s,color .2s}
+      .agh-watch-overlay-score.is-updated{transform:scale(1.14);color:#c7ff37}
+      .agh-watch-overlay-event{position:absolute;left:50%;bottom:126px;transform:translateX(-50%);width:min(410px,84%);padding:11px 13px;border-radius:15px;background:linear-gradient(135deg,rgba(13,17,14,.96),rgba(25,31,27,.96));border:1px solid rgba(199,255,55,.35);box-shadow:0 18px 45px rgba(0,0,0,.38);display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:9px;animation:aghEventIn .3s ease both}
       .agh-watch-overlay-event[hidden]{display:none}
-      .agh-watch-overlay-event-icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(199,255,55,.13);font-size:20px}
+      .agh-watch-overlay-event[data-event-kind="yellow"]{border-color:rgba(255,214,47,.55)}
+      .agh-watch-overlay-event[data-event-kind="red"]{border-color:rgba(255,64,64,.58)}
+      .agh-watch-overlay-event[data-event-kind="sub"]{border-color:rgba(83,207,255,.52)}
+      .agh-watch-overlay-event-icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(199,255,55,.12);font-size:20px}
       .agh-watch-overlay-event-copy{display:grid;gap:2px;min-width:0}
       .agh-watch-overlay-event-copy b{font-size:13px;color:#c7ff37}
+      .agh-watch-overlay-event[data-event-kind="yellow"] .agh-watch-overlay-event-copy b{color:#ffd72f}
+      .agh-watch-overlay-event[data-event-kind="red"] .agh-watch-overlay-event-copy b{color:#ff6666}
+      .agh-watch-overlay-event[data-event-kind="sub"] .agh-watch-overlay-event-copy b{color:#64d9ff}
       .agh-watch-overlay-event-copy span{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .agh-watch-overlay-event-minute{font-size:12px;font-weight:1000}
-      @keyframes aghGoalIn{from{opacity:0;transform:translate(-50%,14px) scale(.97)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+      @keyframes aghEventIn{from{opacity:0;transform:translate(-50%,14px) scale(.97)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
       .agh-watch-close{z-index:6!important}
       @media(max-width:640px){
         .agh-watch-match-overlay{padding:9px 9px 52px}
@@ -134,7 +148,7 @@
         .agh-watch-overlay-team{font-size:9px;gap:5px}
         .agh-watch-overlay-team img{width:24px;height:24px;flex-basis:24px}
         .agh-watch-overlay-score{min-width:55px;font-size:16px;padding:5px 6px}
-        .agh-watch-overlay-event{bottom:106px;width:88%;grid-template-columns:34px minmax(0,1fr) auto;padding:9px 10px}
+        .agh-watch-overlay-event{bottom:106px;width:90%;grid-template-columns:34px minmax(0,1fr) auto;padding:9px 10px}
         .agh-watch-overlay-event-icon{width:34px;height:34px;font-size:18px}
       }
     `;
@@ -157,8 +171,8 @@
         <span class="agh-watch-overlay-chip" data-ov-minute>—</span>
       </div>
       <div class="agh-watch-overlay-event" data-ov-event hidden>
-        <span class="agh-watch-overlay-event-icon">⚽</span>
-        <span class="agh-watch-overlay-event-copy"><b>هدف!</b><span data-ov-event-text></span></span>
+        <span class="agh-watch-overlay-event-icon" data-ov-event-icon>⚽</span>
+        <span class="agh-watch-overlay-event-copy"><b data-ov-event-title>هدف!</b><span data-ov-event-text></span></span>
         <span class="agh-watch-overlay-event-minute" data-ov-event-minute></span>
       </div>
       <div class="agh-watch-overlay-bottom">
@@ -177,18 +191,20 @@
     state.eventTimer = 0;
     state.contextKey = '';
     state.fired.clear();
+    state.seenEventIds.clear();
     state.events = [];
     state.match = null;
     state.teamA = null;
     state.teamB = null;
     state.tournament = null;
+    state.asset = null;
     const overlay = document.querySelector('.agh-watch-match-overlay');
     if (overlay) overlay.hidden = true;
   }
 
   async function loadAssets() {
     if (state.assetsLoaded) return state.assets;
-    const { data, error } = await db.from('media_assets').select('*').eq('entity_type', 'match').order('created_at', { ascending: false }).limit(200);
+    const { data, error } = await db.from('media_assets').select('*').eq('entity_type', 'match').order('created_at', { ascending: false }).limit(220);
     if (!error) {
       state.assets = data || [];
       state.assetsLoaded = true;
@@ -209,12 +225,10 @@
   }
 
   async function loadEvents(matchId) {
-    for (const table of ['match_events', 'match_timeline', 'events']) {
-      try {
-        const { data, error } = await db.from(table).select('*').eq('match_id', matchId);
-        if (!error && Array.isArray(data)) return data.sort((a, b) => eventMinute(a) - eventMinute(b));
-      } catch {}
-    }
+    try {
+      const { data, error } = await db.from('match_events').select('*').eq('match_id', matchId).order('minute', { ascending: true }).order('created_at', { ascending: true });
+      if (!error && Array.isArray(data)) return data;
+    } catch {}
     return [];
   }
 
@@ -239,14 +253,31 @@
     };
   }
 
+  function scoreForAsset(asset, match) {
+    if (asset && (asset.score_a != null || asset.score_b != null)) {
+      return { a: asNumber(asset.score_a), b: asNumber(asset.score_b) };
+    }
+    return scoreFromMatch(match);
+  }
+
+  function minuteForAsset(asset, match) {
+    if (asset?.captured_minute != null) return asNumber(asset.captured_minute);
+    return matchMinute(match);
+  }
+
   function timelineScores(events, match) {
     let a = 0;
     let b = 0;
     const teamAId = match?.team_a_id ?? match?.home_team_id;
     const teamBId = match?.team_b_id ?? match?.away_team_id;
-    const goals = events.filter(isGoal).sort((x, y) => eventMinute(x) - eventMinute(y));
+    const sorted = [...events].sort((x, y) => eventMinute(x) - eventMinute(y));
 
-    goals.forEach((e) => {
+    sorted.forEach((e) => {
+      if (!isGoal(e)) {
+        e.__score_a = a;
+        e.__score_b = b;
+        return;
+      }
       const explicitA = e?.score_a ?? e?.home_score ?? e?.team_a_score ?? e?.score_home;
       const explicitB = e?.score_b ?? e?.away_score ?? e?.team_b_score ?? e?.score_away;
       if (explicitA != null || explicitB != null) {
@@ -262,17 +293,17 @@
       e.__score_a = a;
       e.__score_b = b;
     });
-    return goals;
+    return sorted;
   }
 
   function renderOverlay() {
     const overlay = ensureOverlay();
     if (!overlay || !state.match) return;
     const match = state.match;
-    const asset = assetForUrl(document.getElementById('aghWatchModal')?.dataset.url || '');
-    const finalScore = scoreFromMatch(match);
+    const asset = state.asset;
+    const score = scoreForAsset(asset, match);
     const status = statusLabel(match, asset);
-    const minute = matchMinute(match);
+    const minute = minuteForAsset(asset, match);
 
     overlay.querySelector('[data-ov-status]').textContent = status;
     overlay.querySelector('[data-ov-status]').classList.toggle('is-live', status === 'LIVE');
@@ -280,95 +311,148 @@
     overlay.querySelector('[data-ov-minute]').textContent = status === 'FT' ? 'نهاية' : (minute ? `${minute}'` : (status === 'ملخص' ? 'ملخص' : '—'));
     overlay.querySelector('[data-ov-a-name]').textContent = state.teamA?.name || 'الفريق الأول';
     overlay.querySelector('[data-ov-b-name]').textContent = state.teamB?.name || 'الفريق الثاني';
-    overlay.querySelector('[data-ov-a-logo]').src = logo(state.teamA);
-    overlay.querySelector('[data-ov-b-logo]').src = logo(state.teamB);
-    overlay.querySelector('[data-ov-score]').textContent = `${finalScore.a} - ${finalScore.b}`;
+    overlay.querySelector('[data-ov-a-logo]').src = state.teamA?.logo_url || 'assets/logo-placeholder.svg';
+    overlay.querySelector('[data-ov-b-logo]').src = state.teamB?.logo_url || 'assets/logo-placeholder.svg';
+    overlay.querySelector('[data-ov-score]').textContent = `${score.a} - ${score.b}`;
     overlay.hidden = false;
   }
 
   function setScore(a, b, minute) {
     const overlay = ensureOverlay();
     if (!overlay) return;
-    overlay.querySelector('[data-ov-score]').textContent = `${a} - ${b}`;
+    const score = overlay.querySelector('[data-ov-score]');
+    score.textContent = `${a} - ${b}`;
+    score.classList.remove('is-updated');
+    void score.offsetHeight;
+    score.classList.add('is-updated');
+    setTimeout(() => score.classList.remove('is-updated'), 700);
     if (minute) overlay.querySelector('[data-ov-minute]').textContent = `${minute}'`;
   }
 
+  function eventDetails(e) {
+    const meta = eventMeta(e);
+    if (!meta) return null;
+    const player = eventPlayerName(e) || e.__player_name || '';
+    const note = String(e?.note || '').trim();
+    if (meta.key === 'goal') {
+      const a = asNumber(e.__score_a);
+      const b = asNumber(e.__score_b);
+      const scorer = player || note || 'تم تسجيل هدف';
+      return { ...meta, text: `${scorer} · ${state.teamA?.name || 'الفريق الأول'} ${a} - ${b} ${state.teamB?.name || 'الفريق الثاني'}` };
+    }
+    if (meta.key === 'final') {
+      const score = scoreFromMatch(state.match);
+      return { ...meta, text: `${state.teamA?.name || 'الفريق الأول'} ${score.a} - ${score.b} ${state.teamB?.name || 'الفريق الثاني'}` };
+    }
+    return { ...meta, text: player || note || meta.label };
+  }
+
   function showEvent(e) {
+    const details = eventDetails(e);
     const overlay = ensureOverlay();
-    if (!overlay) return;
+    if (!overlay || !details) return;
     const box = overlay.querySelector('[data-ov-event]');
-    const player = eventPlayerName(e) || e.__player_name || 'هدف';
     const minute = eventMinute(e);
-    const a = asNumber(e.__score_a, e.score_a, e.home_score);
-    const b = asNumber(e.__score_b, e.score_b, e.away_score);
-    const scoreText = `${state.teamA?.name || 'الفريق الأول'} ${a} - ${b} ${state.teamB?.name || 'الفريق الثاني'}`;
-    box.querySelector('[data-ov-event-text]').textContent = `${player} · ${scoreText}`;
+    box.dataset.eventKind = details.key;
+    box.querySelector('[data-ov-event-icon]').textContent = details.icon;
+    box.querySelector('[data-ov-event-title]').textContent = details.label;
+    box.querySelector('[data-ov-event-text]').textContent = details.text;
     box.querySelector('[data-ov-event-minute]').textContent = minute ? `${minute}'` : '';
     box.hidden = false;
     box.style.animation = 'none';
     void box.offsetHeight;
     box.style.animation = '';
     clearTimeout(state.eventTimer);
-    state.eventTimer = setTimeout(() => { box.hidden = true; }, 3200);
+    state.eventTimer = setTimeout(() => { box.hidden = true; }, details.key === 'goal' ? 3400 : 2600);
+  }
+
+  function eventMatchesClip(e, asset) {
+    if (!asset) return false;
+    const minute = asNumber(asset.captured_minute);
+    if (minute && eventMinute(e) === minute) return true;
+    const caption = String(asset.caption || '').toLowerCase();
+    const meta = eventMeta(e);
+    const player = (eventPlayerName(e) || e.__player_name || '').toLowerCase();
+    if (player && caption.includes(player)) return true;
+    if (!meta) return false;
+    if (meta.key === 'goal' && /هدف|goal/.test(caption)) return true;
+    if (meta.key === 'yellow' && /بطاقة صفراء|yellow/.test(caption)) return true;
+    if (meta.key === 'red' && /بطاقة حمراء|red/.test(caption)) return true;
+    if (meta.key === 'sub' && /تبديل|sub/.test(caption)) return true;
+    return false;
   }
 
   function wireTimeline(video, asset) {
     state.fired.clear();
-    const goals = timelineScores(state.events, state.match);
-    if (!goals.length) return;
+    const events = timelineScores(state.events, state.match).filter((e) => eventMeta(e));
+    if (!events.length) return;
 
-    const assetEventId = asset?.event_id ?? asset?.match_event_id ?? null;
-    const assetKind = String(asset?.kind || '').toLowerCase();
-    const goalClip = /goal|هدف/.test(assetKind) || /هدف/.test(String(asset?.caption || ''));
+    const markers = events.map((e, index) => ({ e, index, second: markerSecond(e) }));
+    const explicit = markers.filter((m) => m.second != null);
+    const clipEvents = events.filter((e) => eventMatchesClip(e, asset));
 
-    const markers = goals.map((e, index) => {
-      let second = markerSecond(e);
-      if (second == null && assetEventId && String(e.id) === String(assetEventId)) second = 0.8;
-      return { e, index, second };
-    });
-
-    const explicit = markers.filter((x) => x.second != null);
-    if (!explicit.length && goalClip) {
-      const candidate = goals.find((e) => {
-        const caption = String(asset?.caption || '');
-        const player = eventPlayerName(e) || e.__player_name || '';
-        return player && caption.includes(player);
-      }) || goals[0];
-      const idx = goals.indexOf(candidate);
-      explicit.push({ e: candidate, index: idx, second: 0.8 });
+    if (!explicit.length && clipEvents.length) {
+      clipEvents.forEach((e, i) => {
+        const idx = events.indexOf(e);
+        explicit.push({ e, index: idx, second: 0.8 + i * 3.5 });
+      });
     }
 
     function onTime() {
       const current = video.currentTime || 0;
-      let usedExplicit = explicit.length > 0;
+      let active = explicit.length > 0;
 
-      if (!usedExplicit && video.duration >= 1500) {
-        const maxMinute = Math.max(40, ...goals.map(eventMinute));
+      if (!active && video.duration >= 1500) {
+        const maxMinute = Math.max(40, ...events.map(eventMinute));
         markers.forEach((m) => {
           m.second = Math.max(0.5, (eventMinute(m.e) / maxMinute) * video.duration);
         });
-        usedExplicit = true;
+        active = true;
       }
 
-      if (!usedExplicit) return;
-      markers.concat(explicit.filter((x) => !markers.includes(x))).forEach((m) => {
-        if (m.second == null || current < m.second || state.fired.has(m.index)) return;
+      if (!active) return;
+      const schedule = [...markers.filter((m) => m.second != null)];
+      explicit.forEach((m) => {
+        if (!schedule.some((x) => x.e === m.e && x.second === m.second)) schedule.push(m);
+      });
+
+      schedule.forEach((m) => {
+        if (current < m.second || state.fired.has(m.index)) return;
         state.fired.add(m.index);
-        setScore(m.e.__score_a, m.e.__score_b, eventMinute(m.e));
+        if (isGoal(m.e)) setScore(m.e.__score_a, m.e.__score_b, eventMinute(m.e));
+        else if (eventMinute(m.e)) ensureOverlay()?.querySelector('[data-ov-minute]')?.replaceChildren(document.createTextNode(`${eventMinute(m.e)}'`));
         showEvent(m.e);
       });
     }
 
-    video.__aghOverlayTimeHandler && video.removeEventListener('timeupdate', video.__aghOverlayTimeHandler);
+    if (video.__aghOverlayTimeHandler) video.removeEventListener('timeupdate', video.__aghOverlayTimeHandler);
     video.__aghOverlayTimeHandler = onTime;
     video.addEventListener('timeupdate', onTime);
+
+    const initial = scoreForAsset(asset, state.match);
+    setScore(initial.a, initial.b, minuteForAsset(asset, state.match));
   }
 
   async function refreshLive(matchId) {
-    const fresh = await one('matches', matchId);
+    const [fresh, freshEvents] = await Promise.all([one('matches', matchId), loadEvents(matchId)]);
     if (!fresh || state.contextKey !== String(matchId)) return;
     state.match = fresh;
+    state.asset = null;
     renderOverlay();
+
+    const normalized = await resolvePlayerNames(freshEvents);
+    const scored = timelineScores(normalized, fresh);
+    const unseen = scored.filter((e) => e.id && !state.seenEventIds.has(e.id) && eventMeta(e));
+    scored.forEach((e) => { if (e.id) state.seenEventIds.add(e.id); });
+    state.events = normalized;
+    if (unseen.length) {
+      const latest = unseen[unseen.length - 1];
+      if (isGoal(latest)) {
+        const score = scoreFromMatch(fresh);
+        setScore(score.a, score.b, matchMinute(fresh) || eventMinute(latest));
+      }
+      showEvent(latest);
+    }
   }
 
   async function attachContext(url) {
@@ -389,11 +473,9 @@
     const match = await one('matches', matchId);
     if (!match || state.contextKey !== contextKey) return;
 
-    const teamAId = match.team_a_id ?? match.home_team_id;
-    const teamBId = match.team_b_id ?? match.away_team_id;
     const [teamA, teamB, tournament, events] = await Promise.all([
-      one('teams', teamAId),
-      one('teams', teamBId),
+      one('teams', match.team_a_id),
+      one('teams', match.team_b_id),
       one('tournaments', match.tournament_id),
       loadEvents(matchId),
     ]);
@@ -403,7 +485,9 @@
     state.teamA = teamA;
     state.teamB = teamB;
     state.tournament = tournament;
+    state.asset = asset;
     state.events = await resolvePlayerNames(events);
+    state.seenEventIds = new Set(state.events.map((e) => e.id).filter(Boolean));
 
     renderOverlay();
 
@@ -419,34 +503,28 @@
 
   function watchModal() {
     ensureStyles();
-    const observer = new MutationObserver(() => {
-      const modal = document.getElementById('aghWatchModal');
-      if (!modal) return;
-      if (modal.hidden) {
-        resetContext();
-        return;
-      }
-      const url = modal.dataset.url || modal.querySelector('video')?.currentSrc || modal.querySelector('video')?.src || '';
-      if (url) setTimeout(() => attachContext(url), 20);
-    });
 
-    const bodyObserver = new MutationObserver(() => {
-      const modal = document.getElementById('aghWatchModal');
+    const observeModal = (modal) => {
       if (!modal || modal.dataset.overlayObserved === '1') return;
       modal.dataset.overlayObserved = '1';
+      const observer = new MutationObserver(() => {
+        if (modal.hidden) {
+          resetContext();
+          return;
+        }
+        const url = modal.dataset.url || modal.querySelector('video')?.currentSrc || modal.querySelector('video')?.src || '';
+        if (url) setTimeout(() => attachContext(url), 20);
+      });
       observer.observe(modal, { attributes: true, attributeFilter: ['hidden', 'data-url'] });
       if (!modal.hidden) {
         const url = modal.dataset.url || modal.querySelector('video')?.src || '';
         if (url) attachContext(url);
       }
-    });
+    };
 
+    const bodyObserver = new MutationObserver(() => observeModal(document.getElementById('aghWatchModal')));
     bodyObserver.observe(document.body, { childList: true, subtree: true });
-    const modal = document.getElementById('aghWatchModal');
-    if (modal) {
-      modal.dataset.overlayObserved = '1';
-      observer.observe(modal, { attributes: true, attributeFilter: ['hidden', 'data-url'] });
-    }
+    observeModal(document.getElementById('aghWatchModal'));
   }
 
   watchModal();
