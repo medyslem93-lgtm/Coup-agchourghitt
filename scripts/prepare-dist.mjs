@@ -20,6 +20,7 @@ const files = [
   "app-structure-v2.css",
   "watch-center-v2.js",
   "watch-match-overlay-v1.js",
+  "watch-overlay-polish-v3.js",
   "match-media-score-fix.js",
   "match-media-ui-fix.js",
   "welcome-screen.js",
@@ -71,7 +72,7 @@ publicIndex = publicIndex
   .replace(/<style>html\.agh-welcome-pending[\s\S]*?<\/style>\s*/i, "")
   .replace(/<script>try\{if\(localStorage\.getItem\('agh_welcome_2026_v1'\)[\s\S]*?<\/script>\s*/i, "")
   .replace(/<script src=["']welcome-screen\.js[^"']*["']><\/script>\s*/i, "")
-  .replace(/<meta name=["']release["'] content=["'][^"']+["']>/i, '<meta name="release" content="watch-match-overlay-v1">')
+  .replace(/<meta name=["']release["'] content=["'][^"']+["']>/i, '<meta name="release" content="watch-overlay-polish-v3">')
   .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260919-app2")
   .replace(/player-of-tournament\.css\?v=[^"']+/g, "player-of-tournament.css?v=20260920-rank1")
   .replace(/player-of-tournament\.js\?v=[^"']+/g, "player-of-tournament.js?v=20260920-rank1")
@@ -85,7 +86,8 @@ publicIndex = publicIndex
   .replace(/app-structure-v2\.css\?v=[^"']+/g, "app-structure-v2.css?v=20260919-1")
   .replace(/app-structure-v2\.js\?v=[^"']+/g, "app-structure-v2.js?v=20260919-1")
   .replace(/watch-center-v2\.js\?v=[^"']+/g, "watch-center-v2.js?v=20260920-1")
-  .replace(/watch-match-overlay-v1\.js\?v=[^"']+/g, "watch-match-overlay-v1.js?v=20260920-1");
+  .replace(/watch-match-overlay-v1\.js\?v=[^"']+/g, "watch-match-overlay-v1.js?v=20260920-2")
+  .replace(/watch-overlay-polish-v3\.js\?v=[^"']+/g, "watch-overlay-polish-v3.js?v=20260920-1");
 if (!publicIndex.includes("breaking-news-live.js")) {
   publicIndex = publicIndex.replace("</body>", '<script src="breaking-news-live.js?v=20260910-1"></script></body>');
 }
@@ -96,7 +98,10 @@ if (!publicIndex.includes("player-of-tournament.js")) {
   publicIndex = publicIndex.replace("</body>", '<script src="player-of-tournament.js?v=20260920-rank1"></script></body>');
 }
 if (!publicIndex.includes("watch-match-overlay-v1.js")) {
-  publicIndex = publicIndex.replace("</body>", '<script src="watch-match-overlay-v1.js?v=20260920-1"></script></body>');
+  publicIndex = publicIndex.replace("</body>", '<script src="watch-match-overlay-v1.js?v=20260920-2"></script></body>');
+}
+if (!publicIndex.includes("watch-overlay-polish-v3.js")) {
+  publicIndex = publicIndex.replace("</body>", '<script src="watch-overlay-polish-v3.js?v=20260920-1"></script></body>');
 }
 await writeFile(publicIndexPath, publicIndex);
 
