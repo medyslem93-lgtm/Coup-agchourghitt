@@ -43,4 +43,12 @@
   window.addEventListener('hashchange', () => window.setTimeout(ensureFanRoute, 100));
   window.addEventListener('load', () => window.setTimeout(ensureFanRoute, 250));
   window.setTimeout(ensureFanRoute, 250);
+
+  if (!document.querySelector('script[data-agh-official-community-v2]')) {
+    const script = document.createElement('script');
+    script.src = 'assets/community-official-v2.js?v=20260920-1';
+    script.dataset.aghOfficialCommunityV2 = '1';
+    script.async = true;
+    document.head.appendChild(script);
+  }
 })();

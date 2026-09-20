@@ -142,3 +142,12 @@
     window.addEventListener('admin:data', () => healthCheck(control), { passive: true });
   })();
 })();
+
+(() => {
+  if (document.querySelector('script[data-agh-community-publisher-v2]')) return;
+  const script = document.createElement('script');
+  script.src = '/admin/community-publisher-v2.js?v=20260920-1';
+  script.dataset.aghCommunityPublisherV2 = '1';
+  script.async = true;
+  document.head.appendChild(script);
+})();
