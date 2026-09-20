@@ -1,0 +1,181 @@
+(() => {
+  'use strict';
+  if (window.__aghSiteSmoothV5) return;
+  window.__aghSiteSmoothV5 = true;
+
+  const main = document.getElementById('appMain');
+  if (!main) return;
+
+  const route = () => decodeURIComponent(location.hash || '').replace(/^#\/?/, '').split(/[/?]/)[0] || 'home';
+  let communityTimer = 0;
+  let communityAttempts = 0;
+
+  document.getElementById('aghAccountBtn')?.remove();
+  document.getElementById('aghAccountLayer')?.remove();
+
+  const style = document.createElement('style');
+  style.id = 'aghSiteSmoothV5Styles';
+  style.textContent = `
+    html{scroll-behavior:smooth}body{overscroll-behavior-y:none}
+    button,a,[role="button"],[data-route],[data-agh-route]{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+    .app-main{transition:opacity .16s ease,transform .16s ease}
+    .app-main.agh-route-pending{opacity:.74;transform:translateY(2px)}
+    .agh-smooth-loading{max-width:880px;margin:0 auto;padding:22px 12px 120px}
+    .agh-smooth-loading i{display:block;border-radius:16px;background:linear-gradient(100deg,#111713 25%,#1a231c 40%,#111713 55%);background-size:240% 100%;animation:aghSmoothShimmer 1.15s linear infinite}
+    .agh-smooth-loading i:nth-child(1){width:42%;height:30px;margin-bottom:18px}.agh-smooth-loading i:nth-child(2){width:100%;height:74px;margin-bottom:12px}.agh-smooth-loading i:nth-child(3){width:100%;height:240px}
+    .agh-community-zone-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:5px 1px 10px}.agh-community-zone-title h2{margin:0;color:#fff;font:1000 16px Cairo,sans-serif}.agh-community-zone-title span{color:#8e9991;font:700 9px Cairo,sans-serif}
+    .agh-story-placeholder{display:flex;gap:10px;overflow:hidden;padding:0 0 14px}.agh-story-placeholder .circle{width:62px;height:62px;border-radius:50%;border:2px dashed rgba(223,255,0,.22);background:#101612;display:grid;place-items:center;color:#dfff00;font-size:22px}.agh-story-placeholder div{display:grid;justify-items:center;gap:5px;color:#7f8a82;font:800 8px Cairo,sans-serif}
+    .agh-official-body a{color:#dfff00;text-decoration:none;font-weight:900;overflow-wrap:anywhere}.agh-official-share{margin-inline-start:0}.agh-official-post{content-visibility:auto;contain-intrinsic-size:480px}.agh-community-live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#dfff00;box-shadow:0 0 0 4px rgba(223,255,0,.08);margin-inline-end:6px}
+    @keyframes aghSmoothShimmer{to{background-position:-240% 0}}
+    @media(max-width:600px){.agh-smooth-loading{padding-inline:10px}.agh-official-actions button{min-height:38px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.app-main{transition:none}.agh-smooth-loading i{animation:none}}
+  `;
+  document.head.appendChild(style);
+
+  function toast(text) {
+    const old = document.querySelector('.agh-v5-toast');
+    old?.remove();
+    const el = document.createElement('div');
+    el.className = 'agh-v5-toast';
+    el.textContent = text;
+    Object.assign(el.style,{position:'fixed',zIndex:'100800',left:'50%',bottom:'92px',transform:'translateX(-50%)',maxWidth:'92vw',background:'#111713',color:'#fff',border:'1px solid rgba(223,255,0,.26)',borderRadius:'14px',padding:'10px 14px',font:'900 10px Cairo,sans-serif',textAlign:'center'});
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2400);
+  }
+
+  function markRoutePending() {
+    main.classList.add('agh-route-pending');
+    clearTimeout(markRoutePending.t);
+    markRoutePending.t = setTimeout(() => main.classList.remove('agh-route-pending'), 240);
+  }
+
+  function showCommunityLoading() {
+    if (route() !== 'community') return;
+    if (main.querySelector('[data-official-community],.agh-community-page')) return;
+    main.innerHTML = '<div class="agh-smooth-loading" aria-label="جارٍ تحميل المجتمع"><i></i><i></i><i></i></div>';
+  }
+
+  function loadOfficialCommunityScript(force = false) {
+    let tag = document.querySelector('script[data-agh-official-community-v2]');
+    if (window.__aghOfficialCommunityV2 && !force) return;
+    if (tag && !force) return;
+    if (tag) tag.remove();
+    tag = document.createElement('script');
+    tag.src = 'assets/community-official-v2.js?v=20260920-2';
+    tag.dataset.aghOfficialCommunityV2 = '1';
+    tag.async = false;
+    tag.onload = () => setTimeout(() => window.dispatchEvent(new HashChangeEvent('hashchange')), 30);
+    document.head.appendChild(tag);
+  }
+
+  function scheduleCommunityRepair() {
+    if (route() !== 'community') return;
+    clearTimeout(communityTimer);
+    communityTimer = setTimeout(() => {
+      if (route() !== 'community') return;
+      if (main.querySelector('[data-official-community="v2"]')) {
+        communityAttempts = 0;
+        enhanceCommunity();
+        return;
+      }
+      if (!window.__aghOfficialCommunityV2) loadOfficialCommunityScript(true);
+      if (communityAttempts < 8) {
+        communityAttempts += 1;
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+        scheduleCommunityRepair();
+      }
+    }, communityAttempts ? 130 : 70);
+  }
+
+  function linkify(element) {
+    if (!element || element.dataset.aghLinked === '1') return;
+    element.dataset.aghLinked = '1';
+    const text = element.textContent || '';
+    const re = /(https?:\/\/[^\s]+)/g;
+    if (!re.test(text)) return;
+    re.lastIndex = 0;
+    const frag = document.createDocumentFragment();
+    let last = 0;
+    text.replace(re, (url, _m, offset) => {
+      frag.appendChild(document.createTextNode(text.slice(last, offset)));
+      const a = document.createElement('a');
+      a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = url.replace(/^https?:\/\//, '');
+      frag.appendChild(a); last = offset + url.length; return url;
+    });
+    frag.appendChild(document.createTextNode(text.slice(last)));
+    element.replaceChildren(frag);
+  }
+
+  function enhanceCommunity() {
+    const root = main.querySelector('[data-official-community="v2"]');
+    if (!root) return;
+    const hero = root.querySelector('.agh-official-hero');
+    const stories = root.querySelector('.agh-official-stories');
+    if (!root.querySelector('[data-agh-stories-title]')) {
+      const title = document.createElement('div');
+      title.className = 'agh-community-zone-title';
+      title.dataset.aghStoriesTitle = '1';
+      title.innerHTML = '<h2><i class="agh-community-live-dot"></i>القصص</h2><span>من إدارة البطولة</span>';
+      hero?.insertAdjacentElement('afterend', title);
+      if (!stories) {
+        const empty = document.createElement('div');
+        empty.className = 'agh-story-placeholder';
+        empty.innerHTML = '<div><span class="circle">＋</span><b>ستظهر القصص هنا</b></div>';
+        title.insertAdjacentElement('afterend', empty);
+      }
+    }
+    const feed = root.querySelector('.agh-official-feed');
+    if (feed && !root.querySelector('[data-agh-posts-title]')) {
+      const title = document.createElement('div');
+      title.className = 'agh-community-zone-title';
+      title.dataset.aghPostsTitle = '1';
+      title.innerHTML = '<h2>المنشورات الرسمية</h2><span>أخبار · صور · فيديو</span>';
+      feed.insertAdjacentElement('beforebegin', title);
+    }
+    root.querySelectorAll('.agh-official-body').forEach(linkify);
+    root.querySelectorAll('.agh-official-post').forEach((post) => {
+      const actions = post.querySelector('.agh-official-actions');
+      if (!actions || actions.querySelector('[data-agh-share-post]')) return;
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'agh-official-share'; button.dataset.aghSharePost = post.dataset.officialPost || ''; button.textContent = '↗ مشاركة';
+      const count = actions.querySelector('.agh-comment-count');
+      actions.insertBefore(button, count || null);
+    });
+  }
+
+  async function sharePost(postEl) {
+    const body = postEl?.querySelector('.agh-official-body')?.textContent?.trim() || 'منشور من كأس أغشوركيت';
+    const data = { title: 'كأس أغشوركيت', text: body.slice(0,500), url: location.href };
+    try {
+      if (navigator.share) await navigator.share(data);
+      else if (navigator.clipboard) { await navigator.clipboard.writeText(`${data.text}\n${data.url}`); toast('تم نسخ المنشور للمشاركة'); }
+    } catch (_) {}
+  }
+
+  document.addEventListener('click', (event) => {
+    const share = event.target.closest?.('[data-agh-share-post]');
+    if (share) { event.preventDefault(); sharePost(share.closest('.agh-official-post')); return; }
+    const routeButton = event.target.closest?.('[data-route],[data-agh-route]');
+    if (routeButton) {
+      markRoutePending();
+      const target = routeButton.dataset.aghRoute || routeButton.dataset.route || '';
+      if (target === 'community') setTimeout(showCommunityLoading, 0);
+    }
+  }, true);
+
+  window.addEventListener('hashchange', () => {
+    markRoutePending();
+    if (route() === 'community') { communityAttempts = 0; setTimeout(scheduleCommunityRepair, 40); }
+    setTimeout(() => main.classList.remove('agh-route-pending'), 140);
+  });
+
+  const observer = new MutationObserver(() => {
+    document.getElementById('aghAccountBtn')?.remove();
+    document.getElementById('aghAccountLayer')?.remove();
+    if (route() !== 'community') return;
+    if (main.querySelector('[data-official-community="v2"]')) enhanceCommunity(); else scheduleCommunityRepair();
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  if (route() === 'community') { showCommunityLoading(); loadOfficialCommunityScript(!window.__aghOfficialCommunityV2); scheduleCommunityRepair(); }
+})();
