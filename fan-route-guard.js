@@ -57,7 +57,7 @@
   load('script[data-agh-site-reliability-v1]', 'assets/site-reliability-v1.js?v=20260920-1', 'aghSiteReliabilityV1');
   load('script[data-agh-directory-guest-fix-v1]', 'assets/directory-guest-fix-v1.js?v=20260920-1', 'aghDirectoryGuestFixV1');
   load('script[data-agh-community-guest-v1]', 'assets/community-guest-interactions-v1.js?v=20260920-2', 'aghCommunityGuestV1');
-  load('script[data-agh-lineup-polish-v2]', 'assets/tournament-lineup-polish-v2.js?v=20260920-1', 'aghLineupPolishV2');
-  load('script[data-agh-player-vote-profile-flow-v1]', 'assets/player-vote-profile-flow-v1.js?v=20260920-1', 'aghPlayerVoteProfileFlowV1');
-  load('script[data-agh-admin-live-refresh-v1]', 'assets/admin-live-refresh-v1.js?v=20260920-1', 'aghAdminLiveRefreshV1');
+  load('script[data-agh-lineup-polish-v2]', 'assets/tournament-lineup-polish-v2.js?v=20260920-2', 'aghLineupPolishV2');
+  load('script[data-agh-player-vote-profile-flow-v1]', 'assets/player-vote-profile-flow-v1.js?v=20260920-2', 'aghPlayerVoteProfileFlowV1');
+  load('script[data-agh-admin-live-refresh-v1]', 'assets/admin-live-refresh-v1.js?v=20260920-2', 'aghAdminLiveRefreshV1');
 })();
