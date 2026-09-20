@@ -1,0 +1,292 @@
+/* كأس أغشوركيت — عرض الهدافين بأسلوب بطاقات رياضية بصرية */
+.leader-card.scorers-showcase-card {
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+  border-color: rgba(231, 191, 91, .28);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(231, 191, 91, .10), transparent 28rem),
+    linear-gradient(145deg, #101411, #080b09 72%);
+}
+
+.scorers-showcase-card .leader-card-head {
+  align-items: flex-end;
+  margin-bottom: 14px;
+}
+
+.scorers-showcase-card .leader-card-head h3 {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: clamp(21px, 4vw, 34px);
+  line-height: 1.1;
+  font-weight: 950;
+  letter-spacing: -.7px;
+}
+
+.scorers-showcase-card .leader-card-head h3::before {
+  content: "كأس أغشوركيت 2026";
+  color: var(--gold, #e7bf5b);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .9px;
+}
+
+.scorers-showcase-card .soft-badge {
+  border-color: rgba(231, 191, 91, .25);
+  background: rgba(231, 191, 91, .08);
+  color: #f0cf77;
+}
+
+.scorers-showcase-card .leader-list {
+  display: grid;
+  gap: 10px;
+}
+
+.scorers-showcase-card .leader-row {
+  --scorer-hue: 135;
+  position: relative;
+  isolation: isolate;
+  min-height: 122px;
+  display: grid;
+  grid-template-columns: 76px 96px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0;
+  padding: 0 18px 0 0;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 22px;
+  background:
+    linear-gradient(90deg, hsla(var(--scorer-hue), 64%, 46%, .28), rgba(18, 24, 20, .97) 35%, rgba(9, 12, 10, .98));
+  box-shadow: 0 14px 34px rgba(0,0,0,.22);
+  direction: ltr;
+  cursor: pointer;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.scorers-showcase-card .leader-row::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, transparent 0 53%, rgba(255,255,255,.025) 53% 72%, transparent 72%),
+    radial-gradient(circle at 16% 50%, hsla(var(--scorer-hue), 78%, 58%, .16), transparent 30%);
+}
+
+.scorers-showcase-card .leader-row:hover,
+.scorers-showcase-card .leader-row:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(231, 191, 91, .32);
+  box-shadow: 0 18px 40px rgba(0,0,0,.30);
+}
+
+.scorers-showcase-card .leader-row:first-child {
+  min-height: 136px;
+  border-color: rgba(231, 191, 91, .34);
+  background:
+    linear-gradient(90deg, hsla(var(--scorer-hue), 72%, 48%, .34), rgba(25, 31, 26, .98) 36%, rgba(10, 13, 11, .99));
+}
+
+.scorers-showcase-card .rank-number {
+  position: absolute;
+  top: 10px;
+  right: 11px;
+  z-index: 6;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 50%;
+  background: rgba(0,0,0,.28);
+  color: rgba(255,255,255,.72);
+  font-size: 9px;
+  font-weight: 950;
+  backdrop-filter: blur(8px);
+}
+
+.scorers-showcase-card .leader-row:first-child .rank-number {
+  border-color: rgba(231,191,91,.45);
+  color: #f1d47f;
+}
+
+.scorers-showcase-card .scorer-team-mark {
+  position: relative;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  padding: 14px 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,.92);
+  border-inline-end: 1px solid rgba(255,255,255,.12);
+}
+
+.scorers-showcase-card .scorer-team-mark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.14), transparent 56%);
+  pointer-events: none;
+}
+
+.scorers-showcase-card .scorer-team-mark img {
+  position: relative;
+  z-index: 1;
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 8px rgba(0,0,0,.16));
+}
+
+.scorers-showcase-card .scorer-team-fallback {
+  position: relative;
+  z-index: 1;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: #111712;
+  color: #f6d676;
+  font-size: 19px;
+  font-weight: 950;
+}
+
+.scorers-showcase-card .player-avatar {
+  position: relative;
+  z-index: 4;
+  align-self: end;
+  width: 96px;
+  height: 116px;
+  margin-inline-start: -7px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: hidden;
+  color: transparent;
+}
+
+.scorers-showcase-card .leader-row:first-child .player-avatar {
+  height: 128px;
+}
+
+.scorers-showcase-card .player-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 24%;
+  border: 0;
+  border-radius: 18px 18px 0 0;
+  background: transparent;
+  filter: drop-shadow(0 8px 9px rgba(0,0,0,.34));
+}
+
+.scorers-showcase-card .player-avatar.scorer-placeholder {
+  display: grid;
+  place-items: end center;
+}
+
+.scorers-showcase-card .scorer-placeholder-svg {
+  width: 92px;
+  height: 112px;
+  opacity: .74;
+  filter: drop-shadow(0 8px 8px rgba(0,0,0,.30));
+}
+
+.scorers-showcase-card .leader-copy {
+  min-width: 0;
+  padding: 14px 14px 14px 10px;
+  direction: rtl;
+  text-align: right;
+}
+
+.scorers-showcase-card .leader-name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #fff;
+  font-size: clamp(13px, 2.6vw, 17px);
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.scorers-showcase-card .leader-copy small {
+  display: block;
+  margin-top: 6px;
+  color: rgba(255,255,255,.62);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.scorers-showcase-card .leader-value {
+  min-width: 86px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 0;
+  padding: 10px 14px;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  direction: rtl;
+  text-align: center;
+}
+
+.scorers-showcase-card .scorer-goal-number {
+  font-size: clamp(36px, 7vw, 58px);
+  line-height: .92;
+  font-weight: 1000;
+  letter-spacing: -2px;
+  text-shadow: 0 3px 18px rgba(0,0,0,.30);
+}
+
+.scorers-showcase-card .scorer-goal-label {
+  margin-top: 6px;
+  color: #f0cf77;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .4px;
+}
+
+@media (max-width: 620px) {
+  .leader-card.scorers-showcase-card { padding: 14px; }
+  .scorers-showcase-card .leader-row,
+  .scorers-showcase-card .leader-row:first-child {
+    min-height: 108px;
+    grid-template-columns: 62px 76px minmax(0, 1fr) 68px;
+    border-radius: 18px;
+    padding-inline-end: 6px;
+  }
+  .scorers-showcase-card .scorer-team-mark { padding: 10px 7px; }
+  .scorers-showcase-card .scorer-team-mark img { width: 46px; height: 46px; }
+  .scorers-showcase-card .scorer-team-fallback { width: 44px; height: 44px; border-radius: 13px; font-size: 16px; }
+  .scorers-showcase-card .player-avatar,
+  .scorers-showcase-card .leader-row:first-child .player-avatar {
+    width: 78px;
+    height: 104px;
+    margin-inline-start: -5px;
+  }
+  .scorers-showcase-card .player-avatar img { border-radius: 14px 14px 0 0; }
+  .scorers-showcase-card .scorer-placeholder-svg { width: 75px; height: 99px; }
+  .scorers-showcase-card .leader-copy { padding-inline: 9px 5px; }
+  .scorers-showcase-card .leader-name { font-size: 12px; }
+  .scorers-showcase-card .leader-copy small { margin-top: 4px; font-size: 8px; }
+  .scorers-showcase-card .leader-value { min-width: 64px; padding: 8px 5px; }
+  .scorers-showcase-card .scorer-goal-number { font-size: 34px; letter-spacing: -1px; }
+  .scorers-showcase-card .scorer-goal-label { font-size: 8px; }
+  .scorers-showcase-card .rank-number { width: 24px; height: 24px; top: 7px; right: 7px; font-size: 8px; }
+}
+
+@media (max-width: 390px) {
+  .scorers-showcase-card .leader-row,
+  .scorers-showcase-card .leader-row:first-child {
+    grid-template-columns: 55px 67px minmax(0, 1fr) 58px;
+  }
+  .scorers-showcase-card .player-avatar,
+  .scorers-showcase-card .leader-row:first-child .player-avatar { width: 69px; }
+  .scorers-showcase-card .leader-name { font-size: 11px; }
+  .scorers-showcase-card .scorer-goal-number { font-size: 31px; }
+}
