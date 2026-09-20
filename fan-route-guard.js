@@ -44,35 +44,20 @@
   window.addEventListener('load', () => window.setTimeout(ensureFanRoute, 250));
   window.setTimeout(ensureFanRoute, 250);
 
-  if (!document.querySelector('script[data-agh-official-community-v2]')) {
+  const load = (selector, src, dataKey) => {
+    if (document.querySelector(selector)) return;
     const script = document.createElement('script');
-    script.src = 'assets/community-official-v2.js?v=20260920-1';
-    script.dataset.aghOfficialCommunityV2 = '1';
+    script.src = src;
+    script.dataset[dataKey] = '1';
     script.async = true;
     document.head.appendChild(script);
-  }
+  };
 
-  if (!document.querySelector('script[data-agh-site-reliability-v1]')) {
-    const script = document.createElement('script');
-    script.src = 'assets/site-reliability-v1.js?v=20260920-1';
-    script.dataset.aghSiteReliabilityV1 = '1';
-    script.async = true;
-    document.head.appendChild(script);
-  }
-
-  if (!document.querySelector('script[data-agh-directory-guest-fix-v1]')) {
-    const script = document.createElement('script');
-    script.src = 'assets/directory-guest-fix-v1.js?v=20260920-1';
-    script.dataset.aghDirectoryGuestFixV1 = '1';
-    script.async = true;
-    document.head.appendChild(script);
-  }
-
-  if (!document.querySelector('script[data-agh-community-guest-v1]')) {
-    const script = document.createElement('script');
-    script.src = 'assets/community-guest-interactions-v1.js?v=20260920-2';
-    script.dataset.aghCommunityGuestV1 = '1';
-    script.async = true;
-    document.head.appendChild(script);
-  }
+  load('script[data-agh-official-community-v2]', 'assets/community-official-v2.js?v=20260920-1', 'aghOfficialCommunityV2');
+  load('script[data-agh-site-reliability-v1]', 'assets/site-reliability-v1.js?v=20260920-1', 'aghSiteReliabilityV1');
+  load('script[data-agh-directory-guest-fix-v1]', 'assets/directory-guest-fix-v1.js?v=20260920-1', 'aghDirectoryGuestFixV1');
+  load('script[data-agh-community-guest-v1]', 'assets/community-guest-interactions-v1.js?v=20260920-2', 'aghCommunityGuestV1');
+  load('script[data-agh-lineup-polish-v2]', 'assets/tournament-lineup-polish-v2.js?v=20260920-1', 'aghLineupPolishV2');
+  load('script[data-agh-player-vote-profile-flow-v1]', 'assets/player-vote-profile-flow-v1.js?v=20260920-1', 'aghPlayerVoteProfileFlowV1');
+  load('script[data-agh-admin-live-refresh-v1]', 'assets/admin-live-refresh-v1.js?v=20260920-1', 'aghAdminLiveRefreshV1');
 })();
