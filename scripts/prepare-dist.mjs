@@ -18,6 +18,7 @@ const files = [
   "site-directory.css",
   "app-structure-v2.js",
   "app-structure-v2.css",
+  "watch-center-v2.js",
   "match-media-score-fix.js",
   "match-media-ui-fix.js",
   "welcome-screen.js",
@@ -80,7 +81,8 @@ publicIndex = publicIndex
   .replace(/site-directory\.css\?v=[^"']+/g, "site-directory.css?v=20260919-1")
   .replace(/site-directory\.js\?v=[^"']+/g, "site-directory.js?v=20260919-1")
   .replace(/app-structure-v2\.css\?v=[^"']+/g, "app-structure-v2.css?v=20260919-1")
-  .replace(/app-structure-v2\.js\?v=[^"']+/g, "app-structure-v2.js?v=20260919-1");
+  .replace(/app-structure-v2\.js\?v=[^"']+/g, "app-structure-v2.js?v=20260919-1")
+  .replace(/watch-center-v2\.js\?v=[^"']+/g, "watch-center-v2.js?v=20260920-1");
 if (!publicIndex.includes("breaking-news-live.js")) {
   publicIndex = publicIndex.replace("</body>", '<script src="breaking-news-live.js?v=20260910-1"></script></body>');
 }
