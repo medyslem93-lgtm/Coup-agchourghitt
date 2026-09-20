@@ -9,6 +9,8 @@ const files = [
   "index.html",
   "styles.css",
   "public-app.js",
+  "scorers-showcase.js",
+  "scorers-showcase.css",
   "fan-experience.js",
   "fan-experience.css",
   "fan-route-guard.js",
