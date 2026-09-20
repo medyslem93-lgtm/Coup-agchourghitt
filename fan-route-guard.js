@@ -59,4 +59,12 @@
     script.async = true;
     document.head.appendChild(script);
   }
+
+  if (!document.querySelector('script[data-agh-directory-guest-fix-v1]')) {
+    const script = document.createElement('script');
+    script.src = 'assets/directory-guest-fix-v1.js?v=20260920-1';
+    script.dataset.aghDirectoryGuestFixV1 = '1';
+    script.async = true;
+    document.head.appendChild(script);
+  }
 })();
