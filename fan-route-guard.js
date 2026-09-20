@@ -67,4 +67,12 @@
     script.async = true;
     document.head.appendChild(script);
   }
+
+  if (!document.querySelector('script[data-agh-community-guest-v1]')) {
+    const script = document.createElement('script');
+    script.src = 'assets/community-guest-interactions-v1.js?v=20260920-1';
+    script.dataset.aghCommunityGuestV1 = '1';
+    script.async = true;
+    document.head.appendChild(script);
+  }
 })();
