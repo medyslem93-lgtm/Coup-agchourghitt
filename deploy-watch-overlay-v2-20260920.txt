@@ -1,0 +1,1 @@
+Production deploy trigger for Watch overlay v2. Includes captured score, match-event overlays, live score/minute/team/tournament display, and event animations from main commit 8c57bf13decbeeaa587a40367a359072ffc8ea63.
