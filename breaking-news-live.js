@@ -16,3 +16,7 @@ async function load(){const {data,error}=await db.from('site_settings').select('
 load();
 db.channel('breaking-news-live').on('postgres_changes',{event:'UPDATE',schema:'public',table:'site_settings',filter:'id=eq.main'},p=>apply(p.new)).subscribe();
 })();
+(() => {
+  if(document.getElementById('aghSiteFeatureControlLoader'))return;
+  const s=document.createElement('script');s.id='aghSiteFeatureControlLoader';s.src='/admin/site-feature-control-v1.js?v=20260920-1';s.defer=true;document.head.appendChild(s);
+})();

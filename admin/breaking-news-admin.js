@@ -13,3 +13,7 @@ async function mount(){
 }
 window.addEventListener('load',()=>setTimeout(mount,800));document.addEventListener('click',e=>{if(e.target.closest('[data-tab="settings"]'))setTimeout(mount,250)});
 })();
+(() => {
+  if(document.getElementById('aghAdminSuperControlLoader'))return;
+  const s=document.createElement('script');s.id='aghAdminSuperControlLoader';s.src='/admin/super-control-v1.js?v=20260920-1';s.defer=true;document.head.appendChild(s);
+})();
