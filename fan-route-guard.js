@@ -51,12 +51,4 @@
     script.async = true;
     document.head.appendChild(script);
   }
-
-  if (!document.querySelector('script[data-agh-google-auth-guard-v1]')) {
-    const script = document.createElement('script');
-    script.src = 'google-auth-guard-v1.js?v=20260920-1';
-    script.dataset.aghGoogleAuthGuardV1 = '1';
-    script.async = true;
-    document.head.appendChild(script);
-  }
 })();
