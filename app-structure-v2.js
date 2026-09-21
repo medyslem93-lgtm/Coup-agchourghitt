@@ -43,17 +43,17 @@
 
   function installPrimaryNavigation() {
     const desktop = document.querySelector('.desktop-navigation');
-    const dSig = 'home|matches|tournaments|watch|community|directory';
+    const dSig = 'home|matches|watch|community|profile';
     if (desktop && signature(desktop) !== dSig) {
       desktop.dataset.appStructureV3 = '1';
-      desktop.innerHTML = '<button data-route="home">الرئيسية</button><button data-route="matches">المباريات</button><button data-route="tournaments">البطولات</button><button data-route="watch">شاهد</button><button data-route="community">المجتمع</button><button data-route="directory">المزيد</button>';
+      desktop.innerHTML = '<button data-route="home">الرئيسية</button><button data-route="matches">المباريات</button><button data-route="watch">شاهد</button><button data-route="community">المجتمع</button><button data-route="profile">ملفي</button>';
     }
 
     const mobile = document.querySelector('.mobile-navigation');
-    const mSig = 'home|matches|tournaments|watch|community';
+    const mSig = 'community|profile|home|watch|matches';
     if (mobile && signature(mobile) !== mSig) {
       mobile.dataset.appStructureV3 = '1';
-      mobile.innerHTML = '<button data-route="home"><span>الرئيسية</span></button><button data-route="matches"><span>المباريات</span></button><button class="nav-primary" data-route="tournaments"><span>البطولات</span></button><button data-route="watch"><span>شاهد</span></button><button data-route="community"><span>المجتمع</span></button>';
+      mobile.innerHTML = '<button data-route="community" aria-label="المجتمع"><i aria-hidden="true">◎</i><span>المجتمع</span></button><button data-route="profile" aria-label="ملفي"><i aria-hidden="true">♙</i><span>ملفي</span></button><button class="nav-primary" data-route="home" aria-label="الرئيسية"><i aria-hidden="true">⌂</i><span>الرئيسية</span></button><button data-route="watch" aria-label="شاهد"><i aria-hidden="true">▶</i><span>شاهد</span></button><button data-route="matches" aria-label="المباريات"><i aria-hidden="true">⚽</i><span>المباريات</span></button>';
     }
 
     const active = rootRoute();
@@ -81,7 +81,7 @@
 
   function redirectLegacyFanRoutes() {
     const r = rootRoute();
-    if (['following', 'follows', 'profile'].includes(r)) location.replace('#/community');
+    if (['following', 'follows'].includes(r)) location.replace('#/profile');
   }
 
   function tournamentCard(t, teams, matches) {
@@ -133,10 +133,10 @@
     const target = event.target.closest('[data-route]');
     if (!target) return;
     const r = target.getAttribute('data-route');
-    if (['following','follows','profile'].includes(r || '')) {
+    if (['following','follows'].includes(r || '')) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      location.hash = '#/community';
+      location.hash = '#/profile';
     }
   }, true);
 
