@@ -1,4 +1,4 @@
-const CACHE = "agchorguit-premium-v34-20260921-health1";
+const CACHE = "agchorguit-premium-v35-20260921-community1";
 const CORE = [
   "./",
   "index.html",
@@ -37,10 +37,10 @@ const CORE = [
   "assets/logo-placeholder.svg",
   "assets/site-reliability-v1.js?v=20260920-1",
   "assets/directory-guest-fix-v1.js?v=20260920-1",
-  "assets/community-official-v2.js?v=20260920-1",
+  "assets/community-instagram-v3.js?v=20260921-1",
   "assets/community-guest-interactions-v1.js?v=20260920-2",
   "assets/tournament-lineup-polish-v2.js?v=20260920-2",
-  "assets/player-vote-profile-flow-v1.js?v=20260920-2",
+  "assets/player-vote-profile-flow-v1.js?v=20260921-1",
   "assets/admin-live-refresh-v1.js?v=20260920-2",
   "assets/site-smooth-v5.js?v=20260920-guest1",
 ];
