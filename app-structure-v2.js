@@ -12,7 +12,7 @@
   if (window.supabase?.createClient && cfg.supabaseUrl && cfg.supabaseKey) {
     db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, {
       auth: { persistSession: false, autoRefreshToken: false },
-      global: { headers: { 'x-client-info': 'aghchorguit-app-structure-v3' } },
+      global: { headers: { 'x-client-info': 'aghchorguit-app-structure-stable' } },
     });
   }
 
@@ -38,50 +38,62 @@
   }
 
   function signature(nav) {
-    return [...nav.querySelectorAll(':scope > button')].map(btn => btn.getAttribute('data-route') || btn.getAttribute('data-fan-hash') || '').join('|');
+    return [...nav.querySelectorAll(':scope > button')].map(btn => btn.getAttribute('data-route') || '').join('|');
+  }
+
+  function desiredMobileActive(route) {
+    if (route === 'home') return 'home';
+    if (route === 'matches' || route === 'match') return 'matches';
+    if (route === 'tournaments' || route === 'tournament') return 'tournaments';
+    if (['teams', 'team', 'players', 'player'].includes(route)) return 'teams';
+    return 'directory';
   }
 
   function installPrimaryNavigation() {
     const desktop = document.querySelector('.desktop-navigation');
-    const dSig = 'home|matches|watch|community|profile';
-    if (desktop && signature(desktop) !== dSig) {
-      desktop.dataset.appStructureV3 = '1';
-      desktop.innerHTML = '<button data-route="home">الرئيسية</button><button data-route="matches">المباريات</button><button data-route="watch">شاهد</button><button data-route="community">المجتمع</button><button data-route="profile">ملفي</button>';
+    const desktopSig = 'home|matches|tournaments|teams|stats|news';
+    if (desktop && signature(desktop) !== desktopSig) {
+      desktop.dataset.appStructureStable = '1';
+      desktop.innerHTML = '<button data-route="home">الرئيسية</button><button data-route="matches">المباريات</button><button data-route="tournaments">البطولات</button><button data-route="teams">الفرق</button><button data-route="stats">الإحصائيات</button><button data-route="news">الأخبار</button>';
     }
 
     const mobile = document.querySelector('.mobile-navigation');
-    const mSig = 'community|profile|home|watch|matches';
-    if (mobile && signature(mobile) !== mSig) {
-      mobile.dataset.appStructureV3 = '1';
-      mobile.innerHTML = '<button data-route="community" aria-label="المجتمع"><i aria-hidden="true">◎</i><span>المجتمع</span></button><button data-route="profile" aria-label="ملفي"><i aria-hidden="true">♙</i><span>ملفي</span></button><button class="nav-primary" data-route="home" aria-label="الرئيسية"><i aria-hidden="true">⌂</i><span>الرئيسية</span></button><button data-route="watch" aria-label="شاهد"><i aria-hidden="true">▶</i><span>شاهد</span></button><button data-route="matches" aria-label="المباريات"><i aria-hidden="true">⚽</i><span>المباريات</span></button>';
+    const mobileSig = 'home|matches|tournaments|teams|directory';
+    if (mobile && signature(mobile) !== mobileSig) {
+      mobile.dataset.appStructureStable = '1';
+      mobile.innerHTML = '<button data-route="home"><span>الرئيسية</span></button><button data-route="matches"><span>المباريات</span></button><button class="nav-primary" data-route="tournaments"><span>البطولات</span></button><button data-route="teams"><span>الفرق</span></button><button data-route="directory"><span>المزيد</span></button>';
     }
 
-    const active = rootRoute();
-    document.querySelectorAll('.desktop-navigation button,.mobile-navigation button').forEach(btn => {
-      btn.classList.toggle('active', (btn.dataset.route || '') === active);
+    const activeRoute = rootRoute();
+    const mobileActive = desiredMobileActive(activeRoute);
+    document.querySelectorAll('.desktop-navigation button').forEach(btn => {
+      const route = btn.dataset.route || '';
+      const active = route === activeRoute || (route === 'tournaments' && activeRoute === 'tournament') || (route === 'teams' && ['team', 'players', 'player'].includes(activeRoute));
+      btn.classList.toggle('active', active);
     });
+    document.querySelectorAll('.mobile-navigation button').forEach(btn => btn.classList.toggle('active', (btn.dataset.route || '') === mobileActive));
 
     const extra = document.getElementById('aghSectionNav');
     if (extra) extra.setAttribute('aria-hidden', 'true');
   }
 
   function cleanDirectory() {
-    if (rootRoute() !== 'directory') return;
+    if (!['directory', 'more'].includes(rootRoute())) return;
     main.querySelectorAll('.agh-dir-card').forEach((card) => {
-      const r = card.getAttribute('data-route');
-      if (['tournaments','matches','watch','community','following','follows','profile'].includes(r || '')) card.hidden = true;
+      const r = card.getAttribute('data-route') || '';
+      if (['following', 'follows', 'profile'].includes(r)) card.remove();
     });
     const title = main.querySelector('.agh-dir-page-head h1');
     if (title) title.textContent = 'المزيد';
     const hero = main.querySelector('.agh-dir-hero h2');
-    if (hero) hero.textContent = 'الأقسام الأخرى';
+    if (hero) hero.textContent = 'كل أقسام الموقع';
     const intro = main.querySelector('.agh-dir-page-head p');
-    if (intro) intro.textContent = 'الفرق واللاعبون والحكام والإحصائيات والأخبار في مكان واحد.';
+    if (intro) intro.textContent = 'شاهد، المجتمع، الحكام، الإحصائيات، الأخبار وبقية أقسام كأس أغشوركيت.';
   }
 
   function redirectLegacyFanRoutes() {
     const r = rootRoute();
-    if (['following', 'follows'].includes(r)) location.replace('#/profile');
+    if (['following', 'follows', 'profile'].includes(r)) location.replace('#/directory');
   }
 
   function tournamentCard(t, teams, matches) {
@@ -133,10 +145,10 @@
     const target = event.target.closest('[data-route]');
     if (!target) return;
     const r = target.getAttribute('data-route');
-    if (['following','follows'].includes(r || '')) {
+    if (['following', 'follows', 'profile'].includes(r || '')) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      location.hash = '#/profile';
+      location.hash = '#/directory';
     }
   }, true);
 

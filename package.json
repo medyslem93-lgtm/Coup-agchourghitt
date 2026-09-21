@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node --check live-stream.js && node --check public-app.js && node --check fan-experience.js && node --check fan-route-guard.js && node --check app-structure-v2.js && node --check assets/community-instagram-v3.js && node --check assets/player-vote-profile-flow-v1.js && node --check tournament-experience.js && node --check api/livekit-token.js && node --check admin/admin.js && node --check admin/control-center.js && node --check admin/livekit-camera.js && node --check admin/login.js && node --check sw.js && node scripts/validate-build.mjs && node scripts/prepare-dist.mjs",
+    "build": "node --check live-stream.js && node --check public-app.js && node --check fan-experience.js && node --check fan-route-guard.js && node --check tournament-experience.js && node --check site-directory.js && node --check app-structure-v2.js && node --check assets/site-reliability-v1.js && node --check assets/directory-guest-fix-v1.js && node --check assets/community-official-v2.js && node --check assets/community-guest-interactions-v1.js && node --check assets/tournament-lineup-polish-v2.js && node --check assets/player-vote-profile-flow-v1.js && node --check assets/admin-live-refresh-v1.js && node --check assets/site-smooth-v5.js && node --check player-of-tournament.js && node --check api/livekit-token.js && node --check admin/admin.js && node --check admin/control-center.js && node --check admin/livekit-camera.js && node --check admin/login.js && node --check sw.js && node scripts/validate-build.mjs && node scripts/prepare-dist.mjs",
     "check": "npm run build"
   },
   "dependencies": {
