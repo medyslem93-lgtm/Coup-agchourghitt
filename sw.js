@@ -1,4 +1,4 @@
-const CACHE = "agchorguit-premium-v37-20260922-video-save1";
+const CACHE = "agchorguit-premium-v38-20260922-countdown-video1";
 const CORE = [
   "./",
   "index.html",
@@ -14,8 +14,9 @@ const CORE = [
   "site-directory.css?v=20260919-1",
   "app-structure-v2.css?v=20260921-restore1",
   "modern-refresh-2026.css?v=20260922-1",
+  "vote-countdown-2026.css?v=20260922-1",
   "scorers-showcase.css?v=20260920-1",
-  "player-of-tournament.css?v=20260920-guest1",
+  "player-of-tournament.css?v=20260922-countdown1",
   "public-app.js?v=20260918-recap2",
   "fan-experience.js?v=20260919-1",
   "tournament-experience.js?v=20260919-2",
@@ -29,7 +30,7 @@ const CORE = [
   "road-to-cup.js?v=20260917-stages1",
   "featured-final-hotfix.js?v=20260915-final2",
   "live-stream.js?v=20260915-score1",
-  "player-of-tournament.js?v=20260920-guest1",
+  "player-of-tournament.js?v=20260922-countdown1",
   "config.js?v=20260910-6",
   "vendor/supabase.js?v=2.116.0",
   "manifest.webmanifest",
