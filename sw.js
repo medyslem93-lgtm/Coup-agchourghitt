@@ -1,8 +1,8 @@
-const CACHE = "agchorguit-premium-v37-20260922-video-export1";
+const CACHE = "agchorguit-premium-v37-20260922-video-save1";
 const CORE = [
   "./",
   "index.html",
-  "styles.css?v=20260918-video-export1",
+  "styles.css?v=20260917-media1",
   "referees-section.css?v=20260915-1",
   "team-calendar-v2.css?v=20260915-1",
   "road-to-cup.css?v=20260917-stages1",
@@ -16,7 +16,7 @@ const CORE = [
   "modern-refresh-2026.css?v=20260922-1",
   "scorers-showcase.css?v=20260920-1",
   "player-of-tournament.css?v=20260920-guest1",
-  "public-app.js?v=20260922-video-export1",
+  "public-app.js?v=20260918-recap2",
   "fan-experience.js?v=20260919-1",
   "tournament-experience.js?v=20260919-2",
   "site-directory.js?v=20260919-1",
@@ -24,7 +24,7 @@ const CORE = [
   "watch-center-v2.js?v=20260920-1",
   "watch-match-overlay-v1.js?v=20260920-2",
   "watch-overlay-polish-v3.js?v=20260920-1",
-  "match-media-score-fix.js?v=20260918-2",
+  "match-media-score-fix.js?v=20260922-video-save1",
   "match-media-ui-fix.js?v=20260918-2",
   "road-to-cup.js?v=20260917-stages1",
   "featured-final-hotfix.js?v=20260915-final2",

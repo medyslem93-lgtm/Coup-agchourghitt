@@ -85,7 +85,6 @@
     home: '<path d="m3 10 9-7 9 7v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2Z"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>',
     lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
-    download: '<path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/>',
   };
 
   function icon(name, className = "") {
@@ -625,10 +624,7 @@
     const home = teamForSide(match, "a");
     const away = teamForSide(match, "b");
     const tournament = getTournament(match.tournament_id);
-    const scoringTeamId = event.type === "هدف عكسي"
-      ? (event.team_id === match.team_a_id ? match.team_b_id : match.team_a_id)
-      : event.team_id;
-    const team = getTeam(scoringTeamId);
+    const team = getTeam(event.team_id);
     const player = getPlayer(event.player_id);
     const scorer = player?.name || event.player_name || "مسجل الهدف";
     const snapshot = matchMediaScoreState(match, asset, events);
@@ -636,41 +632,20 @@
     const awayScore = snapshot.awayScore;
     const minute = event.minute ?? asset.captured_minute;
     const tournamentLogo = tournament?.logo_url || state.settings.logo_url;
-    const sideClass = scoringTeamId === match.team_b_id ? "is-away" : "is-home";
-    return `<div class="recap-goal-transition" data-goal-transition aria-hidden="true"><strong>هــــدف!</strong></div>
-      <div class="recap-goal-compact ${sideClass}" data-goal-card>
-        <span>${image(team?.logo_url || tournamentLogo, team?.name || "الفريق", { eager: true })}</span>
-        <div><small>${escapeHtml(team?.name || "الفريق")}</small><b>${escapeHtml(scorer)}</b></div>
-        ${minute == null ? "" : `<time>${escapeHtml(minute)}′</time>`}
-      </div>`;
-  }
-
-  function matchMediaExportMeta(match, asset, goalEvent, events = []) {
-    const home = teamForSide(match, "a");
-    const away = teamForSide(match, "b");
-    const tournament = getTournament(match.tournament_id);
-    const scoringTeamId = goalEvent?.type === "هدف عكسي"
-      ? (goalEvent.team_id === match.team_a_id ? match.team_b_id : match.team_a_id)
-      : goalEvent?.team_id;
-    const scoringTeam = scoringTeamId ? getTeam(scoringTeamId) : null;
-    const player = goalEvent ? getPlayer(goalEvent.player_id) : null;
-    const snapshot = matchMediaScoreState(match, asset, events);
-    return {
-      filename: `${home.name}-${away.name}-ملخص`,
-      home: { id: home.id, name: home.name, logo: imageUrl(home.logo_url) },
-      away: { id: away.id, name: away.name, logo: imageUrl(away.logo_url) },
-      tournament: { name: tournament?.short_name || tournament?.name || "كأس أغشوركيت", logo: imageUrl(tournament?.logo_url || state.settings.logo_url) },
-      scoreA: snapshot.homeScore,
-      scoreB: snapshot.awayScore,
-      time: asset.captured_minute == null ? (match.status === "انتهت" ? "FT" : formatTime(match.match_time)) : `${asset.captured_minute}:00`,
-      goal: goalEvent ? {
-        teamId: scoringTeamId,
-        teamName: scoringTeam?.name || "الفريق",
-        teamLogo: imageUrl(scoringTeam?.logo_url || tournament?.logo_url || state.settings.logo_url),
-        player: player?.name || goalEvent.player_name || "مسجل الهدف",
-        minute: goalEvent.minute ?? asset.captured_minute ?? "",
-      } : null,
-    };
+    return `<div class="recap-goal-transition" data-goal-transition aria-hidden="true">
+      <span class="recap-goal-wipe recap-goal-wipe-a"></span><span class="recap-goal-wipe recap-goal-wipe-b"></span>
+      <div class="recap-goal-lockup">
+        <span class="recap-goal-kicker">GOAL MOMENT · ${escapeHtml(tournament?.short_name || "كأس أغشوركيت")}</span>
+        <span class="recap-goal-team-mark">${image(team?.logo_url || tournamentLogo, team?.name || "الفريق", { eager: true })}</span>
+        <strong>هــــدف!</strong><b>${escapeHtml(scorer)}</b>
+        ${minute == null ? "" : `<em>الدقيقة ${escapeHtml(minute)}′</em>`}
+      </div>
+      <div class="recap-goal-scorebar" aria-label="${escapeHtml(`${home.name} ${homeScore} - ${awayScore} ${away.name}`)}">
+        <span class="recap-goal-side"><b>${escapeHtml(home.name)}</b><i>${image(home.logo_url, home.name, { eager: true })}</i></span>
+        <strong>${homeScore}</strong><i class="recap-goal-cup">${image(tournamentLogo, tournament?.name || "البطولة", { eager: true })}</i><strong>${awayScore}</strong>
+        <span class="recap-goal-side recap-goal-away"><i>${image(away.logo_url, away.name, { eager: true })}</i><b>${escapeHtml(away.name)}</b></span>
+      </div>
+    </div>`;
   }
 
   function matchMediaItem(match, asset, index, events) {
@@ -681,238 +656,12 @@
     const isVideo = matchMediaType(asset) === "video";
     const goalEvent = isVideo ? matchMediaGoalEvent(match, asset, events) : null;
     const media = isVideo
-      ? `<video crossorigin="anonymous" src="${url}" controls playsinline preload="metadata" aria-label="${escapeHtml(label)}">متصفحك لا يدعم تشغيل الفيديو.</video>`
+      ? `<video src="${url}" controls playsinline preload="metadata" aria-label="${escapeHtml(label)}">متصفحك لا يدعم تشغيل الفيديو.</video>`
       : `<img src="${url}" alt="${escapeHtml(asset.caption || `صورة المباراة ${index + 1}`)}" loading="lazy" decoding="async">`;
     const eventOverlay = goalEvent
-      ? `<div class="recap-video-event-layer" data-recap-video-event aria-live="polite">${matchMediaGoalTransition(match, asset, goalEvent, events)}</div>`
+      ? `<div class="recap-video-event-layer" data-recap-video-event aria-live="polite">${matchMediaGoalTransition(match, asset, goalEvent, events)}${broadcastEventMarkup(goalEvent)}</div>`
       : "";
-    const exportButton = isVideo
-      ? `<button class="recap-video-save" type="button" data-save-recap-video aria-label="حفظ الفيديو مع النتيجة والشعارات">${icon("download")}<span>حفظ الفيديو</span></button>`
-      : "";
-    const exportMeta = isVideo ? ` data-export-meta="${escapeHtml(JSON.stringify(matchMediaExportMeta(match, asset, goalEvent, events)))}"` : "";
-    return `<figure class="match-recap-media ${isVideo ? "is-video" : "is-image"}"${exportMeta}>${media}${matchMediaScorebug(match, asset, events)}${eventOverlay}${exportButton}<figcaption><span>${isVideo ? "لقطة فيديو" : "صورة المباراة"}</span><b>${escapeHtml(label)}</b></figcaption></figure>`;
-  }
-
-  function roundedRect(context, x, y, width, height, radius) {
-    const r = Math.min(radius, width / 2, height / 2);
-    context.beginPath();
-    context.moveTo(x + r, y);
-    context.arcTo(x + width, y, x + width, y + height, r);
-    context.arcTo(x + width, y + height, x, y + height, r);
-    context.arcTo(x, y + height, x, y, r);
-    context.arcTo(x, y, x + width, y, r);
-    context.closePath();
-  }
-
-  function fitText(context, value, maxWidth) {
-    const source = String(value || "");
-    if (context.measureText(source).width <= maxWidth) return source;
-    let text = source;
-    while (text.length > 2 && context.measureText(`${text}…`).width > maxWidth) text = text.slice(0, -1);
-    return `${text}…`;
-  }
-
-  function loadCanvasImage(source) {
-    return new Promise((resolve) => {
-      if (!source) return resolve(null);
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(null);
-      img.src = new URL(source, location.href).href;
-    });
-  }
-
-  function drawRecapExportFrame(context, canvas, video, meta, images, elapsed) {
-    const width = canvas.width;
-    const height = canvas.height;
-    context.fillStyle = "#000";
-    context.fillRect(0, 0, width, height);
-    const scale = Math.min(width / video.videoWidth, height / video.videoHeight);
-    const mediaWidth = video.videoWidth * scale;
-    const mediaHeight = video.videoHeight * scale;
-    context.drawImage(video, (width - mediaWidth) / 2, (height - mediaHeight) / 2, mediaWidth, mediaHeight);
-
-    const margin = Math.max(12, width * 0.025);
-    const scoreHeight = Math.max(48, height * 0.095);
-    const scoreWidth = width - margin * 2;
-    roundedRect(context, margin, margin, scoreWidth, scoreHeight, 14);
-    context.fillStyle = "rgba(2,5,3,.92)";
-    context.fill();
-    context.textBaseline = "middle";
-    context.fillStyle = "#fff";
-    context.font = `800 ${Math.max(15, height * 0.032)}px Cairo, Arial, sans-serif`;
-    context.direction = "rtl";
-    const logoSize = scoreHeight * 0.68;
-    if (images.home) context.drawImage(images.home, margin + 10, margin + (scoreHeight - logoSize) / 2, logoSize, logoSize);
-    if (images.away) context.drawImage(images.away, width - margin - logoSize - 10, margin + (scoreHeight - logoSize) / 2, logoSize, logoSize);
-    context.textAlign = "left";
-    context.fillText(fitText(context, meta.home.name, scoreWidth * 0.27), margin + logoSize + 19, margin + scoreHeight / 2);
-    context.textAlign = "right";
-    context.fillText(fitText(context, meta.away.name, scoreWidth * 0.27), width - margin - logoSize - 19, margin + scoreHeight / 2);
-    const centerWidth = Math.max(126, width * 0.22);
-    roundedRect(context, (width - centerWidth) / 2, margin, centerWidth, scoreHeight, 10);
-    context.fillStyle = "#fff";
-    context.fill();
-    context.fillStyle = "#050705";
-    context.textAlign = "center";
-    context.direction = "ltr";
-    context.font = `900 ${Math.max(24, height * 0.052)}px Arial, sans-serif`;
-    context.fillText(`${meta.scoreA}  -  ${meta.scoreB}`, width / 2, margin + scoreHeight / 2);
-    if (images.tournament) {
-      const cupSize = scoreHeight * 0.54;
-      context.drawImage(images.tournament, width / 2 - cupSize / 2, margin + 2, cupSize, cupSize);
-    }
-    const clockWidth = Math.max(74, width * 0.12);
-    roundedRect(context, width / 2 - clockWidth / 2, margin + scoreHeight - 1, clockWidth, Math.max(24, scoreHeight * 0.42), 8);
-    context.fillStyle = "#087153";
-    context.fill();
-    context.fillStyle = "#fff";
-    context.font = `800 ${Math.max(13, height * 0.024)}px Arial, sans-serif`;
-    context.fillText(meta.time, width / 2, margin + scoreHeight + Math.max(24, scoreHeight * 0.42) / 2 - 1);
-
-    if (!meta.goal) return;
-    if (elapsed > 0.35 && elapsed < 2.65) {
-      const phase = Math.min(1, (elapsed - 0.35) / 0.25, (2.65 - elapsed) / 0.35);
-      context.save();
-      context.globalAlpha = Math.max(0, phase);
-      const goalWidth = Math.max(150, width * 0.25);
-      const goalHeight = Math.max(45, height * 0.085);
-      roundedRect(context, width / 2 - goalWidth / 2, margin + scoreHeight * 1.55, goalWidth, goalHeight, goalHeight / 2);
-      context.fillStyle = "rgba(4,18,11,.91)";
-      context.fill();
-      context.strokeStyle = "#c7ff37";
-      context.lineWidth = 3;
-      context.stroke();
-      context.fillStyle = "#fff";
-      context.textAlign = "center";
-      context.direction = "rtl";
-      context.font = `1000 ${Math.max(25, height * 0.052)}px Cairo, Arial, sans-serif`;
-      context.fillText("هــــدف!", width / 2, margin + scoreHeight * 1.55 + goalHeight / 2);
-      context.restore();
-    }
-    if (elapsed > 1.05 && elapsed < Math.min(video.duration || 7, 7)) {
-      const cardWidth = Math.max(210, width * 0.39);
-      const cardHeight = Math.max(58, height * 0.115);
-      const isAway = meta.goal.teamId === meta.away.id;
-      const cardX = isAway ? width - margin - cardWidth : margin;
-      const cardY = margin + scoreHeight * 1.63;
-      roundedRect(context, cardX, cardY, cardWidth, cardHeight, 14);
-      context.fillStyle = "rgba(5,20,12,.9)";
-      context.fill();
-      context.strokeStyle = "rgba(199,255,55,.78)";
-      context.lineWidth = 2;
-      context.stroke();
-      const goalLogo = images.goal;
-      const goalLogoSize = cardHeight * 0.7;
-      const goalLogoX = isAway ? cardX + cardWidth - goalLogoSize - 10 : cardX + 10;
-      if (goalLogo) context.drawImage(goalLogo, goalLogoX, cardY + (cardHeight - goalLogoSize) / 2, goalLogoSize, goalLogoSize);
-      const textX = isAway ? goalLogoX - 10 : goalLogoX + goalLogoSize + 10;
-      context.textAlign = isAway ? "right" : "left";
-      context.direction = "rtl";
-      context.fillStyle = "#c7ff37";
-      context.font = `800 ${Math.max(11, height * 0.02)}px Cairo, Arial, sans-serif`;
-      context.fillText(fitText(context, meta.goal.teamName, cardWidth * 0.48), textX, cardY + cardHeight * 0.31);
-      context.fillStyle = "#fff";
-      context.font = `900 ${Math.max(15, height * 0.03)}px Cairo, Arial, sans-serif`;
-      context.fillText(fitText(context, meta.goal.player, cardWidth * 0.48), textX, cardY + cardHeight * 0.66);
-      context.fillStyle = "#c7ff37";
-      context.textAlign = isAway ? "left" : "right";
-      context.direction = "ltr";
-      context.font = `900 ${Math.max(17, height * 0.036)}px Arial, sans-serif`;
-      context.fillText(meta.goal.minute === "" ? "GOAL" : `${meta.goal.minute}′`, isAway ? cardX + 12 : cardX + cardWidth - 12, cardY + cardHeight / 2);
-    }
-  }
-
-  function supportedRecordingType() {
-    const candidates = ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
-    return candidates.find((type) => !window.MediaRecorder?.isTypeSupported || MediaRecorder.isTypeSupported(type)) || "";
-  }
-
-  async function prepareRecapVideo(figure, button) {
-    if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) throw new Error("export-unsupported");
-    const video = figure.querySelector("video");
-    const meta = JSON.parse(figure.dataset.exportMeta || "{}");
-    if (!video?.videoWidth || !video?.videoHeight || !Number.isFinite(video.duration)) throw new Error("video-not-ready");
-    const maxWidth = 1280;
-    const ratio = video.videoWidth / video.videoHeight;
-    const width = Math.min(maxWidth, video.videoWidth);
-    const height = Math.round(width / ratio);
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext("2d", { alpha: false });
-    const [home, away, tournament, goal] = await Promise.all([
-      loadCanvasImage(meta.home?.logo), loadCanvasImage(meta.away?.logo), loadCanvasImage(meta.tournament?.logo), loadCanvasImage(meta.goal?.teamLogo),
-    ]);
-    const images = { home, away, tournament, goal };
-    const previous = { time: video.currentTime, paused: video.paused, muted: video.muted, playbackRate: video.playbackRate };
-    const outputStream = canvas.captureStream(30);
-    let mediaStream = null;
-    try { mediaStream = video.captureStream?.() || video.mozCaptureStream?.() || null; } catch { mediaStream = null; }
-    mediaStream?.getAudioTracks?.().forEach((track) => outputStream.addTrack(track));
-    const mimeType = supportedRecordingType();
-    const recorder = new MediaRecorder(outputStream, mimeType ? { mimeType, videoBitsPerSecond: 5_000_000 } : { videoBitsPerSecond: 5_000_000 });
-    const chunks = [];
-    recorder.addEventListener("dataavailable", (event) => { if (event.data?.size) chunks.push(event.data); });
-    const finished = new Promise((resolve, reject) => {
-      recorder.addEventListener("stop", resolve, { once: true });
-      recorder.addEventListener("error", () => reject(recorder.error || new Error("recording-failed")), { once: true });
-    });
-    await new Promise((resolve, reject) => {
-      const done = () => { cleanup(); resolve(); };
-      const failed = () => { cleanup(); reject(new Error("video-not-ready")); };
-      const cleanup = () => { video.removeEventListener("seeked", done); video.removeEventListener("error", failed); };
-      video.addEventListener("seeked", done, { once: true });
-      video.addEventListener("error", failed, { once: true });
-      video.currentTime = 0;
-      if (video.readyState >= 2 && video.currentTime === 0) done();
-    });
-    const startedAt = performance.now();
-    let frameId = 0;
-    const render = () => {
-      drawRecapExportFrame(context, canvas, video, meta, images, video.currentTime);
-      const progress = Math.min(99, Math.round((video.currentTime / video.duration) * 100));
-      button.querySelector("span").textContent = `جارٍ التجهيز ${progress}%`;
-      if (!video.ended && recorder.state === "recording") frameId = requestAnimationFrame(render);
-    };
-    video.playbackRate = 1;
-    video.muted = false;
-    recorder.start(500);
-    try {
-      await video.play();
-      render();
-      await new Promise((resolve) => video.addEventListener("ended", resolve, { once: true }));
-      drawRecapExportFrame(context, canvas, video, meta, images, video.duration);
-    } finally {
-      cancelAnimationFrame(frameId);
-      if (recorder.state !== "inactive") recorder.stop();
-      await finished;
-      video.pause();
-      video.currentTime = Math.min(previous.time, video.duration || previous.time);
-      video.muted = previous.muted;
-      video.playbackRate = previous.playbackRate;
-      if (!previous.paused) video.play().catch(() => {});
-      outputStream.getTracks().forEach((track) => track.stop());
-    }
-    if (!chunks.length || performance.now() - startedAt < 250) throw new Error("recording-empty");
-    const type = recorder.mimeType || mimeType || "video/webm";
-    const extension = type.includes("mp4") ? "mp4" : "webm";
-    const safeName = String(meta.filename || "match-recap").replace(/[\\/:*?"<>|]+/g, "-");
-    return new File(chunks, `${safeName}.${extension}`, { type });
-  }
-
-  function saveRecapFile(file) {
-    if (navigator.share && navigator.canShare?.({ files: [file] })) return navigator.share({ files: [file], title: "ملخص المباراة" });
-    const url = URL.createObjectURL(file);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = file.name;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
-    return Promise.resolve();
+    return `<figure class="match-recap-media ${isVideo ? "is-video" : "is-image"}">${media}${matchMediaScorebug(match, asset, events)}${eventOverlay}<figcaption><span>${isVideo ? "لقطة فيديو" : "صورة المباراة"}</span><b>${escapeHtml(label)}</b></figcaption></figure>`;
   }
 
   function mountRecapVideoEvents(root = main) {
@@ -920,34 +669,9 @@
       if (figure.dataset.eventMounted === "true") return;
       const video = figure.querySelector("video");
       const layer = figure.querySelector("[data-recap-video-event]");
-      const card = layer?.querySelector("[data-goal-card]");
-      const saveButton = figure.querySelector("[data-save-recap-video]");
-      if (!video) return;
+      const card = layer?.querySelector(".broadcast-event-card");
+      if (!video || !card) return;
       figure.dataset.eventMounted = "true";
-      saveButton?.addEventListener("click", async () => {
-        if (saveButton._exportedFile) {
-          try { await saveRecapFile(saveButton._exportedFile); toast("تم فتح خيارات حفظ الفيديو"); }
-          catch (error) { if (error?.name !== "AbortError") toast("تعذر حفظ الفيديو على هذا الجهاز", "error"); }
-          return;
-        }
-        saveButton.disabled = true;
-        saveButton.classList.add("is-working");
-        try {
-          if (video.readyState < 2) await new Promise((resolve) => video.addEventListener("loadeddata", resolve, { once: true }));
-          saveButton._exportedFile = await prepareRecapVideo(figure, saveButton);
-          saveButton.querySelector("span").textContent = "حفظ في المعرض";
-          saveButton.classList.add("is-ready");
-          toast("الفيديو جاهز — اضغط «حفظ في المعرض»");
-        } catch (error) {
-          console.error("Recap video export failed", error);
-          saveButton.querySelector("span").textContent = "تعذر التجهيز — أعد المحاولة";
-          toast(error?.message === "export-unsupported" ? "متصفحك لا يدعم تصدير الفيديو؛ جرّب Safari أو Chrome محدثًا" : "تعذر تجهيز الفيديو للحفظ", "error");
-        } finally {
-          saveButton.disabled = false;
-          saveButton.classList.remove("is-working");
-        }
-      });
-      if (!layer || !card) return;
       let shown = false;
       let hideTimer = 0;
       let transitionTimer = 0;
@@ -970,8 +694,8 @@
         card.classList.remove("is-leaving");
         layer.classList.remove("is-running");
         requestAnimationFrame(() => layer.classList.add("is-running"));
-        transitionTimer = window.setTimeout(() => card.classList.add("is-visible"), 700);
-        hideTimer = window.setTimeout(hide, 6500);
+        transitionTimer = window.setTimeout(() => card.classList.add("is-visible"), 2350);
+        hideTimer = window.setTimeout(hide, 7600);
       };
       video.addEventListener("timeupdate", reveal, { passive: true });
       video.addEventListener("playing", reveal, { passive: true });

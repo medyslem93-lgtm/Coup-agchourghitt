@@ -190,7 +190,18 @@
     return size;
   }
 
-  function drawExportOverlay(ctx,w,h,media,data,elapsed,goal) {
+  function loadExportImage(url) {
+    return new Promise(resolve => {
+      if (!url) return resolve(null);
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  }
+
+  function drawExportOverlay(ctx,w,h,media,data,elapsed,goal,images={}) {
     const a = data.match.team_a || {name:'الفريق الأول'};
     const b = data.match.team_b || {name:'الفريق الثاني'};
     const after = scoreAtMedia(media,data);
@@ -207,18 +218,39 @@
     roundedRect(ctx,pad,top,boxW,boxH,12,'rgba(4,8,7,.86)');
     roundedRect(ctx,w-pad-boxW,top,boxW,boxH,12,'rgba(4,8,7,.86)');
     roundedRect(ctx,(w-midW)/2,top,midW,boxH,12,'rgba(4,8,7,.9)');
+    const logoSize=Math.max(25,Math.round(boxH*.7));
+    if(images.b) ctx.drawImage(images.b,pad+8,top+(boxH-logoSize)/2,logoSize,logoSize);
+    if(images.a) ctx.drawImage(images.a,w-pad-logoSize-8,top+(boxH-logoSize)/2,logoSize,logoSize);
     ctx.textBaseline='middle'; ctx.fillStyle='#fff';
-    ctx.textAlign='left'; ctx.font=`800 ${fitText(ctx,b.name,boxW-70,font,14)}px Arial,sans-serif`; ctx.fillText(b.name,pad+14,top+boxH/2);
+    ctx.textAlign='left'; ctx.font=`800 ${fitText(ctx,b.name,boxW-logoSize-76,font,14)}px Arial,sans-serif`; ctx.fillText(b.name,pad+logoSize+17,top+boxH/2);
     ctx.textAlign='right'; ctx.font=`900 ${font}px Arial,sans-serif`; ctx.fillStyle='#31c4ff'; ctx.fillText(String(scoreNow.b),pad+boxW-14,top+boxH/2);
-    ctx.textAlign='right'; ctx.fillStyle='#fff'; ctx.font=`800 ${fitText(ctx,a.name,boxW-70,font,14)}px Arial,sans-serif`; ctx.fillText(a.name,w-pad-14,top+boxH/2);
+    ctx.textAlign='right'; ctx.fillStyle='#fff'; ctx.font=`800 ${fitText(ctx,a.name,boxW-logoSize-76,font,14)}px Arial,sans-serif`; ctx.fillText(a.name,w-pad-logoSize-17,top+boxH/2);
     ctx.textAlign='left'; ctx.font=`900 ${font}px Arial,sans-serif`; ctx.fillStyle='#31c4ff'; ctx.fillText(String(scoreNow.a),w-pad-boxW+14,top+boxH/2);
-    ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.font=`900 ${Math.max(15,Math.round(font*.72))}px Arial,sans-serif`; ctx.fillText(media.captured_minute != null ? `${media.captured_minute}′` : '',w/2,top+boxH/2);
+    if(images.tournament){const cup=Math.max(17,Math.round(boxH*.43));ctx.drawImage(images.tournament,w/2-cup/2,top+3,cup,cup);}
+    ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.font=`900 ${Math.max(13,Math.round(font*.62))}px Arial,sans-serif`; ctx.fillText(media.captured_minute != null ? `${media.captured_minute}′` : '',w/2,top+boxH*.72);
     if (showGoal) {
-      const gw = Math.min(Math.round(w*.6),560), gh = Math.max(76,Math.round(h*.16)), gx=(w-gw)/2, gy=top+boxH+pad;
-      roundedRect(ctx,gx,gy,gw,gh,18,'rgba(5,28,22,.94)');
-      ctx.textAlign='center'; ctx.fillStyle='#31c4ff'; ctx.font=`950 ${Math.max(30,Math.round(h*.06))}px Arial,sans-serif`; ctx.fillText('هدف!',w/2,gy+gh*.35);
-      const scorer = goal.player_name || (goal.team_id===data.match.team_a_id?a.name:b.name);
-      ctx.fillStyle='#fff'; ctx.font=`850 ${Math.max(19,Math.round(h*.035))}px Arial,sans-serif`; ctx.fillText(`${scorer}${goal.minute!=null?` · ${goal.minute}′`:''}`,w/2,gy+gh*.7);
+      const sideA=goal.team_id===data.match.team_a_id;
+      const goalTeam=sideA?a:b;
+      const labelW=Math.min(Math.round(w*.22),230), labelH=Math.max(34,Math.round(h*.06));
+      const labelX=(w-labelW)/2, labelY=top+boxH+Math.max(8,pad*.55);
+      roundedRect(ctx,labelX,labelY,labelW,labelH,labelH/2,'rgba(5,28,22,.94)');
+      ctx.strokeStyle='#31c4ff';ctx.lineWidth=Math.max(2,Math.round(w*.002));ctx.stroke();
+      ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font=`950 ${Math.max(19,Math.round(h*.038))}px Arial,sans-serif`;ctx.fillText('هــــدف!',w/2,labelY+labelH/2);
+
+      const cardW=Math.min(Math.round(w*.38),390), cardH=Math.max(58,Math.round(h*.105));
+      const cardX=sideA?w-pad-cardW:pad, cardY=labelY+labelH+Math.max(7,pad*.45);
+      roundedRect(ctx,cardX,cardY,cardW,cardH,14,'rgba(5,28,22,.92)');
+      ctx.strokeStyle='rgba(49,196,255,.72)';ctx.lineWidth=2;ctx.stroke();
+      const eventLogo=images.goal||(sideA?images.a:images.b), eventLogoSize=Math.round(cardH*.68);
+      const eventLogoX=sideA?cardX+cardW-eventLogoSize-9:cardX+9;
+      if(eventLogo) ctx.drawImage(eventLogo,eventLogoX,cardY+(cardH-eventLogoSize)/2,eventLogoSize,eventLogoSize);
+      const scorer=goal.player_name||goalTeam.name||'مسجل الهدف';
+      ctx.direction='rtl';ctx.fillStyle='#31c4ff';ctx.font=`800 ${Math.max(11,Math.round(h*.019))}px Arial,sans-serif`;
+      ctx.textAlign=sideA?'right':'left';const textX=sideA?eventLogoX-9:eventLogoX+eventLogoSize+9;
+      ctx.fillText(goalTeam.name||'',textX,cardY+cardH*.31);
+      ctx.fillStyle='#fff';ctx.font=`900 ${Math.max(15,Math.round(h*.029))}px Arial,sans-serif`;ctx.fillText(scorer,textX,cardY+cardH*.66);
+      ctx.direction='ltr';ctx.fillStyle='#31c4ff';ctx.font=`900 ${Math.max(17,Math.round(h*.034))}px Arial,sans-serif`;ctx.textAlign=sideA?'left':'right';
+      ctx.fillText(goal.minute!=null?`${goal.minute}′`:'GOAL',sideA?cardX+12:cardX+cardW-12,cardY+cardH/2);
     }
     const title = `${data.match.tournament?.short_name || data.match.tournament?.name || 'كأس أغشوركيت 2026'} • ${a.name} × ${b.name}`;
     ctx.font=`700 ${Math.max(13,Math.round(h*.022))}px Arial,sans-serif`; const tw=Math.min(ctx.measureText(title).width+30,w-pad*2);
@@ -243,14 +275,25 @@
     }
   }
 
+  async function originalVideoFile(url,filename) {
+    const res=await fetch(url,{mode:'cors'});
+    if(!res.ok) throw new Error('fetch failed');
+    const blob=await res.blob();
+    return new File([blob],filename,{type:blob.type||'video/mp4'});
+  }
+
+  function saveVideoFile(file) {
+    if(navigator.share&&navigator.canShare?.({files:[file]})) return navigator.share({files:[file],title:'ملخص المباراة'});
+    const href=URL.createObjectURL(file);const a=document.createElement('a');a.href=href;a.download=file.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(href),30000);return Promise.resolve();
+  }
+
   async function exportVideoWithOverlay(media,data,button) {
     const url = media.public_url;
     if (!url) return;
     const goal = goalForMedia(media,data);
     const mime = bestMime();
     if (!mime || !HTMLCanvasElement.prototype.captureStream) {
-      await downloadOriginal(url,`agchourghit-${media.captured_minute || 'clip'}.mp4`);
-      return;
+      return originalVideoFile(url,`agchourghit-${media.captured_minute || 'clip'}.mp4`);
     }
     const source = document.createElement('video');
     source.crossOrigin='anonymous'; source.playsInline=true; source.preload='auto'; source.muted=true; source.src=url;
@@ -258,6 +301,10 @@
     const vw=source.videoWidth||1280, vh=source.videoHeight||720, maxW=1280, scale=Math.min(1,maxW/vw);
     const canvas=document.createElement('canvas'); canvas.width=Math.max(320,Math.round(vw*scale)); canvas.height=Math.max(180,Math.round(vh*scale));
     const ctx=canvas.getContext('2d',{alpha:false}); if (!ctx) throw new Error('canvas');
+    const [teamAImage,teamBImage,tournamentImage,goalImage]=await Promise.all([
+      loadExportImage(data.match.team_a?.logo_url),loadExportImage(data.match.team_b?.logo_url),loadExportImage(data.match.tournament?.logo_url),loadExportImage(goal?.team_id===data.match.team_a_id?data.match.team_a?.logo_url:data.match.team_b?.logo_url),
+    ]);
+    const exportImages={a:teamAImage,b:teamBImage,tournament:tournamentImage,goal:goalImage};
     const stream=canvas.captureStream(30);
     let sourceStream=null;
     try { sourceStream=source.captureStream?.(); sourceStream?.getAudioTracks?.().forEach(t=>stream.addTrack(t)); } catch {}
@@ -270,7 +317,7 @@
       if (source.readyState >= 2) {
         ctx.drawImage(source,0,0,canvas.width,canvas.height);
         const elapsed=startedAt?performance.now()/1000-startedAt:0;
-        drawExportOverlay(ctx,canvas.width,canvas.height,media,data,elapsed,goal);
+        drawExportOverlay(ctx,canvas.width,canvas.height,media,data,elapsed,goal,exportImages);
       }
       if (!source.ended) raf=requestAnimationFrame(draw);
     };
@@ -279,21 +326,26 @@
     cancelAnimationFrame(raf); if(recorder.state!=='inactive') recorder.stop(); await stopped;
     source.pause(); source.removeAttribute('src'); source.load(); stream.getTracks().forEach(t=>t.stop()); sourceStream?.getTracks?.().forEach(t=>t.stop());
     const blob=new Blob(chunks,{type:mime}); if(!blob.size) throw new Error('empty export');
-    const ext=mime.includes('mp4')?'mp4':'webm'; const href=URL.createObjectURL(blob); const a=document.createElement('a');
-    a.href=href; a.download=`agchourghit-goal-${media.captured_minute || 'clip'}.${ext}`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(href),2500);
+    const ext=mime.includes('mp4')?'mp4':'webm';
+    return new File([blob],`agchourghit-goal-${media.captured_minute || 'clip'}.${ext}`,{type:mime});
   }
 
   function addDownloadButton(wrapper,media,data) {
     let button=wrapper.querySelector(':scope > .agh-media-download');
-    if (!button) { button=document.createElement('button'); button.type='button'; button.className='agh-media-download'; button.innerHTML='⬇ تنزيل مع التفاصيل'; wrapper.appendChild(button); }
+    if (!button) { button=document.createElement('button'); button.type='button'; button.className='agh-media-download'; button.innerHTML='⬇ حفظ الفيديو'; wrapper.appendChild(button); }
     if (button.dataset.bound==='1') return;
     button.dataset.bound='1';
     button.addEventListener('click',async e=>{
       e.preventDefault(); e.stopPropagation(); if(button.disabled) return;
-      const old=button.innerHTML; button.disabled=true; button.innerHTML='⏳ تجهيز الفيديو…';
-      try { await exportVideoWithOverlay(media,data,button); button.innerHTML='✓ تم التجهيز'; }
+      if(button._exportedFile){try{await saveVideoFile(button._exportedFile);}catch(err){if(err?.name!=='AbortError')console.error('Video save failed',err);}return;}
+      button.disabled=true;button.innerHTML='⏳ تجهيز الفيديو…';
+      try {
+        button._exportedFile=await exportVideoWithOverlay(media,data,button);
+        button.innerHTML=navigator.canShare?.({files:[button._exportedFile]})?'⬇ حفظ في المعرض':'✓ تنزيل الفيديو';
+        if(!navigator.canShare?.({files:[button._exportedFile]})) await saveVideoFile(button._exportedFile);
+      }
       catch(err) { console.error('Overlay video export failed',err); await downloadOriginal(media.public_url,`agchourghit-${media.captured_minute || 'clip'}.mp4`); button.innerHTML='⬇ تم تنزيل الأصل'; }
-      setTimeout(()=>{button.disabled=false;button.innerHTML=old;},1800);
+      finally{button.disabled=false;}
     });
   }
 
