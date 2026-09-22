@@ -81,19 +81,19 @@
     if (!['directory', 'more'].includes(rootRoute())) return;
     main.querySelectorAll('.agh-dir-card').forEach((card) => {
       const r = card.getAttribute('data-route') || '';
-      if (['following', 'follows', 'profile'].includes(r)) card.remove();
+      if (['following', 'follows', 'profile', 'community'].includes(r)) card.remove();
     });
     const title = main.querySelector('.agh-dir-page-head h1');
     if (title) title.textContent = 'المزيد';
     const hero = main.querySelector('.agh-dir-hero h2');
     if (hero) hero.textContent = 'كل أقسام الموقع';
     const intro = main.querySelector('.agh-dir-page-head p');
-    if (intro) intro.textContent = 'شاهد، المجتمع، الحكام، الإحصائيات، الأخبار وبقية أقسام كأس أغشوركيت.';
+    if (intro) intro.textContent = 'شاهد، الحكام، الإحصائيات، الأخبار وبقية أقسام كأس أغشوركيت.';
   }
 
   function redirectLegacyFanRoutes() {
     const r = rootRoute();
-    if (['following', 'follows', 'profile'].includes(r)) location.replace('#/directory');
+    if (['following', 'follows', 'profile', 'community'].includes(r)) location.replace('#/directory');
   }
 
   function tournamentCard(t, teams, matches) {
@@ -145,7 +145,7 @@
     const target = event.target.closest('[data-route]');
     if (!target) return;
     const r = target.getAttribute('data-route');
-    if (['following', 'follows', 'profile'].includes(r || '')) {
+    if (['following', 'follows', 'profile', 'community'].includes(r || '')) {
       event.preventDefault();
       event.stopImmediatePropagation();
       location.hash = '#/directory';

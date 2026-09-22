@@ -1,0 +1,35 @@
+:root{--accent:#d4ff3f;--gold:#e8bd57;--surface:#101612;--surface-2:#151d17;--line:rgba(255,255,255,.1);--content:1220px}
+body{background:radial-gradient(circle at 85% -8%,rgba(212,255,63,.12),transparent 28rem),radial-gradient(circle at 8% 32%,rgba(232,189,87,.06),transparent 25rem),linear-gradient(180deg,#070a08 0%,#050705 48%,#080b08 100%)}
+.app-header{min-height:78px;border-bottom-color:rgba(212,255,63,.11);background:rgba(5,8,6,.87);box-shadow:0 12px 38px rgba(0,0,0,.2)}
+.brand-mark{border-color:rgba(232,189,87,.42);background:linear-gradient(145deg,rgba(232,189,87,.16),rgba(212,255,63,.06));box-shadow:0 8px 24px rgba(0,0,0,.28)}
+.brand-copy small{color:var(--gold)}
+.desktop-navigation{padding:5px;border:1px solid rgba(255,255,255,.07);border-radius:16px;background:rgba(255,255,255,.025)}
+.desktop-navigation button{min-height:42px;padding-inline:16px}
+.desktop-navigation button.active{color:#11170a;background:linear-gradient(135deg,#dcff65,#bce82d);box-shadow:0 8px 22px rgba(190,235,45,.18)}
+.season-button,.icon-button{background:rgba(255,255,255,.055)}
+#aghBreakingTicker{border:1px solid rgba(255,255,255,.12)!important;box-shadow:0 12px 30px rgba(119,12,5,.2);background:linear-gradient(90deg,#9f1209,#e52b15)!important}
+#aghBreakingTicker .agh-label{box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.page-shell{padding-top:28px}
+.hero-layout{gap:16px}
+.hero-copy-card,.hero-match-card,.section-block,.surface-card,.profile-hero,.article-card{border-color:rgba(255,255,255,.1);box-shadow:0 20px 54px rgba(0,0,0,.22)}
+.hero-copy-card{background:radial-gradient(circle at 12% 10%,rgba(212,255,63,.13),transparent 20rem),linear-gradient(145deg,#172019,#0b100c)}
+.hero-copy-card:after{content:"";position:absolute;inset-inline-end:-80px;bottom:-120px;width:270px;height:270px;border:1px solid rgba(212,255,63,.14);border-radius:50%;box-shadow:0 0 0 34px rgba(212,255,63,.025),0 0 0 70px rgba(212,255,63,.018);pointer-events:none}
+.hero-copy-card h1{font-size:clamp(38px,7vw,72px);line-height:1.02;letter-spacing:-.055em}
+.hero-copy-card h1 em{color:var(--accent);font-style:normal;text-shadow:0 10px 34px rgba(212,255,63,.2)}
+.primary-button{border-color:#ccf638;background:linear-gradient(135deg,#dfff62,#bce52d);box-shadow:0 10px 28px rgba(191,233,46,.2)}
+.secondary-button,.page-action{background:rgba(255,255,255,.055)}
+.section-heading{margin-bottom:15px}.section-heading h2{font-size:clamp(21px,4vw,31px)}
+.match-card,.news-card,.team-card,.leader-card,.action-tile,.agh-home-directory-card{transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.match-card:hover,.news-card:hover,.team-card:hover,.action-tile:hover,.agh-home-directory-card:hover{transform:translateY(-3px);border-color:rgba(212,255,63,.27);box-shadow:0 18px 42px rgba(0,0,0,.28)}
+.match-card,.team-card,.news-card,.action-tile{background:linear-gradient(145deg,rgba(22,30,24,.96),rgba(10,14,11,.98))}
+.status-pill.live,.live-badge{box-shadow:0 0 0 5px rgba(255,75,75,.08),0 8px 20px rgba(255,75,75,.12)}
+.team-logo,.team-card-logo,.match-team-logo,.team-logo-large{filter:drop-shadow(0 10px 16px rgba(0,0,0,.22))}
+.table-scroll,.table-wrap{border-radius:20px;border-color:rgba(255,255,255,.1);background:#0c110d;box-shadow:0 16px 40px rgba(0,0,0,.2)}
+.app-tabs{padding:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:17px}
+.app-tabs button.active{background:linear-gradient(135deg,#dfff62,#bce52d);color:#11170a;box-shadow:0 8px 20px rgba(190,233,45,.17)}
+.mobile-navigation{border-color:rgba(212,255,63,.15);background:rgba(7,11,8,.92);box-shadow:0 18px 50px rgba(0,0,0,.48);backdrop-filter:blur(24px) saturate(145%)}
+.mobile-navigation button{min-height:59px}
+.mobile-navigation button.active{color:var(--accent)}
+.mobile-navigation .nav-primary{background:linear-gradient(145deg,#dfff62,#bce52d);color:#11170a!important;box-shadow:0 9px 24px rgba(190,233,45,.25)}
+@media(max-width:760px){.app-header{min-height:68px;padding:9px 13px}.brand-mark{width:44px;height:44px;flex-basis:44px;border-radius:14px}.brand-copy strong{font-size:13px}.season-button{display:none}.page-shell{width:min(calc(100% - 24px),var(--content));padding-top:17px}.hero-copy-card,.hero-match-card,.section-block,.profile-hero{border-radius:24px}.hero-copy-card{padding:22px 18px}.hero-copy-card h1{font-size:clamp(34px,12vw,49px)}.hero-copy-card p{font-size:14px;line-height:1.9}.hero-actions{display:grid;grid-template-columns:1fr 1fr}.primary-button,.secondary-button{min-height:47px}.section-heading{align-items:center}.section-heading h2{font-size:21px}.match-card{border-radius:20px}.mobile-navigation{left:8px;right:8px;bottom:calc(7px + env(safe-area-inset-bottom));padding:6px;border-radius:23px}.mobile-navigation button span{font-size:11px;font-weight:800}}
+@media(prefers-reduced-motion:reduce){.match-card,.news-card,.team-card,.action-tile,.agh-home-directory-card{transition:none}}

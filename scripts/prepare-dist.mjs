@@ -13,13 +13,13 @@ const files = [
   "scorers-showcase.css",
   "fan-experience.js",
   "fan-experience.css",
-  "fan-route-guard.js",
   "tournament-experience.js",
   "tournament-experience.css",
   "site-directory.js",
   "site-directory.css",
   "app-structure-v2.js",
   "app-structure-v2.css",
+  "modern-refresh-2026.css",
   "watch-center-v2.js",
   "watch-match-overlay-v1.js",
   "watch-overlay-polish-v3.js",
@@ -80,14 +80,13 @@ publicIndex = publicIndex
   .replace(/player-of-tournament\.js\?v=[^"']+/g, "player-of-tournament.js?v=20260920-guest1")
   .replace(/fan-experience\.css\?v=[^"']+/g, "fan-experience.css?v=20260919-1")
   .replace(/fan-experience\.js\?v=[^"']+/g, "fan-experience.js?v=20260919-1")
-  .replace(/fan-route-guard\.js\?v=[^"']+/g, "fan-route-guard.js?v=20260920-guest1")
   .replace(/assets\/site-smooth-v4\.js\?v=[^"']+/g, "assets/site-smooth-v5.js?v=20260920-guest1")
   .replace(/tournament-experience\.css\?v=[^"']+/g, "tournament-experience.css?v=20260919-2")
   .replace(/tournament-experience\.js\?v=[^"']+/g, "tournament-experience.js?v=20260919-2")
   .replace(/site-directory\.css\?v=[^"']+/g, "site-directory.css?v=20260919-1")
   .replace(/site-directory\.js\?v=[^"']+/g, "site-directory.js?v=20260919-1")
   .replace(/app-structure-v2\.css\?v=[^"']+/g, "app-structure-v2.css?v=20260921-restore1")
-  .replace(/app-structure-v2\.js\?v=[^"']+/g, "app-structure-v2.js?v=20260921-restore1")
+  .replace(/app-structure-v2\.js\?v=[^"']+/g, "app-structure-v2.js?v=20260922-1")
   .replace(/watch-center-v2\.js\?v=[^"']+/g, "watch-center-v2.js?v=20260920-1")
   .replace(/watch-match-overlay-v1\.js\?v=[^"']+/g, "watch-match-overlay-v1.js?v=20260920-2")
   .replace(/watch-overlay-polish-v3\.js\?v=[^"']+/g, "watch-overlay-polish-v3.js?v=20260920-1");

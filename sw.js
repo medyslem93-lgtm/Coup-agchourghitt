@@ -1,4 +1,4 @@
-const CACHE = "agchorguit-premium-v35-20260921-restore1";
+const CACHE = "agchorguit-premium-v36-20260922-refresh1";
 const CORE = [
   "./",
   "index.html",
@@ -13,14 +13,14 @@ const CORE = [
   "tournament-experience.css?v=20260919-2",
   "site-directory.css?v=20260919-1",
   "app-structure-v2.css?v=20260921-restore1",
+  "modern-refresh-2026.css?v=20260922-1",
   "scorers-showcase.css?v=20260920-1",
   "player-of-tournament.css?v=20260920-guest1",
   "public-app.js?v=20260918-recap2",
   "fan-experience.js?v=20260919-1",
-  "fan-route-guard.js?v=20260920-guest1",
   "tournament-experience.js?v=20260919-2",
   "site-directory.js?v=20260919-1",
-  "app-structure-v2.js?v=20260921-restore1",
+  "app-structure-v2.js?v=20260922-1",
   "watch-center-v2.js?v=20260920-1",
   "watch-match-overlay-v1.js?v=20260920-2",
   "watch-overlay-polish-v3.js?v=20260920-1",
@@ -36,13 +36,9 @@ const CORE = [
   "assets/tournament.jpg",
   "assets/logo-placeholder.svg",
   "assets/site-reliability-v1.js?v=20260920-1",
-  "assets/directory-guest-fix-v1.js?v=20260920-1",
-  "assets/community-official-v2.js?v=20260920-1",
-  "assets/community-guest-interactions-v1.js?v=20260920-2",
   "assets/tournament-lineup-polish-v2.js?v=20260920-2",
   "assets/player-vote-profile-flow-v1.js?v=20260920-2",
   "assets/admin-live-refresh-v1.js?v=20260920-2",
-  "assets/site-smooth-v5.js?v=20260920-guest1",
 ];
 
 self.addEventListener("install", (event) => {
