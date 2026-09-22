@@ -75,7 +75,7 @@ publicIndex = publicIndex
   .replace(/<script>try\{if\(localStorage\.getItem\('agh_welcome_2026_v1'\)[\s\S]*?<\/script>\s*/i, "")
   .replace(/<script src=["']welcome-screen\.js[^"']*["']><\/script>\s*/i, "")
   .replace(/<meta name=["']release["'] content=["'][^"']+["']>/i, '<meta name="release" content="guest-voting-v1">')
-  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260921-restore1")
+  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260922-1")
   .replace(/player-of-tournament\.css\?v=[^"']+/g, "player-of-tournament.css?v=20260920-guest1")
   .replace(/player-of-tournament\.js\?v=[^"']+/g, "player-of-tournament.js?v=20260920-guest1")
   .replace(/fan-experience\.css\?v=[^"']+/g, "fan-experience.css?v=20260919-1")
