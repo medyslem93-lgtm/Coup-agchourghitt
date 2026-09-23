@@ -337,7 +337,10 @@
 
   function playerStats(tournamentId) {
     const rows = state.playerStats.filter((row) => row.tournament_id === tournamentId);
-    return rows.length ? rows : fallbackPlayerStats(tournamentId);
+    return (rows.length ? rows : fallbackPlayerStats(tournamentId)).map(row => ({
+      ...row,
+      matches: state.matches.filter(match => match.tournament_id === tournamentId && match.status === FINISHED && (match.team_a_id === row.team_id || match.team_b_id === row.team_id)).length
+    }));
   }
 
   function rankedPlayers(tournamentId, field) {
@@ -385,7 +388,6 @@
       ${nextMatches.length ? `<section class="section-block">${sectionHeading("NEXT", "المباريات القادمة", "الجدول الكامل", `tournament/${tournament.slug}/matches`)}${matchCollection(nextMatches)}</section>` : ""}
       ${recentResults.length ? `<section class="section-block">${sectionHeading("RESULTS", "آخر النتائج", "جميع النتائج", `tournament/${tournament.slug}/results`)}${matchCollection(recentResults)}</section>` : ""}
       <section class="section-block">${sectionHeading("CUPS", "بطولات كأس أغشوركيت", "عرض البطولات", "tournaments")}${tournamentCards()}</section>
-      ${visibleNews.length ? `<section class="section-block">${sectionHeading("NEWS", "آخر الأخبار", "كل الأخبار", "news")}${newsCards(visibleNews.slice(0, 2))}</section>` : ""}
     </div>`;
   }
 
@@ -492,6 +494,7 @@
       const lineup = state.lineups.find((item) => item.id === row.lineup_id);
       if (lineup) matchIds.add(lineup.match_id);
     });
+    state.matches.filter(match => match.status === FINISHED && team && match.tournament_id === team.tournament_id && (match.team_a_id === team.id || match.team_b_id === team.id)).forEach(match => matchIds.add(match.id));
     const matches = [...matchIds].map(getMatch).filter(Boolean).sort((a, b) => matchDateTime(b) - matchDateTime(a));
     const photo = player.photo_url ? `<span class="team-logo-large">${image(player.photo_url, player.name, { eager: true })}</span>` : `<span class="team-logo-large" style="display:grid;place-items:center;background:var(--surface-3);color:var(--accent);font-size:34px;font-weight:900">${escapeHtml(initials(player.name))}</span>`;
     main.innerHTML = `<div class="page-shell"><section class="profile-hero" style="--profile-accent:${escapeHtml(tournament?.accent_color || "#c7ff37")}"><div class="back-row"><button class="back-button" type="button" data-route="team/${team?.id || ""}">${icon("back")} فريق ${escapeHtml(team?.name || "اللاعب")}</button><span class="status-pill finished">PLAYER</span></div><div class="profile-main">${photo}<div><span class="eyebrow">PLAYER PROFILE</span><h1>${escapeHtml(player.name)}</h1><p>${escapeHtml(team?.name || "فريق غير محدد")}</p><div class="profile-badges">${player.number != null ? `<span class="soft-badge">رقم ${player.number}</span>` : ""}${player.position ? `<span class="soft-badge">${escapeHtml(player.position)}</span>` : ""}${player.is_captain ? '<span class="soft-badge">قائد الفريق</span>' : ""}</div></div>${team ? `<div class="agh-team-kit"><small>قميص اللاعب</small>${clubShirt(team, player.number)}</div>` : ""}<div class="profile-actions"><button class="secondary-button" type="button" data-share="${location.href}">${icon("share", "button-icon")} مشاركة</button></div></div><div class="profile-metrics"><div class="profile-metric"><strong>${stats.matches || 0}</strong><span>المباريات</span></div><div class="profile-metric"><strong>${stats.goals || 0}</strong><span>الأهداف</span></div><div class="profile-metric"><strong>${stats.assists || 0}</strong><span>Assists</span></div><div class="profile-metric"><strong>${stats.yellow_cards || 0}</strong><span>صفراء</span></div><div class="profile-metric"><strong>${stats.red_cards || 0}</strong><span>حمراء</span></div></div></section><section class="section-block">${sectionHeading("MATCH LOG", "سجل المباريات")}${matchCollection(matches, "list")}</section><section class="section-block">${sectionHeading("EVENTS", "أحداث اللاعب")}${eventTimeline(events)}</section></div>`;

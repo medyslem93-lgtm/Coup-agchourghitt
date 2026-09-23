@@ -37,7 +37,7 @@
 
   function renderBanner() {
     document.querySelectorAll('.tournament-breaking-banner').forEach(el => el.remove());
-    if (!item) return;
+    if (!item || !/^#\/?news(?:\/|$)/.test(location.hash)) return;
     const shell = main.querySelector('.page-shell') || main.firstElementChild || main;
     const banner = document.createElement('button');
     banner.type = 'button';

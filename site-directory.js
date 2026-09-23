@@ -22,6 +22,7 @@
   const route = () => (location.hash.replace(/^#\/?/, '') || 'home').split('/').filter(Boolean).map(decodeURIComponent);
   const normalize = (value = '') => String(value).normalize('NFKD').replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '').replace(/ـ/g, '').replace(/[أإآٱ]/g, 'ا').replace(/[ىي]/g, 'ي').replace(/ة/g, 'ه').replace(/[ؤ]/g, 'و').replace(/[ئ]/g, 'ي').replace(/[گڨ]/g, 'ك').toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, ' ').replace(/\s+/g, ' ').trim();
   const img = (url, alt = '') => `<img src="${esc(url || 'assets/tournament.jpg')}" alt="${esc(alt)}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='assets/tournament.jpg'">`;
+  const refereeAvatar = r => img(r?.photo_url || 'assets/referee-avatar.svg', r?.name || 'حكم');
   const shirt = (tm, number = '') => `<span class="agh-club-shirt agh-club-shirt-small" aria-label="قميص ${esc(tm?.name || 'الفريق')}"><span class="agh-club-shirt-collar"></span><span class="agh-club-shirt-crest">${tm?.logo_url ? img(tm.logo_url, '') : '<span>⚽</span>'}</span>${number !== '' && number != null ? `<b>${esc(number)}</b>` : ''}</span>`;
   const team = id => store.teams.find(x => x.id === id);
   const tournament = id => store.tournaments.find(x => x.id === id);
@@ -42,6 +43,10 @@
       ];
       const results = await Promise.all(queries.map(async ([key, q]) => [key, await q]));
       results.forEach(([key, result]) => { if (!result.error) store[key] = result.data || []; });
+      if (window.AGCH_REFEREE_IDENTITY) {
+        const merged = window.AGCH_REFEREE_IDENTITY.merge(store.referees, store.assignments);
+        store.referees = merged.refs; store.assignments = merged.assign;
+      }
       store.loaded = true;
       store.loading = null;
       return store;
@@ -119,23 +124,24 @@
 
   function refereeStats(id) {
     const a = store.assignments.filter(x => x.referee_id === id && x.match_id);
-    return { total: a.length, main: a.filter(x => x.role === 'main').length, assist: a.filter(x => x.role && x.role !== 'main').length };
+    return { total: new Set(a.map(x => x.match_id)).size, main: new Set(a.filter(x => x.role === 'main').map(x => x.match_id)).size, assist: new Set(a.filter(x => x.role && x.role !== 'main').map(x => x.match_id)).size };
   }
 
   function renderRefereesDirectory(active = 'all') {
     const allowed = active === 'all' ? null : new Set(store.assignments.filter(a => a.tournament_id === active).map(a => a.referee_id));
     const rows = store.referees.filter(r => !allowed || allowed.has(r.id));
-    const body = `${tournamentChips(active, 'data-ref-filter')}<div class="agh-ref-directory">${rows.map(r => { const s = refereeStats(r.id); return `<button type="button" class="agh-ref-directory-card" data-route="referee/${esc(r.id)}"><i>${r.photo_url ? img(r.photo_url,r.name) : '<span>⚖️</span>'}</i><span><b>${esc(r.name)}</b><small>${s.total} مباراة · ${s.main} رئيسي · ${s.assist} مساعد</small></span><strong>‹</strong></button>`; }).join('') || '<div class="agh-dir-empty">لا يوجد حكام في هذا القسم.</div>'}</div>`;
+    const body = `${tournamentChips(active, 'data-ref-filter')}<div class="agh-ref-directory">${rows.map(r => { const s = refereeStats(r.id); return `<button type="button" class="agh-ref-directory-card" data-route="referee/${esc(r.id)}"><i>${refereeAvatar(r)}</i><span><b>${esc(r.name)}</b><small>${s.total} مباراة · ${s.main} رئيسي · ${s.assist} مساعد</small></span><strong>‹</strong></button>`; }).join('') || '<div class="agh-dir-empty">لا يوجد حكام في هذا القسم.</div>'}</div>`;
     main.innerHTML = shell('الحكام', 'دليل مستقل للحكام وتعييناتهم في مباريات البطولات.', body, 'REFEREES');
   }
 
   function renderRefereeProfile(id) {
-    const r = store.referees.find(x => x.id === id);
+    const canonical = window.AGCH_REFEREE_IDENTITY?.canonical(id) || id;
+    const r = store.referees.find(x => x.id === canonical);
     if (!r) { main.innerHTML = shell('الحكم غير موجود', 'تعذر العثور على هذا الملف.', '<div class="agh-dir-empty">الملف غير متاح.</div>'); return; }
-    const assignments = store.assignments.filter(a => a.referee_id === id && a.match_id);
-    const s = refereeStats(id);
+    const assignments = store.assignments.filter(a => a.referee_id === canonical && a.match_id);
+    const s = refereeStats(canonical);
     const matches = assignments.map(a => ({ a, m: store.matches.find(m => m.id === a.match_id) })).filter(x => x.m);
-    const body = `<section class="agh-ref-profile"><div class="agh-ref-profile-main"><i>${r.photo_url ? img(r.photo_url,r.name) : '<span>⚖️</span>'}</i><div><small>REFEREE PROFILE</small><h2>${esc(r.name)}</h2><p>السجل التحكيمي في كأس أغشوركيت</p></div></div><div class="agh-ref-profile-stats"><div><b>${s.total}</b><span>مباراة</span></div><div><b>${s.main}</b><span>حكم رئيسي</span></div><div><b>${s.assist}</b><span>حكم مساعد</span></div></div></section><section class="agh-dir-section"><div class="agh-dir-section-title"><div><span><b>المباريات والتعيينات</b><small>السجل الكامل</small></span></div></div><div class="agh-team-directory">${matches.map(({a,m}) => { const ta = team(m.team_a_id), tb = team(m.team_b_id), tr = tournament(m.tournament_id); return `<button type="button" class="agh-entity-row" data-route="match/${esc(m.id)}"><i>${img(ta?.logo_url,ta?.name)}</i><span><b>${esc(ta?.name || 'فريق')} × ${esc(tb?.name || 'فريق')}</b><small>${esc(tr?.short_name || '')} · ${fmtDate(m.match_date)} · ${a.role === 'main' ? 'حكم رئيسي' : 'حكم مساعد'}</small></span><em>${m.status === 'انتهت' ? `${m.score_a ?? 0}-${m.score_b ?? 0}` : esc((m.match_time || '').slice(0,5))}</em><strong>‹</strong></button>`; }).join('') || '<div class="agh-dir-empty">لا توجد تعيينات مسجلة.</div>'}</div></section>`;
+    const body = `<section class="agh-ref-profile"><div class="agh-ref-profile-main"><i>${refereeAvatar(r)}</i><div><small>REFEREE PROFILE</small><h2>${esc(r.name)}</h2><p>السجل التحكيمي في كأس أغشوركيت</p></div></div><div class="agh-ref-profile-stats"><div><b>${s.total}</b><span>مباراة</span></div><div><b>${s.main}</b><span>حكم رئيسي</span></div><div><b>${s.assist}</b><span>حكم مساعد</span></div></div></section><section class="agh-dir-section"><div class="agh-dir-section-title"><div><span><b>المباريات والتعيينات</b><small>السجل الكامل</small></span></div></div><div class="agh-team-directory">${matches.map(({a,m}) => { const ta = team(m.team_a_id), tb = team(m.team_b_id), tr = tournament(m.tournament_id); return `<button type="button" class="agh-entity-row" data-route="match/${esc(m.id)}"><i>${img(ta?.logo_url,ta?.name)}</i><span><b>${esc(ta?.name || 'فريق')} × ${esc(tb?.name || 'فريق')}</b><small>${esc(tr?.short_name || '')} · ${fmtDate(m.match_date)} · ${a.role === 'main' ? 'حكم رئيسي' : 'حكم مساعد'}</small></span><em>${m.status === 'انتهت' ? `${m.score_a ?? 0}-${m.score_b ?? 0}` : esc((m.match_time || '').slice(0,5))}</em><strong>‹</strong></button>`; }).join('') || '<div class="agh-dir-empty">لا توجد تعيينات مسجلة.</div>'}</div></section>`;
     main.innerHTML = shell(r.name, 'ملف الحكم وسجل المباريات.', body, 'OFFICIAL');
   }
 

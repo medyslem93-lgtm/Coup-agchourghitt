@@ -33,6 +33,8 @@ const files = [
   "entry-splash.js",
   "entry-splash.css",
   "referee-system-v2.js",
+  "referee-identity.js",
+  "referee-profile-polish.css",
   "live-stream.js",
   "livekit-viewer.js",
   "config.js",
@@ -78,17 +80,17 @@ const publicIndexPath = resolve(output, "index.html");
 let publicIndex = await readFile(publicIndexPath, "utf8");
 publicIndex = publicIndex
   .replace(/<meta name=["']release["'] content=["'][^"']+["']>/i, '<meta name="release" content="guest-voting-v1">')
-  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260923-invites1")
+  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260923-profiles1")
   .replace(/player-of-tournament\.css\?v=[^"']+/g, "player-of-tournament.css?v=20260922-countdown1")
-  .replace(/player-of-tournament\.js\?v=[^"']+/g, "player-of-tournament.js?v=20260923-deadline1")
-  .replace(/public-app\.js\?v=[^"']+/g, "public-app.js?v=20260923-admin1")
+  .replace(/player-of-tournament\.js\?v=[^"']+/g, "player-of-tournament.js?v=20260923-middleonly1")
+  .replace(/public-app\.js\?v=[^"']+/g, "public-app.js?v=20260923-profiles1")
   .replace(/fan-experience\.css\?v=[^"']+/g, "fan-experience.css?v=20260919-1")
   .replace(/fan-experience\.js\?v=[^"']+/g, "fan-experience.js?v=20260923-clean1")
   .replace(/assets\/site-smooth-v4\.js\?v=[^"']+/g, "assets/site-smooth-v5.js?v=20260920-guest1")
   .replace(/tournament-experience\.css\?v=[^"']+/g, "tournament-experience.css?v=20260919-2")
   .replace(/tournament-experience\.js\?v=[^"']+/g, "tournament-experience.js?v=20260919-2")
   .replace(/site-directory\.css\?v=[^"']+/g, "site-directory.css?v=20260919-1")
-  .replace(/site-directory\.js\?v=[^"']+/g, "site-directory.js?v=20260923-admin1")
+  .replace(/site-directory\.js\?v=[^"']+/g, "site-directory.js?v=20260923-profiles1")
   .replace(/app-structure-v2\.css\?v=[^"']+/g, "app-structure-v2.css?v=20260921-restore1")
   .replace(/app-structure-v2\.js\?v=[^"']+/g, "app-structure-v2.js?v=20260922-1")
   .replace(/watch-center-v2\.js\?v=[^"']+/g, "watch-center-v2.js?v=20260920-1")
@@ -101,7 +103,7 @@ if (!publicIndex.includes("player-of-tournament.css")) {
   publicIndex = publicIndex.replace("</head>", '<link rel="stylesheet" href="player-of-tournament.css?v=20260922-countdown1"></head>');
 }
 if (!publicIndex.includes("player-of-tournament.js")) {
-  publicIndex = publicIndex.replace("</body>", '<script src="player-of-tournament.js?v=20260923-deadline1"></script></body>');
+  publicIndex = publicIndex.replace("</body>", '<script src="player-of-tournament.js?v=20260923-middleonly1"></script></body>');
 }
 if (!publicIndex.includes("watch-match-overlay-v1.js")) {
   publicIndex = publicIndex.replace("</body>", '<script src="watch-match-overlay-v1.js?v=20260920-2"></script></body>');

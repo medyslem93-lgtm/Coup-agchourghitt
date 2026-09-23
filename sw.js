@@ -1,4 +1,4 @@
-const CACHE = "agchorguit-premium-v44-20260923-invites";
+const CACHE = "agchorguit-premium-v45-20260923-profiles";
 const CORE = [
   "./",
   "index.html",
@@ -12,6 +12,10 @@ const CORE = [
   "news-center.js?v=20260923-admin1",
   "styles.css?v=20260917-media1",
   "referees-section.css?v=20260915-1",
+  "referee-profile-polish.css?v=20260923-1",
+  "referee-identity.js?v=20260923-1",
+  "referee-system-v2.js?v=20260923-profiles1",
+  "assets/referee-avatar.svg",
   "team-calendar-v2.css?v=20260915-1",
   "road-to-cup.css?v=20260917-stages1",
   "team-of-week-v6.css?v=20260915-1",
@@ -26,10 +30,10 @@ const CORE = [
   "vote-countdown-2026.css?v=20260922-1",
   "scorers-showcase.css?v=20260920-1",
   "player-of-tournament.css?v=20260922-countdown1",
-  "public-app.js?v=20260923-admin1",
+  "public-app.js?v=20260923-profiles1",
   "fan-experience.js?v=20260923-clean1",
   "tournament-experience.js?v=20260919-2",
-  "site-directory.js?v=20260923-admin1",
+  "site-directory.js?v=20260923-profiles1",
   "app-structure-v2.js?v=20260922-1",
   "watch-center-v2.js?v=20260920-1",
   "watch-match-overlay-v1.js?v=20260920-2",
@@ -39,7 +43,7 @@ const CORE = [
   "road-to-cup.js?v=20260917-stages1",
   "featured-final-hotfix.js?v=20260915-final2",
   "live-stream.js?v=20260915-score1",
-  "player-of-tournament.js?v=20260923-deadline1",
+  "player-of-tournament.js?v=20260923-middleonly1",
   "config.js?v=20260910-6",
   "vendor/supabase.js?v=2.116.0",
   "manifest.webmanifest",
