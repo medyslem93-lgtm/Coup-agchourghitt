@@ -28,6 +28,8 @@ const files = [
   "match-media-score-fix.js",
   "match-media-ui-fix.js",
   "welcome-screen.js",
+  "entry-splash.js",
+  "entry-splash.css",
   "referee-system-v2.js",
   "live-stream.js",
   "livekit-viewer.js",
@@ -73,11 +75,8 @@ await Promise.all(files.map((entry) => cp(resolve(root, entry), resolve(output, 
 const publicIndexPath = resolve(output, "index.html");
 let publicIndex = await readFile(publicIndexPath, "utf8");
 publicIndex = publicIndex
-  .replace(/<style>html\.agh-welcome-pending[\s\S]*?<\/style>\s*/i, "")
-  .replace(/<script>try\{if\(localStorage\.getItem\('agh_welcome_2026_v1'\)[\s\S]*?<\/script>\s*/i, "")
-  .replace(/<script src=["']welcome-screen\.js[^"']*["']><\/script>\s*/i, "")
   .replace(/<meta name=["']release["'] content=["'][^"']+["']>/i, '<meta name="release" content="guest-voting-v1">')
-  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260923-home2")
+  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260923-news1")
   .replace(/player-of-tournament\.css\?v=[^"']+/g, "player-of-tournament.css?v=20260922-countdown1")
   .replace(/player-of-tournament\.js\?v=[^"']+/g, "player-of-tournament.js?v=20260922-countdown1")
   .replace(/public-app\.js\?v=[^"']+/g, "public-app.js?v=20260923-home1")

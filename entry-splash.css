@@ -1,0 +1,11 @@
+html.agh-entry-pending { overflow: hidden; }
+html.agh-entry-pending body::before { content: ''; position: fixed; inset: 0; z-index: 2147483000; background: #fcfaf5; }
+.agh-entry { position: fixed; inset: 0; z-index: 2147483001; display: grid; place-items: center; overflow: hidden; background: radial-gradient(ellipse at 50% 110%, #e6e7c9 0, transparent 46%), #fcfaf5; color: #123d2f; direction: rtl; text-align: center; animation: agh-entry-hide .22s 1.04s both; }
+.agh-entry::before { content: ''; position: absolute; inset: -20%; opacity: .45; background: repeating-linear-gradient(135deg, transparent 0 145px, #e8eadf 146px 180px, transparent 181px 350px); }
+.agh-entry-content { position: relative; width: min(90vw, 410px); display: grid; justify-items: center; gap: 14px; animation: agh-entry-rise .42s ease both; }
+.agh-entry img { display: block; width: min(68vw, 250px); height: min(68vw, 250px); object-fit: contain; border-radius: 20px; mix-blend-mode: multiply; }
+.agh-entry h1 { font: 900 clamp(25px, 7vw, 38px)/1.25 Cairo, sans-serif; margin: 0; }
+.agh-entry p { font: 700 clamp(16px, 4.5vw, 21px)/1.5 Cairo, sans-serif; color: #806019; margin: 0; }
+.agh-entry-line { width: 96px; height: 3px; border-radius: 8px; background: linear-gradient(90deg, #b8892a, #e7c471, #b8892a); }
+@keyframes agh-entry-rise { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes agh-entry-hide { to { opacity: 0; visibility: hidden; } }

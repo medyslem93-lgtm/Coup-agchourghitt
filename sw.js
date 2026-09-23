@@ -1,7 +1,12 @@
-const CACHE = "agchorguit-premium-v40-20260923-home2";
+const CACHE = "agchorguit-premium-v41-20260923-news";
 const CORE = [
   "./",
   "index.html",
+  "entry-splash.css?v=20260923-1",
+  "entry-splash.js?v=20260923-1",
+  "assets/agchourghit-cup-splash.jpeg",
+  "news-center.css?v=20260923-2",
+  "news-center.js?v=20260923-2",
   "styles.css?v=20260917-media1",
   "referees-section.css?v=20260915-1",
   "team-calendar-v2.css?v=20260915-1",
