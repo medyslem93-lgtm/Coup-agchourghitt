@@ -1,0 +1,15 @@
+.agh-invite-layer{position:fixed;inset:0;z-index:3900;background:rgba(2,12,8,.8);backdrop-filter:blur(8px);display:grid;place-items:center;padding:16px;direction:rtl}
+.agh-invite-dialog{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);align-items:center;gap:18px;width:min(960px,100%);max-height:min(90dvh,850px);overflow:auto;padding:24px;border:1px solid rgba(221,180,90,.34);border-radius:26px;background:linear-gradient(145deg,#112a20,#071611);color:#fff;box-shadow:0 35px 100px #0009}
+.agh-invite-dialog>img{width:100%;max-height:72dvh;object-fit:contain;border-radius:16px;background:#fff}
+.agh-invite-close{position:absolute;z-index:2;top:12px;left:12px;width:40px;height:40px;border-radius:50%;border:1px solid #fff5;background:#143528;color:#fff;font-size:25px;cursor:pointer}
+.agh-invite-copy{display:grid;align-content:center;gap:12px;min-width:0}
+.agh-invite-copy>span{color:#e3c47f;font:800 11px/1.6 Cairo,sans-serif}
+.agh-invite-copy h2{margin:0;font:900 clamp(24px,4vw,38px)/1.3 Cairo,sans-serif}
+.agh-invite-copy p{margin:0;color:#d2dcd4;font:500 13px/1.8 Cairo,sans-serif}
+.agh-invite-details{display:grid;gap:7px}.agh-invite-details b{font:700 13px/1.7 Cairo,sans-serif;color:#f0ddb0}
+.agh-invite-copy .agh-invite-body{white-space:pre-line}
+.agh-invite-link{justify-self:start;display:inline-flex;align-items:center;margin-top:8px;padding:11px 19px;border-radius:12px;background:#ebcd80;color:#173323;font:900 13px Cairo,sans-serif;text-decoration:none}
+.agh-invite-home{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,180px);align-items:center;gap:18px;margin:16px 0 22px;padding:18px 22px;border-radius:22px;border:1px solid rgba(228,190,105,.25);background:linear-gradient(120deg,#132e22,#0c1a13);color:#fff}
+.agh-invite-home>img{width:100%;max-height:145px;object-fit:contain;border-radius:12px;background:#fff}
+.agh-invite-home .agh-invite-copy{gap:6px}.agh-invite-home .agh-invite-copy h2{font-size:clamp(18px,2.5vw,26px)}.agh-invite-home .agh-invite-body{display:none}.agh-invite-home .agh-invite-link{margin-top:2px}
+@media(max-width:700px){.agh-invite-dialog{grid-template-columns:1fr;gap:12px;padding:13px;max-height:92dvh}.agh-invite-dialog>img{grid-row:1;max-height:45dvh}.agh-invite-dialog .agh-invite-copy{padding:4px 8px 12px}.agh-invite-dialog .agh-invite-copy h2{font-size:24px}.agh-invite-home{grid-template-columns:1fr 100px;gap:8px;padding:14px}.agh-invite-home>img{max-height:100px}.agh-invite-home .agh-invite-details b{font-size:11px}.agh-invite-home .agh-invite-copy h2{font-size:17px}.agh-invite-home .agh-invite-copy>p{display:none}}

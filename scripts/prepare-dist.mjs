@@ -28,6 +28,8 @@ const files = [
   "match-media-score-fix.js",
   "match-media-ui-fix.js",
   "welcome-screen.js",
+  "invitations-public.js",
+  "invitations-public.css",
   "entry-splash.js",
   "entry-splash.css",
   "referee-system-v2.js",
@@ -76,9 +78,9 @@ const publicIndexPath = resolve(output, "index.html");
 let publicIndex = await readFile(publicIndexPath, "utf8");
 publicIndex = publicIndex
   .replace(/<meta name=["']release["'] content=["'][^"']+["']>/i, '<meta name="release" content="guest-voting-v1">')
-  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260923-admin1")
+  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260923-invites1")
   .replace(/player-of-tournament\.css\?v=[^"']+/g, "player-of-tournament.css?v=20260922-countdown1")
-  .replace(/player-of-tournament\.js\?v=[^"']+/g, "player-of-tournament.js?v=20260922-countdown1")
+  .replace(/player-of-tournament\.js\?v=[^"']+/g, "player-of-tournament.js?v=20260923-deadline1")
   .replace(/public-app\.js\?v=[^"']+/g, "public-app.js?v=20260923-admin1")
   .replace(/fan-experience\.css\?v=[^"']+/g, "fan-experience.css?v=20260919-1")
   .replace(/fan-experience\.js\?v=[^"']+/g, "fan-experience.js?v=20260923-clean1")
@@ -99,7 +101,7 @@ if (!publicIndex.includes("player-of-tournament.css")) {
   publicIndex = publicIndex.replace("</head>", '<link rel="stylesheet" href="player-of-tournament.css?v=20260922-countdown1"></head>');
 }
 if (!publicIndex.includes("player-of-tournament.js")) {
-  publicIndex = publicIndex.replace("</body>", '<script src="player-of-tournament.js?v=20260922-countdown1"></script></body>');
+  publicIndex = publicIndex.replace("</body>", '<script src="player-of-tournament.js?v=20260923-deadline1"></script></body>');
 }
 if (!publicIndex.includes("watch-match-overlay-v1.js")) {
   publicIndex = publicIndex.replace("</body>", '<script src="watch-match-overlay-v1.js?v=20260920-2"></script></body>');

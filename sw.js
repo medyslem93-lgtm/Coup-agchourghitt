@@ -1,7 +1,10 @@
-const CACHE = "agchorguit-premium-v43-20260923-admin";
+const CACHE = "agchorguit-premium-v44-20260923-invites";
 const CORE = [
   "./",
   "index.html",
+  "invitations-public.js?v=20260923-1",
+  "invitations-public.css?v=20260923-1",
+  "assets/final-2026-invitation.png",
   "entry-splash.css?v=20260923-1",
   "entry-splash.js?v=20260923-1",
   "assets/agchourghit-cup-splash.jpeg",
@@ -36,7 +39,7 @@ const CORE = [
   "road-to-cup.js?v=20260917-stages1",
   "featured-final-hotfix.js?v=20260915-final2",
   "live-stream.js?v=20260915-score1",
-  "player-of-tournament.js?v=20260922-countdown1",
+  "player-of-tournament.js?v=20260923-deadline1",
   "config.js?v=20260910-6",
   "vendor/supabase.js?v=2.116.0",
   "manifest.webmanifest",

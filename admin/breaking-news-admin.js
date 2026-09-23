@@ -15,5 +15,5 @@ window.addEventListener('load',()=>setTimeout(mount,800));document.addEventListe
 })();
 (() => {
   if(document.getElementById('aghAdminSuperControlLoader'))return;
-  const s=document.createElement('script');s.id='aghAdminSuperControlLoader';s.src='/admin/super-control-v1.js?v=20260920-1';s.defer=true;document.head.appendChild(s);
+  const s=document.createElement('script');s.id='aghAdminSuperControlLoader';s.src='/admin/super-control-v1.js?v=20260923-invites1';s.defer=true;document.head.appendChild(s);
 })();
