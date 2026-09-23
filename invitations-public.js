@@ -19,7 +19,7 @@
     if (!item) { existing?.remove(); return; }
     if (existing?.dataset.id === item.id && existing.dataset.updated === item.updated_at) return;
     const section = document.createElement('section');
-    section.className = 'agh-invite-home'; section.dataset.id = item.id; section.dataset.updated = item.updated_at;
+    section.className = `agh-invite-home${item.presentation === 'cinematic' ? ' agh-invite-cinematic' : ''}`; section.dataset.id = item.id; section.dataset.updated = item.updated_at;
     section.innerHTML = card(item);
     if (existing) existing.replaceWith(section);
     else (shell.querySelector('.agh-quick-access') || shell.querySelector('.hero-layout')).insertAdjacentElement('afterend',section);
@@ -33,7 +33,7 @@
     const seenKey = `agh-invite:${item.id}:${item.updated_at}`;
     try { if (item.display_mode !== 'every_visit' && sessionStorage.getItem(seenKey)) return; sessionStorage.setItem(seenKey,'1'); } catch (_) {}
     const layer = document.createElement('div');
-    layer.id = 'aghInvitationDialog'; layer.className = 'agh-invite-layer'; layer.setAttribute('role','dialog'); layer.setAttribute('aria-modal','true'); layer.setAttribute('aria-label',item.title);
+    layer.id = 'aghInvitationDialog'; layer.className = `agh-invite-layer${item.presentation === 'cinematic' ? ' agh-invite-cinematic' : ''}`; layer.setAttribute('role','dialog'); layer.setAttribute('aria-modal','true'); layer.setAttribute('aria-label',item.title);
     layer.innerHTML = `<div class="agh-invite-dialog"><button class="agh-invite-close" type="button" aria-label="إغلاق الدعوة">×</button>${card(item)}</div>`;
     layer.addEventListener('click', event => { if (event.target === layer || event.target.closest('.agh-invite-close, .agh-invite-link')) close(); });
     document.body.appendChild(layer);

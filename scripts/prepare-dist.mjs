@@ -80,7 +80,7 @@ const publicIndexPath = resolve(output, "index.html");
 let publicIndex = await readFile(publicIndexPath, "utf8");
 publicIndex = publicIndex
   .replace(/<meta name=["']release["'] content=["'][^"']+["']>/i, '<meta name="release" content="guest-voting-v1">')
-  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260923-profiles1")
+  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260923-cinema1")
   .replace(/player-of-tournament\.css\?v=[^"']+/g, "player-of-tournament.css?v=20260922-countdown1")
   .replace(/player-of-tournament\.js\?v=[^"']+/g, "player-of-tournament.js?v=20260923-middleonly1")
   .replace(/public-app\.js\?v=[^"']+/g, "public-app.js?v=20260923-profiles1")

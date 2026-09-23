@@ -1,10 +1,11 @@
-const CACHE = "agchorguit-premium-v45-20260923-profiles";
+const CACHE = "agchorguit-premium-v46-20260923-cinema";
 const CORE = [
   "./",
   "index.html",
-  "invitations-public.js?v=20260923-1",
-  "invitations-public.css?v=20260923-1",
+  "invitations-public.js?v=20260923-cinema1",
+  "invitations-public.css?v=20260923-cinema1",
   "assets/final-2026-invitation.png",
+  "assets/final-cinematic-2026.webp",
   "entry-splash.css?v=20260923-1",
   "entry-splash.js?v=20260923-1",
   "assets/agchourghit-cup-splash.jpeg",
