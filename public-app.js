@@ -364,10 +364,9 @@
     const results = matches.filter((match) => match.status === FINISHED).sort((a, b) => matchDateTime(b) - matchDateTime(a));
     const upcoming = matches.filter((match) => match.status === "قادمة").sort((a, b) => matchDateTime(a) - matchDateTime(b));
     const featured = live[0] || results[0] || upcoming[0];
-    const scorers = rankedPlayers(tournament.id, "goals");
-    const assists = rankedPlayers(tournament.id, "assists");
-    const yellows = cardRankings(tournament.id, "بطاقة صفراء");
-    const reds = cardRankings(tournament.id, "بطاقة حمراء");
+    const recentResults = results.filter(match => match.id !== featured?.id).slice(0, 3);
+    const nextMatches = upcoming.filter(match => match.id !== featured?.id).slice(0, 3);
+    const visibleNews = state.news.filter(item => item.status !== "draft" && item.status !== "scheduled" && !item.is_story && (!item.scheduled_at || new Date(item.scheduled_at) <= new Date())).sort((a, b) => new Date(b.published_at || b.publish_date || b.created_at || 0) - new Date(a.published_at || a.publish_date || a.created_at || 0));
     main.innerHTML = `<div class="page-shell">
       ${tournamentStrip(tournament.id)}
       <section class="hero-layout">
@@ -382,14 +381,11 @@
         ["ball", "الهدافون", "نجوم البطولة", "stats/scorers"],
         ["news", "الأخبار", "آخر المستجدات", "news"],
       ].map(([symbol, title, detail, route]) => `<button class="agh-quick-item" type="button" data-route="${escapeHtml(route)}"><span class="agh-quick-icon">${icon(symbol)}</span><b>${title}</b><small>${detail}</small><span class="agh-quick-arrow" aria-hidden="true">↗</span></button>`).join("")}</div></section>
-      ${live.length ? `<section class="section-block">${sectionHeading("LIVE NOW", "مباشر الآن", "كل المباريات", "matches")}${matchCollection(live.slice(0, 5))}</section>` : ""}
-      <section class="section-block">${sectionHeading("LATEST RESULTS", "آخر النتائج", "عرض النتائج", `tournament/${tournament.slug}/results`)}${matchCollection(results.slice(0, 6))}</section>
-      <section class="section-block">${sectionHeading("UPCOMING", "المباريات القادمة", "الجدول الكامل", `tournament/${tournament.slug}/matches`)}${matchCollection(upcoming.slice(0, 6))}</section>
-      <section class="section-block"><div class="two-column"><div class="standings-card">${sectionHeading("TABLE", "ترتيب الفرق", "الترتيب الكامل", `tournament/${tournament.slug}/standings`)}${standingsTable(tournament.id, true)}</div><div>${leaderCard("أفضل الهدافين", scorers, "goals", "لم تسجل أهداف في هذه البطولة بعد", 6)}</div></div></section>
-      <section class="section-block">${sectionHeading("LEADERS", "قادة البطولة", "كل الإحصائيات", "stats")}<div class="two-column">${leaderCard("صناعة الأهداف", assists, "assists", "لا توجد صناعات أهداف مسجلة", 5)}${leaderCard("البطاقات الصفراء", yellows, "yellow_cards", "لا توجد بطاقات صفراء", 5)}</div></section>
-      <section class="section-block">${sectionHeading("DISCIPLINE", "البطاقات والإيقافات", "كل البطاقات", `tournament/${tournament.slug}/cards`)}<div class="data-grid"><div class="metric-card"><span>البطاقات الصفراء</span><strong>${eventsForTournament(tournament.id).filter((event) => event.type === "بطاقة صفراء").length}</strong><small>إجمالي البطولة</small></div><div class="metric-card"><span>البطاقات الحمراء</span><strong>${eventsForTournament(tournament.id).filter((event) => event.type === "بطاقة حمراء").length}</strong><small>إيقافات مباشرة</small></div><div class="metric-card"><span>الأكثر إنذارًا</span><strong>${escapeHtml(yellows[0]?.player_name || "—")}</strong><small>${yellows[0] ? `${yellows[0].yellow_cards} بطاقات` : "لا توجد بيانات"}</small></div><div class="metric-card accent"><span>آخر حالة طرد</span><strong>${escapeHtml(reds[0]?.player_name || "—")}</strong><small>${escapeHtml(reds[0]?.team_name || "لا توجد حالات")}</small></div></div></section>
-      <section class="section-block">${sectionHeading("TOURNAMENT HUBS", "بطولات كأس أغشوركيت", "عرض الكل", "tournaments")}${tournamentCards()}</section>
-      <section class="section-block">${sectionHeading("LATEST NEWS", "آخر الأخبار والأحداث", "كل الأخبار", "news")}${newsCards(state.news.slice(0, 3))}</section>
+      ${live.length ? `<section class="section-block">${sectionHeading("LIVE", "مباشر الآن", "كل المباريات", "matches")}${matchCollection(live.slice(0, 3))}</section>` : ""}
+      ${nextMatches.length ? `<section class="section-block">${sectionHeading("NEXT", "المباريات القادمة", "الجدول الكامل", `tournament/${tournament.slug}/matches`)}${matchCollection(nextMatches)}</section>` : ""}
+      ${recentResults.length ? `<section class="section-block">${sectionHeading("RESULTS", "آخر النتائج", "جميع النتائج", `tournament/${tournament.slug}/results`)}${matchCollection(recentResults)}</section>` : ""}
+      <section class="section-block">${sectionHeading("CUPS", "بطولات كأس أغشوركيت", "عرض البطولات", "tournaments")}${tournamentCards()}</section>
+      ${visibleNews.length ? `<section class="section-block">${sectionHeading("NEWS", "آخر الأخبار", "كل الأخبار", "news")}${newsCards(visibleNews.slice(0, 2))}</section>` : ""}
     </div>`;
   }
 

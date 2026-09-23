@@ -76,12 +76,12 @@ const publicIndexPath = resolve(output, "index.html");
 let publicIndex = await readFile(publicIndexPath, "utf8");
 publicIndex = publicIndex
   .replace(/<meta name=["']release["'] content=["'][^"']+["']>/i, '<meta name="release" content="guest-voting-v1">')
-  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260923-news1")
+  .replace(/sw\.js\?v=[^"']+/g, "sw.js?v=20260923-clean1")
   .replace(/player-of-tournament\.css\?v=[^"']+/g, "player-of-tournament.css?v=20260922-countdown1")
   .replace(/player-of-tournament\.js\?v=[^"']+/g, "player-of-tournament.js?v=20260922-countdown1")
-  .replace(/public-app\.js\?v=[^"']+/g, "public-app.js?v=20260923-home1")
+  .replace(/public-app\.js\?v=[^"']+/g, "public-app.js?v=20260923-clean1")
   .replace(/fan-experience\.css\?v=[^"']+/g, "fan-experience.css?v=20260919-1")
-  .replace(/fan-experience\.js\?v=[^"']+/g, "fan-experience.js?v=20260919-1")
+  .replace(/fan-experience\.js\?v=[^"']+/g, "fan-experience.js?v=20260923-clean1")
   .replace(/assets\/site-smooth-v4\.js\?v=[^"']+/g, "assets/site-smooth-v5.js?v=20260920-guest1")
   .replace(/tournament-experience\.css\?v=[^"']+/g, "tournament-experience.css?v=20260919-2")
   .replace(/tournament-experience\.js\?v=[^"']+/g, "tournament-experience.js?v=20260919-2")

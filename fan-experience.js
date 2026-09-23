@@ -174,24 +174,6 @@
     actions.insertAdjacentHTML('afterbegin', `<button class="secondary-button" type="button" data-follow-player="${esc(id)}">${followed ? '✓ أتابعه' : '+ متابعة اللاعب'}</button>`);
   }
 
-  function injectHomePersonal() {
-    if (route() !== 'home' || main.querySelector('[data-fan-home]')) return;
-    const shell = main.querySelector('.page-shell');
-    const hero = shell?.querySelector('.hero-layout');
-    if (!shell || !hero) return;
-    const teams = favoriteTeams();
-    const players = followedPlayers();
-    const ids = new Set(teams.map((t) => t.id));
-    const personalMatches = state.matches.filter((m) => ids.has(m.team_a_id) || ids.has(m.team_b_id)).sort((a,b) => matchTime(a)-matchTime(b)).slice(0,4);
-    const live = liveCards().slice(0,3);
-    const recent = state.media.slice(0,6);
-    const panel = document.createElement('section');
-    panel.className = 'fan-home-panel section-block';
-    panel.dataset.fanHome = '1';
-    panel.innerHTML = `<div class="fan-home-shortcuts"><button type="button" data-fan-hash="watch"><span class="fan-shortcut-icon">▶</span><b>شاهد</b><small>البث والملخصات</small></button><button type="button" data-fan-hash="follows"><span class="fan-shortcut-icon">★</span><b>لك</b><small>فرقك ولاعبوك</small></button><button type="button" data-fan-hash="profile"><span class="fan-shortcut-icon">☺</span><b>ملفي</b><small>متابعاتك ومحفوظاتك</small></button></div>${live.length ? `<div class="fan-home-live"><div class="fan-section-title"><div><span class="fan-live-dot"></span><b>مباشر الآن</b></div><button type="button" data-fan-hash="watch">شاهد الكل</button></div><div class="fan-recap-strip">${live.map(matchMini).join('')}</div></div>` : ''}${teams.length || players.length ? `<div class="fan-home-for-you"><div class="fan-section-title"><b>لك</b><button type="button" data-fan-hash="follows">كل متابعاتي</button></div>${personalMatches.length ? `<div class="fan-recap-strip">${personalMatches.map(matchMini).join('')}</div>` : `<p class="fan-muted">تابع فرقًا أكثر لتظهر لك المباريات هنا.</p>`}</div>` : `<div class="fan-onboard-inline"><div><span>✨</span><b>اجعل الصفحة الرئيسية خاصة بك</b><small>تابع فريقك ولاعبيك المفضلين لتصلك أخبارهم ومبارياتهم هنا.</small></div><button type="button" data-fan-hash="teams">اختر فريقك</button></div>`}${recent.length ? `<div class="fan-home-media"><div class="fan-section-title"><b>آخر اللقطات</b><button type="button" data-fan-hash="watch">عرض الكل</button></div><div class="fan-media-grid fan-media-grid-home">${recent.map(mediaCard).join('')}</div></div>` : ''}`;
-    hero.insertAdjacentElement('afterend', panel);
-  }
-
   function editProfile() {
     const current = profile();
     const name = prompt('اكتب الاسم الذي تريد ظهوره في ملفك الشخصي:', current.name || '');
@@ -221,7 +203,6 @@
     const r = route();
     if (!['watch','profile','follows'].includes(r)) {
       enhancePlayerPage();
-      injectHomePersonal();
       return;
     }
     await load();
@@ -244,7 +225,7 @@
   window.addEventListener('hashchange', () => setTimeout(renderCustomRoute, 0));
   const observer = new MutationObserver(() => {
     customizeNavigation();
-    if (state.loaded) { enhancePlayerPage(); injectHomePersonal(); }
+    if (state.loaded) { enhancePlayerPage(); }
   });
   observer.observe(main, { childList: true, subtree: true });
 
