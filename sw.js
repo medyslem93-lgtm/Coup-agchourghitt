@@ -1,4 +1,4 @@
-const CACHE = "agchorguit-premium-v39-20260923-home1";
+const CACHE = "agchorguit-premium-v40-20260923-home2";
 const CORE = [
   "./",
   "index.html",
@@ -14,14 +14,14 @@ const CORE = [
   "site-directory.css?v=20260919-1",
   "app-structure-v2.css?v=20260921-restore1",
   "modern-refresh-2026.css?v=20260922-1",
-  "home-2026-polish.css?v=20260923-1",
+  "home-2026-polish.css?v=20260923-2",
   "vote-countdown-2026.css?v=20260922-1",
   "scorers-showcase.css?v=20260920-1",
   "player-of-tournament.css?v=20260922-countdown1",
   "public-app.js?v=20260923-home1",
   "fan-experience.js?v=20260919-1",
   "tournament-experience.js?v=20260919-2",
-  "site-directory.js?v=20260923-home1",
+  "site-directory.js?v=20260923-home2",
   "app-structure-v2.js?v=20260922-1",
   "watch-center-v2.js?v=20260920-1",
   "watch-match-overlay-v1.js?v=20260920-2",
