@@ -7,8 +7,20 @@
   const esc = (value = '') => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const active = item => item.published && (!item.starts_at || Date.parse(item.starts_at) <= Date.now()) && (!item.ends_at || Date.parse(item.ends_at) > Date.now());
   let invitations = [], entryAttempted = false, refreshTimer;
+  const finalPlayers = 'assets/final-match-players-2026.webp';
+  function artwork(item) {
+    if (item.presentation === 'cinematic' && item.image_url === finalPlayers) {
+      const slides = [
+        [finalPlayers, 'لاعبا نهائي كأس أغشوركيت 2026'],
+        ['assets/final-invitation-card-2026.webp', 'الدعوة العامة لحضور المباراة النهائية'],
+        ['assets/final-match-duel-2026.webp', 'منافسة الفريقين في المباراة النهائية']
+      ];
+      return `<div class="agh-invite-gallery" aria-label="صور إعلان النهائي">${slides.map(([src,alt], index) => `<img src="${esc(src)}" alt="${esc(alt)}" ${index ? 'loading="lazy"' : 'fetchpriority="high"'} decoding="async">`).join('')}</div>`;
+    }
+    return item.image_url ? `<img src="${esc(item.image_url)}" alt="${esc(item.title)}" loading="lazy" decoding="async">` : '';
+  }
   function card(item) {
-    return `<div class="agh-invite-copy"><span>دعوة عامة · كأس أغشوركيت 2026</span><h2>${esc(item.title)}</h2>${item.subtitle ? `<p>${esc(item.subtitle)}</p>` : ''}<div class="agh-invite-details">${item.event_at ? `<b>📅 ${esc(new Intl.DateTimeFormat('ar-MR',{dateStyle:'full',timeStyle:'short',timeZone:'Africa/Nouakchott'}).format(new Date(item.event_at)))}</b>` : ''}${item.venue ? `<b>📍 ${esc(item.venue)}</b>` : ''}</div>${item.body ? `<p class="agh-invite-body">${esc(item.body)}</p>` : ''}${item.action_url ? `<a class="agh-invite-link" href="${esc(item.action_url)}">${esc(item.action_label || 'عرض التفاصيل')} ←</a>` : ''}</div>${item.image_url ? `<img src="${esc(item.image_url)}" alt="${esc(item.title)}" loading="lazy" decoding="async">` : ''}`;
+    return `<div class="agh-invite-copy"><span>دعوة عامة · كأس أغشوركيت 2026</span><h2>${esc(item.title)}</h2>${item.subtitle ? `<p>${esc(item.subtitle)}</p>` : ''}<div class="agh-invite-details">${item.event_at ? `<b>📅 ${esc(new Intl.DateTimeFormat('ar-MR',{dateStyle:'full',timeStyle:'short',timeZone:'Africa/Nouakchott'}).format(new Date(item.event_at)))}</b>` : ''}${item.venue ? `<b>📍 ${esc(item.venue)}</b>` : ''}</div>${item.body ? `<p class="agh-invite-body">${esc(item.body)}</p>` : ''}${item.action_url ? `<a class="agh-invite-link" href="${esc(item.action_url)}">${esc(item.action_label || 'عرض التفاصيل')} ←</a>` : ''}</div>${artwork(item)}`;
   }
   function homeCard() {
     if (!main || (location.hash || '#home') !== '#home') return;

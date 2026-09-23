@@ -41,3 +41,12 @@
 .agh-invite-layer.agh-invite-cinematic .agh-invite-copy{margin-right:auto}
 .agh-invite-home.agh-invite-cinematic .agh-invite-copy{margin-right:auto;margin-left:0}
 @media(max-width:700px){.agh-invite-layer.agh-invite-cinematic .agh-invite-copy{margin-right:0}}
+.agh-invite-cinematic .agh-invite-gallery{position:absolute;inset:0;z-index:-2;overflow:hidden;background:#091a18}
+.agh-invite-cinematic .agh-invite-gallery img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 35%;opacity:0;animation:aghFinalScenes 15s infinite ease-in-out;will-change:opacity,transform}
+.agh-invite-cinematic .agh-invite-gallery img:nth-child(2){object-fit:contain;background:radial-gradient(circle at center,#e4e3df 0%,#29332d 95%);animation-delay:5s}
+.agh-invite-cinematic .agh-invite-gallery img:nth-child(3){animation-delay:10s}
+.agh-invite-layer.agh-invite-cinematic:has(.agh-invite-gallery) .agh-invite-dialog:before{z-index:-1;background:linear-gradient(90deg,#061512fa 0%,#061512e8 32%,#0615124d 72%,#06151214 100%)}
+.agh-invite-home.agh-invite-cinematic:has(.agh-invite-gallery):before{z-index:-1;background:linear-gradient(90deg,#061512f7 0%,#061512df 38%,#06151235 85%)}
+@keyframes aghFinalScenes{0%{opacity:0;transform:scale(1.045)}4%,27%{opacity:1}33%,100%{opacity:0;transform:scale(1)}}
+@media(max-width:700px){.agh-invite-cinematic .agh-invite-gallery img{object-position:center 30%}.agh-invite-layer.agh-invite-cinematic:has(.agh-invite-gallery) .agh-invite-dialog:before,.agh-invite-home.agh-invite-cinematic:has(.agh-invite-gallery):before{background:linear-gradient(0deg,#061512 0%,#061512f5 27%,#06151238 72%,transparent 100%)}}
+@media(prefers-reduced-motion:reduce){.agh-invite-cinematic .agh-invite-gallery img{animation:none;opacity:0;will-change:auto}.agh-invite-cinematic .agh-invite-gallery img:first-child{opacity:1}}
