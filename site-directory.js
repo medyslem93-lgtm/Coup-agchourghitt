@@ -80,7 +80,7 @@
   }
 
   function homeDirectory() {
-    if (route()[0] !== 'home' || main.querySelector('.agh-home-directory')) return;
+    if (route()[0] !== 'home' || main.querySelector('.agh-home-directory, .agh-quick-access')) return;
     const anchor = main.querySelector('.hero-layout') || main.querySelector('.tournament-strip') || main.firstElementChild;
     if (!anchor) return;
     const section = document.createElement('section');
@@ -219,7 +219,7 @@
   const observer = new MutationObserver(() => {
     const root = route()[0];
     if (['directory','teams','players','referees','referee'].includes(root) && !main.querySelector('.agh-dir-page')) setTimeout(renderCustomRoute, 70);
-    if (root === 'home' && !main.querySelector('.agh-home-directory')) setTimeout(renderCustomRoute, 100);
+    if (root === 'home' && !main.querySelector('.agh-home-directory, .agh-quick-access')) setTimeout(renderCustomRoute, 100);
   });
   observer.observe(main, { childList: true, subtree: false });
 
