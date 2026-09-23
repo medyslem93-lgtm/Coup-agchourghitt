@@ -227,5 +227,19 @@
   installSectionNav();
   organizeDesktopNav();
   installSearch();
+  let refreshTimer;
+  const refreshDirectory = () => {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(async () => {
+      await load(true);
+      if (['directory','teams','players','referees','referee'].includes(route()[0])) renderCustomRoute();
+      if (!searchLayer.hidden) renderSearch();
+    }, 450);
+  };
+  const directoryChannel = db.channel('agh-directory-public-updates');
+  for (const table of ['referees','referee_assignments','tournaments','teams','players','news']) {
+    directoryChannel.on('postgres_changes', {event:'*',schema:'public',table}, refreshDirectory);
+  }
+  directoryChannel.subscribe();
   load().then(() => { renderCustomRoute(); if (!searchLayer.hidden) renderSearch(); });
 })();

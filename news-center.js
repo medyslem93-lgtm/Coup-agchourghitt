@@ -35,5 +35,8 @@
   async function load(){const [nr,tr,pr,mr]=await Promise.all([sb.from('news').select('*').order('featured',{ascending:false}).order('sort_order').order('created_at',{ascending:false}),sb.from('teams').select('id,name,logo_url'),sb.from('players').select('id,name,photo_url,team_id'),sb.from('matches').select('id,match_date,match_time,team_a_id,team_b_id,score_a,score_b,status')]);if(nr.error)return;state.news=nr.data||[];state.teams=tr.data||[];state.players=pr.data||[];state.matches=mr.data||[];if(/^#news/.test(location.hash)||location.hash==='#news')render()}
   document.addEventListener('click',e=>{const b=e.target.closest('[data-route="news"]');if(b)setTimeout(()=>{location.hash='#news';renderCenter()},0)},true);
   window.addEventListener('hashchange',()=>{if(/^#news/.test(location.hash))render()});
+  let refreshTimer;
+  const refresh=()=>{clearTimeout(refreshTimer);refreshTimer=setTimeout(load,450)};
+  sb.channel('agh-news-public-updates').on('postgres_changes',{event:'*',schema:'public',table:'news'},refresh).subscribe();
   load();
 })();

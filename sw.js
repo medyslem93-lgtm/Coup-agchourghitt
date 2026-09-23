@@ -1,4 +1,4 @@
-const CACHE = "agchorguit-premium-v42-20260923-clean";
+const CACHE = "agchorguit-premium-v43-20260923-admin";
 const CORE = [
   "./",
   "index.html",
@@ -6,7 +6,7 @@ const CORE = [
   "entry-splash.js?v=20260923-1",
   "assets/agchourghit-cup-splash.jpeg",
   "news-center.css?v=20260923-2",
-  "news-center.js?v=20260923-2",
+  "news-center.js?v=20260923-admin1",
   "styles.css?v=20260917-media1",
   "referees-section.css?v=20260915-1",
   "team-calendar-v2.css?v=20260915-1",
@@ -23,10 +23,10 @@ const CORE = [
   "vote-countdown-2026.css?v=20260922-1",
   "scorers-showcase.css?v=20260920-1",
   "player-of-tournament.css?v=20260922-countdown1",
-  "public-app.js?v=20260923-clean1",
+  "public-app.js?v=20260923-admin1",
   "fan-experience.js?v=20260923-clean1",
   "tournament-experience.js?v=20260919-2",
-  "site-directory.js?v=20260923-home2",
+  "site-directory.js?v=20260923-admin1",
   "app-structure-v2.js?v=20260922-1",
   "watch-center-v2.js?v=20260920-1",
   "watch-match-overlay-v1.js?v=20260920-2",

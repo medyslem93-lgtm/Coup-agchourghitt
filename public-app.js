@@ -370,7 +370,7 @@
     main.innerHTML = `<div class="page-shell">
       ${tournamentStrip(tournament.id)}
       <section class="hero-layout">
-        <div class="hero-copy-card agh-home-hero"><div class="agh-home-hero-copy"><span class="eyebrow">البطولة الرسمية · موسم ${escapeHtml(tournament.season || "2026")}</span><h1>كأس أغشوركيت<br><em>2026</em></h1><p>${escapeHtml(state.settings.hero_subtitle || "من لحظة البداية حتى التتويج: المباريات، الأندية، اللاعبون وكل أحداث البطولة في مكان واحد.")}</p><div class="hero-actions"><button class="primary-button" type="button" data-route="matches">تابع المباريات ${icon("arrow", "button-icon")}</button><button class="secondary-button" type="button" data-route="tournaments">استكشف البطولات</button></div></div><div class="agh-home-trophy" aria-hidden="true">${image(state.settings.logo_url || tournament.logo_url, "")}</div><div class="agh-home-hero-foot"><span>⚽ ${matches.length} مباراة</span><span>🛡 ${tournamentTeams(tournament.id).length} فريق</span><span>● ${escapeHtml(tournament.short_name)}</span></div></div>
+        <div class="hero-copy-card agh-home-hero"><div class="agh-home-hero-copy"><span class="eyebrow">البطولة الرسمية · موسم ${escapeHtml(tournament.season || "2026")}</span><h1>${state.settings.hero_title ? escapeHtml(state.settings.hero_title) : "كأس أغشوركيت<br><em>2026</em>"}</h1><p>${escapeHtml(state.settings.hero_subtitle || "من لحظة البداية حتى التتويج: المباريات، الأندية، اللاعبون وكل أحداث البطولة في مكان واحد.")}</p><div class="hero-actions"><button class="primary-button" type="button" data-route="matches">تابع المباريات ${icon("arrow", "button-icon")}</button><button class="secondary-button" type="button" data-route="tournaments">استكشف البطولات</button></div></div><div class="agh-home-trophy" aria-hidden="true">${image(state.settings.logo_url || tournament.logo_url, "")}</div><div class="agh-home-hero-foot"><span>⚽ ${matches.length} مباراة</span><span>🛡 ${tournamentTeams(tournament.id).length} فريق</span><span>● ${escapeHtml(tournament.short_name)}</span></div></div>
         ${heroMatch(featured, tournament)}
       </section>
       <section class="agh-quick-access" aria-label="الوصول السريع"><div class="agh-quick-heading"><div><span class="eyebrow">QUICK ACCESS</span><h2>الوصول السريع</h2></div><p>كل ما يهمك في البطولة، بخطوة واحدة.</p></div><div class="agh-quick-grid">${[
@@ -1221,6 +1221,9 @@
       .on("postgres_changes", { event: "*", schema: "public", table: "teams" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "players" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "news" }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "tournaments" }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "site_settings" }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "awards" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "media_assets" }, refresh)
       .subscribe();
   }
