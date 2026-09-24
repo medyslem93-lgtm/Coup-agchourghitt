@@ -8,6 +8,7 @@
   const active = item => item.published && (!item.starts_at || Date.parse(item.starts_at) <= Date.now()) && (!item.ends_at || Date.parse(item.ends_at) > Date.now());
   let invitations = [], entryAttempted = false, refreshTimer;
   const finalPlayers = 'assets/final-match-players-2026.webp';
+  const promoVideo = 'assets/final-tent-story-2026.mp4';
   function artwork(item) {
     if (item.presentation === 'cinematic' && item.image_url === finalPlayers) {
       const slides = [
@@ -20,7 +21,7 @@
     return item.image_url ? `<img src="${esc(item.image_url)}" alt="${esc(item.title)}" loading="lazy" decoding="async">` : '';
   }
   function card(item) {
-    return `<div class="agh-invite-copy"><span>دعوة عامة · كأس أغشوركيت 2026</span><h2>${esc(item.title)}</h2>${item.subtitle ? `<p>${esc(item.subtitle)}</p>` : ''}<div class="agh-invite-details">${item.event_at ? `<b>📅 ${esc(new Intl.DateTimeFormat('ar-MR',{dateStyle:'full',timeStyle:'short',timeZone:'Africa/Nouakchott'}).format(new Date(item.event_at)))}</b>` : ''}${item.venue ? `<b>📍 ${esc(item.venue)}</b>` : ''}</div>${item.body ? `<p class="agh-invite-body">${esc(item.body)}</p>` : ''}${item.action_url ? `<a class="agh-invite-link" href="${esc(item.action_url)}">${esc(item.action_label || 'عرض التفاصيل')} ←</a>` : ''}</div>${artwork(item)}`;
+    return `<div class="agh-invite-copy"><span>دعوة عامة · كأس أغشوركيت 2026</span><h2>${esc(item.title)}</h2>${item.subtitle ? `<p>${esc(item.subtitle)}</p>` : ''}<div class="agh-invite-details">${item.event_at ? `<b>📅 ${esc(new Intl.DateTimeFormat('ar-MR',{dateStyle:'full',timeStyle:'short',timeZone:'Africa/Nouakchott'}).format(new Date(item.event_at)))}</b>` : ''}${item.venue ? `<b>📍 ${esc(item.venue)}</b>` : ''}</div>${item.body ? `<p class="agh-invite-body">${esc(item.body)}</p>` : ''}${item.action_url ? `<a class="agh-invite-link" href="${esc(item.action_url)}">${esc(item.action_label || 'عرض التفاصيل')} ←</a>` : ''}${item.presentation === 'cinematic' && item.image_url === finalPlayers ? '<button class="agh-promo-play" type="button">▶ شاهد إعلان النهائي بالصوت</button>' : ''}</div>${artwork(item)}`;
   }
   function homeCard() {
     if (!main || (location.hash || '#home') !== '#home') return;
@@ -37,6 +38,18 @@
     else (shell.querySelector('.agh-quick-access') || shell.querySelector('.hero-layout')).insertAdjacentElement('afterend',section);
   }
   function close() { document.getElementById('aghInvitationDialog')?.remove(); }
+  function closePromo() { const layer = document.getElementById('aghPromoDialog'); if (layer) { layer.querySelector('video')?.pause(); layer.remove(); } }
+  document.addEventListener('click', event => {
+    if (!event.target.closest('.agh-promo-play')) return;
+    closePromo();
+    const layer = document.createElement('div');
+    layer.id = 'aghPromoDialog'; layer.className = 'agh-promo-layer'; layer.setAttribute('role','dialog'); layer.setAttribute('aria-modal','true'); layer.setAttribute('aria-label','إعلان نهائي كأس أغشوركيت');
+    layer.innerHTML = `<div class="agh-promo-frame"><button type="button" class="agh-promo-close" aria-label="إغلاق الفيديو">×</button><video src="${promoVideo}" controls playsinline preload="metadata" poster="assets/final-match-players-2026.webp" aria-label="إعلان النهائي بالصوت"></video></div>`;
+    layer.addEventListener('click', ev => { if (ev.target === layer || ev.target.closest('.agh-promo-close')) closePromo(); });
+    document.body.appendChild(layer);
+    layer.querySelector('video')?.play().catch(() => {});
+    layer.querySelector('.agh-promo-close').focus();
+  });
   function entry() {
     if (entryAttempted) return;
     entryAttempted = true;
@@ -51,7 +64,7 @@
     document.body.appendChild(layer);
     layer.querySelector('.agh-invite-close').focus();
   }
-  document.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') { closePromo(); close(); } });
   async function load(first = false) {
     const {data,error} = await db.from('site_invitations').select('*').eq('published',true).order('sort_order').order('created_at',{ascending:false});
     if (error) return;
