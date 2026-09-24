@@ -1,4 +1,4 @@
-const CACHE = "agchorguit-premium-v53-20260924-formation1";
+const CACHE = "agchorguit-premium-v54-20260924-tournament1";
 const CORE = [
   "./",
   "index.html",
@@ -25,7 +25,7 @@ const CORE = [
   "assets/agh-cup-hero-poster-2026.jpg",
   "team-calendar-v2.css?v=20260915-1",
   "road-to-cup.css?v=20260917-stages1",
-  "team-of-week-v6.css?v=20260924-formation1",
+  "team-of-week-v6.css?v=20260924-tournament1",
   "goal-of-round-v7.css?v=20260915-1",
   "standings-fairplay-v9.css?v=20260915-1",
   "fan-experience.css?v=20260919-1",
@@ -57,7 +57,7 @@ const CORE = [
   "assets/tournament.jpg",
   "assets/logo-placeholder.svg",
   "assets/site-reliability-v1.js?v=20260920-1",
-  "assets/tournament-lineup-polish-v2.js?v=20260924-formation1",
+  "assets/tournament-lineup-polish-v2.js?v=20260924-tournament1",
   "assets/player-vote-profile-flow-v1.js?v=20260920-2",
   "assets/admin-live-refresh-v1.js?v=20260920-2",
 ];
