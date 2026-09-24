@@ -1,9 +1,10 @@
-const CACHE = "agchorguit-premium-v48-20260923-final3";
+const CACHE = "agchorguit-premium-v49-20260924-intro1";
 const CORE = [
   "./",
   "index.html",
   "invitations-public.js?v=20260923-final3",
   "invitations-public.css?v=20260923-final3",
+  "tournament-intro.css?v=20260924-1",
   "assets/final-2026-invitation.png",
   "assets/final-cinematic-2026.webp",
   "assets/final-match-players-2026.webp",
@@ -34,7 +35,7 @@ const CORE = [
   "vote-countdown-2026.css?v=20260922-1",
   "scorers-showcase.css?v=20260920-1",
   "player-of-tournament.css?v=20260922-countdown1",
-  "public-app.js?v=20260923-profiles1",
+  "public-app.js?v=20260924-intro1",
   "fan-experience.js?v=20260923-clean1",
   "tournament-experience.js?v=20260919-2",
   "site-directory.js?v=20260923-profiles1",

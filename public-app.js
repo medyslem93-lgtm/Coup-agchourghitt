@@ -41,6 +41,70 @@
     tournaments: new Map(),
   };
   let lastPayloadJson = "";
+  let introTournamentSlug = null;
+  let introTimer = 0;
+
+  function closeTournamentIntro() {
+    clearInterval(introTimer);
+    introTimer = 0;
+    document.getElementById("aghTournamentIntro")?.remove();
+  }
+
+  function showTournamentIntro(tournament) {
+    closeTournamentIntro();
+    const teams = tournamentTeams(tournament.id);
+    if (!teams.length) return;
+    const slides = teams.map((team) => {
+      const matches = matchesForTournament(tournament.id).filter((match) =>
+        match.status === FINISHED && (match.team_a_id === team.id || match.team_b_id === team.id));
+      let wins = 0, draws = 0, goals = 0;
+      matches.forEach((match) => {
+        const home = match.team_a_id === team.id;
+        const own = score(home ? match.score_a : match.score_b);
+        const rival = score(home ? match.score_b : match.score_a);
+        goals += own;
+        if (own > rival) wins += 1;
+        if (own === rival) draws += 1;
+      });
+      return { team, played: matches.length, wins, goals, points: wins * 3 + draws };
+    });
+    const layer = document.createElement("div");
+    layer.id = "aghTournamentIntro";
+    layer.className = "agh-tournament-intro";
+    layer.setAttribute("role", "dialog");
+    layer.setAttribute("aria-modal", "true");
+    layer.setAttribute("aria-label", `عرض فرق ${tournament.name}`);
+    layer.style.setProperty("--intro-accent", /^#[0-9a-f]{3,8}$/i.test(tournament.accent_color || "") ? tournament.accent_color : "#b8e74f");
+    layer.innerHTML = `<div class="agh-intro-stage" dir="rtl"><div class="agh-intro-top"><span>كأس أغشوركيت 2026 · ${escapeHtml(tournament.short_name || tournament.name)}</span><button type="button" data-intro-close aria-label="إغلاق عرض الفرق">✕ <span>دخول البطولة</span></button></div><div class="agh-intro-content" aria-live="polite"></div><div class="agh-intro-bottom"><button type="button" data-intro-prev aria-label="الفريق السابق">❯</button><div class="agh-intro-progress" aria-hidden="true"></div><button type="button" data-intro-next aria-label="الفريق التالي">❮</button><span class="agh-intro-count"></span></div></div>`;
+    document.body.appendChild(layer);
+    let index = 0;
+    const autoplay = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function paint() {
+      const { team, played, wins, goals, points } = slides[index];
+      const content = layer.querySelector(".agh-intro-content");
+      content.innerHTML = `<div class="agh-intro-emblem"><span>${image(team.logo_url, team.name, { eager: true })}</span></div><div class="agh-intro-info"><span class="agh-intro-kicker">الفريق ${String(index + 1).padStart(2, "0")} / ${String(slides.length).padStart(2, "0")}</span><h2>${escapeHtml(team.name)}</h2><p>${escapeHtml(tournament.name)}</p><div class="agh-intro-stats"><div><strong>${played}</strong><span>مباريات</span></div><div><strong>${wins}</strong><span>فوز</span></div><div><strong>${goals}</strong><span>أهداف</span></div><div><strong>${points}</strong><span>نقاط</span></div></div><a href="#team/${encodeURIComponent(team.id)}" data-intro-team>ملف الفريق ←</a></div>`;
+      content.classList.remove("agh-intro-enter");
+      void content.offsetWidth;
+      content.classList.add("agh-intro-enter");
+      layer.querySelector(".agh-intro-count").textContent = `${index + 1} / ${slides.length}`;
+      layer.querySelector(".agh-intro-progress").innerHTML = slides.map((_, i) => `<span class="${i === index ? "active" : ""}"></span>`).join("");
+    }
+    function advance(step) { index = (index + step + slides.length) % slides.length; paint(); }
+    layer.addEventListener("click", (event) => {
+      if (event.target.closest("[data-intro-close]")) closeTournamentIntro();
+      else if (event.target.closest("[data-intro-next]")) advance(1);
+      else if (event.target.closest("[data-intro-prev]")) advance(-1);
+      else if (event.target.closest("[data-intro-team]")) closeTournamentIntro();
+    });
+    layer.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeTournamentIntro();
+      if (event.key === "ArrowLeft") advance(1);
+      if (event.key === "ArrowRight") advance(-1);
+    });
+    paint();
+    layer.querySelector("[data-intro-close]").focus();
+    if (autoplay && slides.length > 1) introTimer = setInterval(() => advance(1), 2600);
+  }
 
   function rebuildIndexes() {
     indexes.teams = new Map(state.teams.map((item) => [item.id, item]));
@@ -1104,6 +1168,17 @@
     if (state.loading && !state.tournaments.length) return;
     if (state.error && !state.tournaments.length) return renderError(state.error);
     const parts = parseRoute();
+    const nextIntroSlug = parts[0] === "tournament" ? parts[1] : null;
+    if (nextIntroSlug !== introTournamentSlug) {
+      closeTournamentIntro();
+      introTournamentSlug = nextIntroSlug;
+      if (nextIntroSlug) {
+        const incomingTournament = state.tournaments.find((item) => item.slug === nextIntroSlug);
+        if (incomingTournament) setTimeout(() => {
+          if (introTournamentSlug === nextIntroSlug && parseRoute()[0] === "tournament" && parseRoute()[1] === nextIntroSlug) showTournamentIntro(incomingTournament);
+        }, 250);
+      }
+    }
     const activeStream = document.getElementById("matchLiveStream");
     resetBroadcastEvents();
     if (activeStream) window.AGCH_LIVE_STREAM?.destroy(activeStream);

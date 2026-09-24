@@ -9,6 +9,7 @@ const files = [
   "index.html",
   "styles.css",
   "public-app.js",
+  "tournament-intro.css",
   "scorers-showcase.js",
   "scorers-showcase.css",
   "fan-experience.js",
