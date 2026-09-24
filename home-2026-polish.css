@@ -36,9 +36,9 @@
 .tournament-card p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .agh-quick-access{margin-top:14px;margin-bottom:18px}
 .agh-home-hero-foot span:last-child{display:none}
-.agh-home-hero .agh-home-hero-video{position:absolute;z-index:0;inset:0;width:100%;height:100%;object-fit:cover;object-position:34% center;pointer-events:none}
+.agh-home-hero .agh-home-hero-video{position:absolute;z-index:0;inset:0;width:100%;height:100%;object-fit:cover;object-position:right center;pointer-events:none}
 .agh-home-hero:before{content:"";position:absolute;z-index:1;inset:0;pointer-events:none;background:linear-gradient(270deg,#07180ff5 0%,#07180fdc 40%,#07180f26 75%,transparent 100%)}
 .agh-home-hero .agh-home-trophy{visibility:hidden}
 .agh-home-hero .agh-home-hero-copy,.agh-home-hero .agh-home-hero-foot{z-index:2}
-@media(max-width:760px){.agh-home-hero .agh-home-hero-video{object-position:30% center}.agh-home-hero:before{background:linear-gradient(270deg,#07180fe8 0%,#07180fd9 58%,#07180f32 100%)}}
+@media(max-width:760px){.agh-home-hero .agh-home-hero-video{object-position:center center}.agh-home-hero:before{background:linear-gradient(270deg,#07180fe8 0%,#07180fd9 58%,#07180f32 100%)}}
 @media(prefers-reduced-motion:reduce){.agh-home-hero .agh-home-hero-video{display:none}.agh-home-hero{background:#07180f url('assets/agh-cup-hero-poster-2026.jpg') left center/cover no-repeat!important}}
