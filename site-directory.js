@@ -131,7 +131,7 @@
     const allowed = active === 'all' ? null : new Set(store.assignments.filter(a => a.tournament_id === active).map(a => a.referee_id));
     const rows = store.referees.filter(r => !allowed || allowed.has(r.id));
     const body = `${tournamentChips(active, 'data-ref-filter')}<div class="agh-ref-directory">${rows.map(r => { const s = refereeStats(r.id); return `<button type="button" class="agh-ref-directory-card" data-route="referee/${esc(r.id)}"><i>${refereeAvatar(r)}</i><span><b>${esc(r.name)}</b><small>${s.total} مباراة · ${s.main} رئيسي · ${s.assist} مساعد</small></span><strong>‹</strong></button>`; }).join('') || '<div class="agh-dir-empty">لا يوجد حكام في هذا القسم.</div>'}</div>`;
-    main.innerHTML = shell('الحكام', 'دليل مستقل للحكام وتعييناتهم في مباريات البطولات.', body, 'REFEREES');
+    main.innerHTML = shell('حكام كأس أغشوركيت', 'حكام البطولة وتعييناتهم في المباريات.', body, 'كأس أغشوركيت 2026');
   }
 
   function renderRefereeProfile(id) {
@@ -142,7 +142,7 @@
     const s = refereeStats(canonical);
     const matches = assignments.map(a => ({ a, m: store.matches.find(m => m.id === a.match_id) })).filter(x => x.m);
     const body = `<section class="agh-ref-profile"><div class="agh-ref-profile-main"><i>${refereeAvatar(r)}</i><div><small>REFEREE PROFILE</small><h2>${esc(r.name)}</h2><p>السجل التحكيمي في كأس أغشوركيت</p></div></div><div class="agh-ref-profile-stats"><div><b>${s.total}</b><span>مباراة</span></div><div><b>${s.main}</b><span>حكم رئيسي</span></div><div><b>${s.assist}</b><span>حكم مساعد</span></div></div></section><section class="agh-dir-section"><div class="agh-dir-section-title"><div><span><b>المباريات والتعيينات</b><small>السجل الكامل</small></span></div></div><div class="agh-team-directory">${matches.map(({a,m}) => { const ta = team(m.team_a_id), tb = team(m.team_b_id), tr = tournament(m.tournament_id); return `<button type="button" class="agh-entity-row" data-route="match/${esc(m.id)}"><i>${img(ta?.logo_url,ta?.name)}</i><span><b>${esc(ta?.name || 'فريق')} × ${esc(tb?.name || 'فريق')}</b><small>${esc(tr?.short_name || '')} · ${fmtDate(m.match_date)} · ${a.role === 'main' ? 'حكم رئيسي' : 'حكم مساعد'}</small></span><em>${m.status === 'انتهت' ? `${m.score_a ?? 0}-${m.score_b ?? 0}` : esc((m.match_time || '').slice(0,5))}</em><strong>‹</strong></button>`; }).join('') || '<div class="agh-dir-empty">لا توجد تعيينات مسجلة.</div>'}</div></section>`;
-    main.innerHTML = shell(r.name, 'ملف الحكم وسجل المباريات.', body, 'OFFICIAL');
+    main.innerHTML = shell(r.name, 'ملف الحكم وسجل مبارياته في كأس أغشوركيت.', body, 'حكام كأس أغشوركيت');
   }
 
   function scoreText(text, q) {
