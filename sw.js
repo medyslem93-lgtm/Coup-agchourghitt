@@ -1,10 +1,10 @@
-const CACHE = "agchorguit-premium-v49-20260924-intro1";
+const CACHE = "agchorguit-premium-v50-20260924-intro2";
 const CORE = [
   "./",
   "index.html",
   "invitations-public.js?v=20260923-final3",
   "invitations-public.css?v=20260923-final3",
-  "tournament-intro.css?v=20260924-1",
+  "tournament-intro.css?v=20260924-2",
   "assets/final-2026-invitation.png",
   "assets/final-cinematic-2026.webp",
   "assets/final-match-players-2026.webp",
