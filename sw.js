@@ -1,4 +1,4 @@
-const CACHE = "agchorguit-premium-v54-20260924-tournament1";
+const CACHE = "agchorguit-premium-v55-20260925-awards1";
 const CORE = [
   "./",
   "index.html",
@@ -25,7 +25,7 @@ const CORE = [
   "assets/agh-cup-hero-poster-2026.jpg",
   "team-calendar-v2.css?v=20260915-1",
   "road-to-cup.css?v=20260917-stages1",
-  "team-of-week-v6.css?v=20260924-tournament1",
+  "team-of-week-v6.css?v=20260925-roster1",
   "goal-of-round-v7.css?v=20260915-1",
   "standings-fairplay-v9.css?v=20260915-1",
   "fan-experience.css?v=20260919-1",
@@ -36,7 +36,9 @@ const CORE = [
   "home-2026-polish.css?v=20260924-cup2",
   "vote-countdown-2026.css?v=20260922-1",
   "scorers-showcase.css?v=20260920-1",
-  "player-of-tournament.css?v=20260922-countdown1",
+  "youth-top-scorer.css?v=20260925-awards1",
+  "youth-top-scorer.js?v=20260925-awards1",
+  "player-of-tournament.css?v=20260925-awards1",
   "public-app.js?v=20260924-cup1",
   "fan-experience.js?v=20260923-clean1",
   "tournament-experience.js?v=20260919-2",
@@ -50,7 +52,7 @@ const CORE = [
   "road-to-cup.js?v=20260917-stages1",
   "featured-final-hotfix.js?v=20260915-final2",
   "live-stream.js?v=20260915-score1",
-  "player-of-tournament.js?v=20260923-middleonly1",
+  "player-of-tournament.js?v=20260925-awards1",
   "config.js?v=20260910-6",
   "vendor/supabase.js?v=2.116.0",
   "manifest.webmanifest",

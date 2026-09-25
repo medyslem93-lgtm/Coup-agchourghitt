@@ -1,0 +1,15 @@
+.agh-youth-scorer-feature{position:relative;overflow:hidden;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) minmax(110px,36%);align-items:end;min-height:250px;margin:12px 0 18px;padding:22px 20px 0;border-radius:23px;border:1px solid #d8bb72;background:radial-gradient(circle at 76% 15%,#dfbe6752,transparent 35%),linear-gradient(145deg,#0b3429,#09221d 65%,#071611);color:#fff;text-decoration:none;box-shadow:0 14px 35px #03140e88;direction:rtl}
+.agh-youth-scorer-feature:before{content:"";position:absolute;inset:9px;border:1px solid #f0d58835;border-radius:17px;pointer-events:none}
+.agh-youth-scorer-copy{position:relative;z-index:1;display:grid;justify-items:start;align-content:center;gap:7px;align-self:stretch;padding-bottom:16px}
+.agh-youth-award-kicker{color:#e9c67a;font-size:10px;font-weight:900;letter-spacing:.04em}
+.agh-youth-scorer-copy h4{margin:0;color:#f5df9c;font-size:clamp(19px,3vw,29px);line-height:1.25}
+.agh-youth-scorer-copy strong{font-size:clamp(25px,4vw,42px);line-height:1.25}
+.agh-youth-team{display:flex;align-items:center;gap:8px;font-size:12px;color:#ddd;font-weight:800}
+.agh-youth-team img{height:23px;width:23px;object-fit:contain;border-radius:50%;background:#fff}
+.agh-youth-goals{display:flex;align-items:baseline;gap:7px;font-weight:900;color:#f5dd99}
+.agh-youth-goals b{font:900 36px/1 Arial,sans-serif}
+.agh-youth-scorer-copy small{color:#eee;font-weight:800}
+.agh-youth-portrait{position:relative;z-index:1;align-self:end;min-height:225px;display:grid;place-items:end center}
+.agh-youth-portrait img{width:100%;max-height:250px;object-fit:contain;object-position:bottom center;filter:drop-shadow(0 8px 16px #0009)}
+.agh-youth-portrait span{font-size:90px}
+@media(max-width:480px){.agh-youth-scorer-feature{min-height:215px;padding:15px 12px 0;grid-template-columns:minmax(0,1fr) 38%}.agh-youth-portrait{min-height:190px}.agh-youth-scorer-copy strong{font-size:25px}.agh-youth-goals b{font-size:27px}}
