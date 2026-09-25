@@ -17,7 +17,8 @@ export default async function handler(req, res) {
     const active = matches.filter(row => row.status === 'مباشر' || row.stream_status === 'live');
     const ids = active.map(row => row.id).filter(Boolean);
     const events = ids.length ? await read(`match_events?select=*&match_id=in.(${ids.join(',')})&order=created_at.asc&limit=300`) : [];
-    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=3, stale-while-revalidate=6, stale-if-error=20');
+    res.setHeader('Cache-Control', 'public, max-age=0');
+    res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=3, stale-while-revalidate=6');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).json({ matches, events, activeMatchIds: ids });
   } catch (error) {

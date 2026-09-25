@@ -38,7 +38,8 @@ export default async function handler(req, res) {
     }));
     const payload = Object.fromEntries(entries);
     payload.settings = Array.isArray(payload.settings) ? payload.settings[0] || {} : {};
-    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=20, stale-while-revalidate=90, stale-if-error=600');
+    res.setHeader('Cache-Control', 'public, max-age=0');
+    res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=20, stale-while-revalidate=90');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).json(payload);
   } catch (error) {
