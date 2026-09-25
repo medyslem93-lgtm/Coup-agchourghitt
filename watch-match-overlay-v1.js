@@ -434,7 +434,14 @@
   }
 
   async function refreshLive(matchId) {
-    const [fresh, freshEvents] = await Promise.all([one('matches', matchId), loadEvents(matchId)]);
+    let fresh, freshEvents;
+    try {
+      const response = await fetch('/api/live-match-state', { cache: 'no-cache', signal: AbortSignal.timeout(8000) });
+      if (!response.ok) return;
+      const feed = await response.json();
+      fresh = feed.matches?.find(match => match.id === matchId);
+      freshEvents = feed.events?.filter(event => event.match_id === matchId) || [];
+    } catch { return; }
     if (!fresh || state.contextKey !== String(matchId)) return;
     state.match = fresh;
     state.asset = null;

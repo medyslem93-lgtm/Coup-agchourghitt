@@ -1244,38 +1244,25 @@
     }
     state.refreshing = true;
     if (!silent && !state.tournaments.length) state.loading = true;
-    const queries = {
-      tournaments: db.from("tournaments").select("*").order("sort_order"),
-      teams: db.from("teams").select("*").order("name"),
-      players: db.from("players").select("*").order("name"),
-      matches: db.from("matches").select("*").order("match_date", { ascending: false, nullsFirst: false }),
-      events: db.from("match_events").select("*").order("created_at", { ascending: true }),
-      lineups: db.from("match_lineups").select("*"),
-      lineupPlayers: db.from("match_lineup_players").select("*"),
-      matchStats: db.from("match_stats").select("*"),
-      standings: db.from("tournament_standings").select("*"),
-      playerStats: db.from("player_tournament_stats").select("*"),
-      news: db.from("news").select("*").order("featured", { ascending: false }).order("sort_order").order("publish_date", { ascending: false }),
-      awards: db.from("awards").select("*"),
-      media: db.from("media_assets").select("*").eq("entity_type", "match").order("created_at", { ascending: true }),
-      settings: db.from("site_settings").select("*").eq("id", "main").maybeSingle(),
-    };
     try {
-      const entries = await Promise.all(Object.entries(queries).map(async ([key, query]) => [key, await query]));
-      const results = Object.fromEntries(entries);
-      const coreError = ["tournaments", "teams", "players", "matches", "events"].map((key) => results[key]?.error).find(Boolean);
-      if (coreError) throw coreError;
-      const payload = {};
-      Object.entries(results).forEach(([key, result]) => { payload[key] = result.error ? [] : (key === "settings" ? result.data || {} : result.data || []); });
+      const response = await fetch('/api/public-snapshot', { cache: 'no-cache', signal: AbortSignal.timeout(12000) });
+      if (!response.ok) throw new Error(`snapshot_${response.status}`);
+      const payload = await response.json();
+      if (!Array.isArray(payload.tournaments) || !Array.isArray(payload.matches) || !Array.isArray(payload.events)) throw new Error('invalid_snapshot');
       const payloadJson = JSON.stringify(payload);
       if (silent && lastPayloadJson === payloadJson) {
         document.getElementById("connectionState").hidden = true;
         return;
       }
       lastPayloadJson = payloadJson;
-      hydrate(payload);
+      // The video must never be torn down by an unrelated news or roster refresh.
+      if (silent && document.getElementById('matchLiveStream')) {
+        Object.keys(payload).forEach(key => { if (key in state && key !== 'matches' && key !== 'events' && payload[key] != null) state[key] = payload[key]; });
+        rebuildIndexes();
+      } else hydrate(payload);
       try { localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), payload })); } catch { /* storage quota is non-fatal */ }
       document.getElementById("connectionState").hidden = true;
+      window.dispatchEvent(new CustomEvent('agh:public-snapshot'));
     } catch (error) {
       console.error("Tournament data load failed", error);
       state.loading = false;
@@ -1289,21 +1276,49 @@
     } finally { state.refreshing = false; }
   }
 
+  // One short-lived CDN response per interval replaces a database websocket and
+  // many parallel database requests for every spectator.
+  let liveRequest = false;
+  async function refreshLiveState() {
+    if (document.hidden || liveRequest || !state.tournaments.length) return;
+    liveRequest = true;
+    try {
+      const response = await fetch('/api/live-match-state', { cache: 'no-cache', signal: AbortSignal.timeout(9000) });
+      if (!response.ok) throw new Error(`live_${response.status}`);
+      const feed = await response.json();
+      if (!Array.isArray(feed.matches) || !Array.isArray(feed.events)) return;
+      for (const match of feed.matches) {
+        const current = getMatch(match.id);
+        if (!current) continue;
+        const fields = ['status','score_a','score_b','minute','current_minute','stream_enabled','stream_status','stream_type','stream_url'];
+        if (fields.some(key => current[key] !== match[key])) {
+          const transition = current.stream_status !== match.stream_status || current.stream_enabled !== match.stream_enabled || current.stream_type !== match.stream_type;
+          const patched = patchLiveMatch({ new: match });
+          if (!patched && transition && parseRoute()[0] === 'match' && parseRoute()[1] === match.id) renderRoute();
+        }
+      }
+      const active = new Set(feed.activeMatchIds || []);
+      const incoming = new Set(feed.events.map(event => event.id));
+      // The initial feed establishes history; only events after it animate.
+      if (!refreshLiveState.seeded) for (const event of feed.events) broadcastEvents.seen.add(event.id);
+      for (const event of feed.events) {
+        const old = state.events.find(item => item.id === event.id);
+        if (!old) patchLiveEvent({ eventType: 'INSERT', new: event });
+        else if (JSON.stringify(old) !== JSON.stringify(event)) patchLiveEvent({ eventType: 'UPDATE', new: event });
+      }
+      for (const old of [...state.events]) {
+        if (active.has(old.match_id) && !incoming.has(old.id)) patchLiveEvent({ eventType: 'DELETE', old: { id: old.id, match_id: old.match_id } });
+      }
+      refreshLiveState.seeded = true;
+      window.dispatchEvent(new CustomEvent('agh:live-state', { detail: feed }));
+    } catch (error) { console.warn('Live state refresh delayed', error); }
+    finally { liveRequest = false; }
+  }
   function subscribe() {
-    if (!db) return;
-    let timer;
-    const refresh = () => { clearTimeout(timer); timer = setTimeout(() => loadData(true), 500); };
-    state.channel = db.channel("premium-public-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, (payload) => { if (!patchLiveMatch(payload)) refresh(); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "match_events" }, (payload) => { if (!patchLiveEvent(payload)) refresh(); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "teams" }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "players" }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "news" }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "tournaments" }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "site_settings" }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "awards" }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "media_assets" }, refresh)
-      .subscribe();
+    refreshLiveState();
+    setInterval(refreshLiveState, 4000);
+    setInterval(() => { if (!document.hidden) loadData(true); }, 75000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { refreshLiveState(); loadData(true); } });
   }
 
   function openSearch() {

@@ -48,8 +48,9 @@ const publicStyles = readFileSync(resolve(root, "styles.css"), "utf8");
 if (!publicApp.includes("function patchLiveEvent") || !publicApp.includes("showBroadcastEvent(incoming)")) {
   errors.push("public-app.js: live match events are not connected to the broadcast overlay");
 }
-if (!publicApp.includes('table: "match_events"') || !publicApp.includes("patchLiveEvent(payload)")) {
-  errors.push("public-app.js: Supabase Realtime match_events subscription is missing");
+const liveStateApi = readFileSync(resolve(root, "api/live-match-state.js"), "utf8");
+if (!publicApp.includes("/api/live-match-state") || !publicApp.includes("patchLiveEvent({ eventType: 'INSERT'") || !liveStateApi.includes("match_events?select=*")) {
+  errors.push("Live match events are not connected to the shared live feed");
 }
 if (!publicStyles.includes(".broadcast-event-layer") || !publicStyles.includes(".broadcast-event-card")) {
   errors.push("styles.css: cinematic broadcast event styles are missing");

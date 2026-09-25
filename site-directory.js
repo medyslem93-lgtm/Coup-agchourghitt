@@ -32,17 +32,12 @@
     if (store.loaded && !force) return store;
     if (store.loading) return store.loading;
     store.loading = (async () => {
-      const queries = [
-        ['tournaments', db.from('tournaments').select('id,slug,name,short_name,season,status,logo_url,accent_color,sort_order').order('sort_order')],
-        ['teams', db.from('teams').select('id,tournament_id,name,logo_url,group_name,category,coach').order('name')],
-        ['players', db.from('players').select('id,team_id,name,photo_url,position,number,is_captain').order('name')],
-        ['referees', db.from('referees').select('*').order('name')],
-        ['assignments', db.from('referee_assignments').select('id,referee_id,tournament_id,match_id,role,category,name,photo_url')],
-        ['matches', db.from('matches').select('id,tournament_id,team_a_id,team_b_id,match_date,match_time,status,stage,round_name,score_a,score_b,venue').order('match_date', { ascending: false, nullsFirst: false })],
-        ['news', db.from('news').select('id,title,description,type,image_url,publish_date').order('publish_date', { ascending: false })],
-      ];
-      const results = await Promise.all(queries.map(async ([key, q]) => [key, await q]));
-      results.forEach(([key, result]) => { if (!result.error) store[key] = result.data || []; });
+      const response = await fetch('/api/public-snapshot', { cache: 'no-cache', signal: AbortSignal.timeout(12000) });
+      if (!response.ok) throw new Error(`directory_${response.status}`);
+      const snapshot = await response.json();
+      for (const key of ['tournaments','teams','players','referees','assignments','matches','news']) {
+        if (Array.isArray(snapshot[key])) store[key] = snapshot[key];
+      }
       if (window.AGCH_REFEREE_IDENTITY) {
         const merged = window.AGCH_REFEREE_IDENTITY.merge(store.referees, store.assignments);
         store.referees = merged.refs; store.assignments = merged.assign;
@@ -242,10 +237,6 @@
       if (!searchLayer.hidden) renderSearch();
     }, 450);
   };
-  const directoryChannel = db.channel('agh-directory-public-updates');
-  for (const table of ['referees','referee_assignments','tournaments','teams','players','news']) {
-    directoryChannel.on('postgres_changes', {event:'*',schema:'public',table}, refreshDirectory);
-  }
-  directoryChannel.subscribe();
+  window.addEventListener('agh:public-snapshot', refreshDirectory);
   load().then(() => { renderCustomRoute(); if (!searchLayer.hidden) renderSearch(); });
 })();
