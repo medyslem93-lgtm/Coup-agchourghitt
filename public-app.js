@@ -1245,7 +1245,7 @@
     state.refreshing = true;
     if (!silent && !state.tournaments.length) state.loading = true;
     try {
-      const response = await fetch('/api/public-snapshot', { cache: 'no-cache', signal: AbortSignal.timeout(12000) });
+      const response = await fetch('/api/public-snapshot', { signal: AbortSignal.timeout(12000) });
       if (!response.ok) throw new Error(`snapshot_${response.status}`);
       const payload = await response.json();
       if (!Array.isArray(payload.tournaments) || !Array.isArray(payload.matches) || !Array.isArray(payload.events)) throw new Error('invalid_snapshot');
@@ -1283,7 +1283,7 @@
     if (document.hidden || liveRequest || !state.tournaments.length) return;
     liveRequest = true;
     try {
-      const response = await fetch('/api/live-match-state', { cache: 'no-cache', signal: AbortSignal.timeout(9000) });
+      const response = await fetch('/api/live-match-state', { signal: AbortSignal.timeout(9000) });
       if (!response.ok) throw new Error(`live_${response.status}`);
       const feed = await response.json();
       if (!Array.isArray(feed.matches) || !Array.isArray(feed.events)) return;

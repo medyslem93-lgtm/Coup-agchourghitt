@@ -436,7 +436,7 @@
   async function refreshLive(matchId) {
     let fresh, freshEvents;
     try {
-      const response = await fetch('/api/live-match-state', { cache: 'no-cache', signal: AbortSignal.timeout(8000) });
+      const response = await fetch('/api/live-match-state', { signal: AbortSignal.timeout(8000) });
       if (!response.ok) return;
       const feed = await response.json();
       fresh = feed.matches?.find(match => match.id === matchId);

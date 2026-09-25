@@ -32,7 +32,7 @@
     if (store.loaded && !force) return store;
     if (store.loading) return store.loading;
     store.loading = (async () => {
-      const response = await fetch('/api/public-snapshot', { cache: 'no-cache', signal: AbortSignal.timeout(12000) });
+      const response = await fetch('/api/public-snapshot', { signal: AbortSignal.timeout(12000) });
       if (!response.ok) throw new Error(`directory_${response.status}`);
       const snapshot = await response.json();
       for (const key of ['tournaments','teams','players','referees','assignments','matches','news']) {
