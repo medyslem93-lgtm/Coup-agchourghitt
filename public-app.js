@@ -308,7 +308,7 @@
 
   function scoreMarkup(match, compact = false) {
     if (match.status === FINISHED || match.status === "مباشر") {
-      return `<strong>${score(match.score_a)} <span>–</span> ${score(match.score_b)}</strong><small>${escapeHtml(match.status === "مباشر" ? `${matchClock(match).minute}′` : "النتيجة النهائية")}</small>`;
+      return `<strong>${score(match.score_a)} <span>–</span> ${score(match.score_b)}</strong><small>${escapeHtml(match.status === "مباشر" ? matchClock(match).clock : "النتيجة النهائية")}</small>`;
     }
     return `<time>${formatTime(match.match_time)}</time><small>${escapeHtml(compact ? formatDate(match.match_date, true) : "موعد المباراة")}</small>`;
   }
@@ -882,12 +882,12 @@
     const tournamentLogo = tournament?.logo_url || state.settings.logo_url || "assets/tournament.jpg";
     return `<section id="matchLiveStream" class="live-stream-card" style="--broadcast-accent:${escapeHtml(tournament?.accent_color || "#c7ff37")}" data-stream-enabled="true" data-stream-status="${escapeHtml(match.stream_status)}" data-stream-type="${escapeHtml(match.stream_type || "")}" data-stream-url="${escapeHtml(match.stream_url || "")}" data-match-id="${escapeHtml(match.id)}" aria-label="${escapeHtml(labels.title)}">
       <div class="live-stream-head">
-        <div><span class="live-stream-kicker"><i aria-hidden="true"></i><span data-stream-kicker-text>${escapeHtml(labels.live)} · ${escapeHtml(minute)}′</span></span><strong data-stream-summary>${escapeHtml(home.name)} ${score(match.score_a)} - ${score(match.score_b)} ${escapeHtml(away.name)}</strong></div>
+        <div><span class="live-stream-kicker"><i aria-hidden="true"></i><span data-stream-kicker-text>${escapeHtml(labels.live)} · ${escapeHtml(clock)}</span></span><strong data-stream-summary>${escapeHtml(home.name)} ${score(match.score_a)} - ${score(match.score_b)} ${escapeHtml(away.name)}</strong></div>
         <span class="live-stream-badge">LIVE</span>
       </div>
       <div class="live-stream-stage" data-stream-stage>
         <div class="live-stream-media" data-stream-media><div class="stream-loader" aria-hidden="true"></div></div>
-        <div class="broadcast-scorebug" data-broadcast-scorebug role="status" aria-live="polite" aria-label="${escapeHtml(`${home.name} ${score(match.score_a)} - ${score(match.score_b)} ${away.name}، الدقيقة ${minute}`)}">
+        <div class="broadcast-scorebug" data-broadcast-scorebug role="status" aria-live="polite" aria-label="${escapeHtml(`${home.name} ${score(match.score_a)} - ${score(match.score_b)} ${away.name}، الوقت ${clock}`)}">
           <div class="scorebug-competition"><span>${escapeHtml(tournament?.short_name || "كأس أغشوركيت")}</span><b data-broadcast-period>${escapeHtml(phase)}</b></div>
           <div class="scorebug-main">
             <span class="scorebug-team scorebug-home"><span class="scorebug-crest">${image(home.logo_url, home.name, { eager: true })}</span><b>${escapeHtml(home.name)}</b></span>
@@ -935,14 +935,14 @@
     setText("[data-broadcast-away-score]", score(next.score_b));
     setText("[data-broadcast-minute]", clock);
     setText("[data-broadcast-period]", phase);
-    setText("[data-stream-kicker-text]", `${labels.live} · ${minute}′`);
+    setText("[data-stream-kicker-text]", `${labels.live} · ${clock}`);
     setText("[data-stream-summary]", `${home.name} ${score(next.score_a)} - ${score(next.score_b)} ${away.name}`);
     const scorebug = container.querySelector("[data-broadcast-scorebug]");
-    if (scorebug) scorebug.setAttribute("aria-label", `${home.name} ${score(next.score_a)} - ${score(next.score_b)} ${away.name}، الدقيقة ${minute}`);
+    if (scorebug) scorebug.setAttribute("aria-label", `${home.name} ${score(next.score_a)} - ${score(next.score_b)} ${away.name}، الوقت ${clock}`);
     const centerScore = main.querySelector(".match-center-score strong");
     const centerMinute = main.querySelector(".match-center-score small");
     if (centerScore) centerScore.textContent = `${score(next.score_a)} – ${score(next.score_b)}`;
-    if (centerMinute) centerMinute.textContent = `${minute}′`;
+    if (centerMinute) centerMinute.textContent = clock;
     return true;
   }
 

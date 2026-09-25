@@ -30,18 +30,24 @@
       const id = String(card.getAttribute("data-route") || "").replace(/^match\//, "");
       const match = matches.get(id);
       if (!match) return;
-      setText(card.querySelector(".score-block small,.match-score small"), `${minute(match, now)}′`);
+      setText(card.querySelector(".score-block small,.match-score small"), format(match, now));
     });
     const id = (location.hash.match(/match\/([^/?#]+)/) || [])[1];
     const match = matches.get(id);
     if (!match) return;
-    const value = minute(match, now);
+    const clock = format(match, now);
     const stream = document.getElementById("matchLiveStream");
-    setText(document.querySelector(".match-center-score small"), `${value}′`);
+    setText(document.querySelector(".match-center-score small"), clock);
     if (stream?.dataset.matchId !== id) return;
-    setText(stream.querySelector("[data-broadcast-minute]"), format(match, now));
+    setText(stream.querySelector("[data-broadcast-minute]"), clock);
     setText(stream.querySelector("[data-broadcast-period]"), phase(match, now));
-    setText(stream.querySelector("[data-stream-kicker-text]"), `مباشر الآن · ${value}′`);
+    setText(stream.querySelector("[data-stream-kicker-text]"), `مباشر الآن · ${clock}`);
+    const scorebug = stream.querySelector("[data-broadcast-scorebug]");
+    if (scorebug) {
+      const summary = stream.querySelector("[data-stream-summary]")?.textContent || "";
+      const label = `${summary}، الوقت ${clock}`;
+      if (scorebug.getAttribute("aria-label") !== label) scorebug.setAttribute("aria-label", label);
+    }
   }
   window.addEventListener("agh:live-state", event => {
     matches.clear();
