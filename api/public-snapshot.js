@@ -17,6 +17,7 @@ const paths = {
   settings: 'site_settings?select=*&id=eq.main&limit=1',
   referees: 'referees?select=*&order=name',
   assignments: 'referee_assignments?select=id,referee_id,tournament_id,match_id,role,category,name,photo_url',
+  clocks: 'match_live_clocks?select=match_id,elapsed_seconds,anchor_at,running',
 };
 const core = new Set(['tournaments', 'teams', 'players', 'matches', 'events']);
 
@@ -38,6 +39,12 @@ export default async function handler(req, res) {
     }));
     const payload = Object.fromEntries(entries);
     payload.settings = Array.isArray(payload.settings) ? payload.settings[0] || {} : {};
+    const clockByMatch = new Map(payload.clocks.map(row => [row.match_id, row]));
+    for (const match of payload.matches) {
+      const clock = clockByMatch.get(match.id);
+      if (clock) Object.assign(match, { clock_elapsed_seconds: clock.elapsed_seconds, clock_anchor_at: clock.anchor_at, clock_running: clock.running });
+    }
+    delete payload.clocks;
     res.setHeader('Cache-Control', 'public, max-age=0');
     res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=20, stale-while-revalidate=90');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');

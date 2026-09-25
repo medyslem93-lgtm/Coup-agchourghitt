@@ -308,7 +308,7 @@
 
   function scoreMarkup(match, compact = false) {
     if (match.status === FINISHED || match.status === "مباشر") {
-      return `<strong>${score(match.score_a)} <span>–</span> ${score(match.score_b)}</strong><small>${escapeHtml(match.status === "مباشر" ? `${match.minute || 0}′` : "النتيجة النهائية")}</small>`;
+      return `<strong>${score(match.score_a)} <span>–</span> ${score(match.score_b)}</strong><small>${escapeHtml(match.status === "مباشر" ? `${matchClock(match).minute}′` : "النتيجة النهائية")}</small>`;
     }
     return `<time>${formatTime(match.match_time)}</time><small>${escapeHtml(compact ? formatDate(match.match_date, true) : "موعد المباراة")}</small>`;
   }
@@ -865,12 +865,20 @@
     return Boolean(match?.stream_enabled && match.stream_status === "live" && sourceReady && match.status !== FINISHED);
   }
 
+  function matchClock(match) {
+    const source = window.AGCH_MATCH_CLOCK;
+    const minute = source ? source.minute(match) : Math.max(0, Number(match.minute) || 0);
+    return {
+      minute,
+      clock: source ? source.format(match) : `${String(minute).padStart(2, "0")}:00`,
+      phase: source ? source.phase(match) : (minute > 90 ? "وقت إضافي" : minute >= 45 ? "الشوط الثاني" : "الشوط الأول"),
+    };
+  }
+
   function liveStreamBlock(match, home, away, tournament) {
     if (!hasLiveStream(match)) return "";
     const labels = liveStreamCopy();
-    const minute = match.current_minute ?? match.minute ?? 0;
-    const clock = `${String(Math.max(0, Number(minute) || 0)).padStart(2, "0")}:00`;
-    const phase = Number(minute) > 90 ? "وقت إضافي" : Number(minute) > 45 ? "الشوط الثاني" : "الشوط الأول";
+    const { minute, clock, phase } = matchClock(match);
     const tournamentLogo = tournament?.logo_url || state.settings.logo_url || "assets/tournament.jpg";
     return `<section id="matchLiveStream" class="live-stream-card" style="--broadcast-accent:${escapeHtml(tournament?.accent_color || "#c7ff37")}" data-stream-enabled="true" data-stream-status="${escapeHtml(match.stream_status)}" data-stream-type="${escapeHtml(match.stream_type || "")}" data-stream-url="${escapeHtml(match.stream_url || "")}" data-match-id="${escapeHtml(match.id)}" aria-label="${escapeHtml(labels.title)}">
       <div class="live-stream-head">
@@ -921,9 +929,7 @@
     const home = teamForSide(next, "a");
     const away = teamForSide(next, "b");
     const labels = liveStreamCopy();
-    const minute = next.current_minute ?? next.minute ?? 0;
-    const clock = `${String(Math.max(0, Number(minute) || 0)).padStart(2, "0")}:00`;
-    const phase = Number(minute) > 90 ? "وقت إضافي" : Number(minute) > 45 ? "الشوط الثاني" : "الشوط الأول";
+    const { minute, clock, phase } = matchClock(next);
     const setText = (selector, value) => { const element = container.querySelector(selector); if (element) element.textContent = value; };
     setText("[data-broadcast-home-score]", score(next.score_a));
     setText("[data-broadcast-away-score]", score(next.score_b));
@@ -1290,7 +1296,7 @@
       for (const match of feed.matches) {
         const current = getMatch(match.id);
         if (!current) continue;
-        const fields = ['status','score_a','score_b','minute','current_minute','stream_enabled','stream_status','stream_type','stream_url'];
+        const fields = ['status','score_a','score_b','minute','clock_elapsed_seconds','clock_anchor_at','clock_running','stream_enabled','stream_status','stream_type','stream_url'];
         if (fields.some(key => current[key] !== match[key])) {
           const transition = current.stream_status !== match.stream_status || current.stream_enabled !== match.stream_enabled || current.stream_type !== match.stream_type;
           const patched = patchLiveMatch({ new: match });

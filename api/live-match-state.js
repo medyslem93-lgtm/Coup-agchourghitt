@@ -16,7 +16,15 @@ export default async function handler(req, res) {
     const matches = await read('matches?select=id,tournament_id,team_a_id,team_b_id,status,match_date,match_time,score_a,score_b,minute,stream_enabled,stream_status,stream_type,stream_url,updated_at&order=updated_at.desc&limit=60');
     const active = matches.filter(row => row.status === 'مباشر' || row.stream_status === 'live');
     const ids = active.map(row => row.id).filter(Boolean);
-    const events = ids.length ? await read(`match_events?select=*&match_id=in.(${ids.join(',')})&order=created_at.asc&limit=300`) : [];
+    const [events, clocks] = await Promise.all([
+      ids.length ? read(`match_events?select=*&match_id=in.(${ids.join(',')})&order=created_at.asc&limit=300`) : [],
+      ids.length ? read(`match_live_clocks?select=match_id,elapsed_seconds,anchor_at,running&match_id=in.(${ids.join(',')})`) : [],
+    ]);
+    const clockByMatch = new Map(clocks.map(row => [row.match_id, row]));
+    for (const match of matches) {
+      const clock = clockByMatch.get(match.id);
+      if (clock) Object.assign(match, { clock_elapsed_seconds: clock.elapsed_seconds, clock_anchor_at: clock.anchor_at, clock_running: clock.running });
+    }
     res.setHeader('Cache-Control', 'public, max-age=0');
     res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=3, stale-while-revalidate=6');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');

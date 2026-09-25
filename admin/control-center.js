@@ -172,6 +172,16 @@
     return true;
   }
 
+  function clockSeconds(clock) {
+    const base = Math.max(0, Number(clock?.elapsed_seconds) || 0);
+    const anchor = clock?.anchor_at ? Date.parse(clock.anchor_at) : NaN;
+    return Math.floor(base + (clock?.running && Number.isFinite(anchor) ? Math.max(0, (Date.now() - anchor) / 1000) : 0));
+  }
+  function clockLabel(clock) {
+    const seconds = clockSeconds(clock);
+    return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+  }
+
   function openEventFromCenter(matchId, type) {
     admin.close();
     admin.activateTab("events");
@@ -208,11 +218,13 @@
       </div>
       <div class="quick-status">
         <button class="primary" data-center-status="مباشر" type="button">بدء / استئناف</button>
+        <button class="ghost" data-center-pause type="button">إيقاف الوقت مؤقتًا</button>
         <button class="ghost" data-center-minute="46" type="button">بدء الشوط الثاني</button>
         <button class="ghost" data-center-status="مؤجلة" type="button">تأجيل</button>
         <button class="danger" data-center-status="ملغاة" type="button">إلغاء</button>
         <button class="danger" data-center-status="انتهت" type="button">إنهاء المباراة</button>
       </div>
+      <p class="match-control-clock">وقت المباراة: <strong id="centerLiveClock" dir="ltr">—</strong></p>
       <div class="row two match-score-editor">
         <div class="field"><label>نتيجة ${esc(match.team_a?.name || "الفريق الأول")}</label><input id="centerScoreA" type="number" min="0" value="${match.score_a ?? 0}"></div>
         <div class="field"><label>نتيجة ${esc(match.team_b?.name || "الفريق الثاني")}</label><input id="centerScoreB" type="number" min="0" value="${match.score_b ?? 0}"></div>
@@ -236,14 +248,47 @@
       <div class="savebar"><button class="ghost" data-center-lineup="${match.id}" type="button">إدارة التشكيلات</button><button class="ghost" data-center-stats="${match.id}" type="button">إحصائيات المباراة</button></div>
     `);
     const panel = $("panel");
+    let clock = null;
+    const readClock = async () => {
+      const { data, error } = await admin.client.from("match_live_clocks")
+        .select("match_id,elapsed_seconds,anchor_at,running").eq("match_id", match.id).maybeSingle();
+      if (!error && data) clock = data;
+      const display = $("centerLiveClock");
+      if (display) display.textContent = clock ? clockLabel(clock) : "—";
+      return !error && clock;
+    };
+    readClock();
+    const clockTicker = setInterval(() => {
+      if (!panel.isConnected || !document.getElementById("centerLiveClock")) return clearInterval(clockTicker);
+      if (clock) $("centerLiveClock").textContent = clockLabel(clock);
+    }, 1000);
     window.AGCH_LIVEKIT_CAMERA?.mount(match.id, $("livekitCameraBox"));
     panel.querySelectorAll("[data-center-status]").forEach((button) => button.addEventListener("click", async () => {
       const status = button.dataset.centerStatus;
       if (["انتهت", "ملغاة"].includes(status) && !confirm(`تأكيد تغيير حالة المباراة إلى «${status}»؟`)) return;
       button.disabled = true;
-      await updateMatch(match.id, { status }, "تم تحديث حالة المباراة");
+      const ok = await updateMatch(match.id, { status }, "تم تحديث حالة المباراة");
+      if (!ok) { button.disabled = false; return; }
+      if (status === "مباشر" && await readClock() && !clock.running) {
+        const { error } = await admin.client.from("match_live_clocks").update({
+          anchor_at: new Date().toISOString(), running: true, updated_at: new Date().toISOString(),
+        }).eq("match_id", match.id);
+        if (error) admin.toast("بدأت المباراة، لكن تعذر استئناف الساعة: " + error.message, false);
+      }
       admin.close();
     }));
+    panel.querySelector("[data-center-pause]")?.addEventListener("click", async event => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      if (!await readClock()) { admin.toast("تعذر قراءة ساعة المباراة", false); button.disabled = false; return; }
+      const now = new Date().toISOString();
+      const { error } = await admin.client.from("match_live_clocks").update({
+        elapsed_seconds: clockSeconds(clock), anchor_at: null, running: false, updated_at: now,
+      }).eq("match_id", match.id);
+      if (error) admin.toast("تعذر إيقاف الساعة: " + error.message, false);
+      else { await readClock(); admin.toast("تم إيقاف وقت المباراة مؤقتًا"); }
+      button.disabled = false;
+    });
     panel.querySelector("[data-center-minute]")?.addEventListener("click", async () => {
       await updateMatch(match.id, { status: "مباشر", minute: 46 }, "بدأ الشوط الثاني");
       admin.close();
