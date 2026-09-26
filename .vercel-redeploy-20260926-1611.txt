@@ -1,0 +1,1 @@
+Force production deployment after public fallback, tournament voting, admin auth, and site reliability repairs.
