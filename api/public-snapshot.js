@@ -25,7 +25,11 @@ const optionalPaths={
   assignments:'referee_assignments?select=*',
   refereeMatchStats:'referee_match_stats?select=*',
   featureFlags:'site_feature_flags?select=*',
-  liveClocks:'match_live_clocks?select=match_id,elapsed_seconds,anchor_at,running'
+  liveClocks:'match_live_clocks?select=match_id,elapsed_seconds,anchor_at,running',
+  qualificationEvents:'qualification_events?select=*&order=created_at.asc',
+  middleRoundThreeDraws:'middle_round_three_draws?select=*',
+  playerTournamentPolls:'player_tournament_polls?select=*',
+  playerTournamentCandidates:'player_tournament_candidates?select=*&order=sort_order.asc.nullslast,created_at.asc'
 };
 
 async function readRest(path){
