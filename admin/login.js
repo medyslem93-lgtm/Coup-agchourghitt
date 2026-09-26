@@ -1,11 +1,13 @@
 (()=>{
   'use strict';
-  const SUPABASE_URL='https://pncjlbsflsgshmzgiiqu.supabase.co';
-  const SUPABASE_KEY='sb_publishable_fnl_v042_IqkcFPpP5oVLA_F_CrpRZX';
+  const cfg=window.AGCH_CONFIG||{};
+  const SUPABASE_URL=cfg.supabaseUrl||'https://vbdfyxwzugaqerkcnqzk.supabase.co';
+  const SUPABASE_KEY=cfg.supabaseKey||'sb_publishable_WXQXUIk-FQ5SAyzIcslXtA_zo1NPp22';
   const ADMIN_STORAGE_KEY='agch-admin-auth-v2';
   const form=document.getElementById('adminLogin');
   const status=document.getElementById('loginStatus');
   const button=document.getElementById('loginButton');
+  const emailLinkLogin=document.getElementById('emailLinkLogin');
   const forgot=document.getElementById('forgotPassword');
   const updateForm=document.getElementById('updatePasswordForm');
   const recoveryStatus=document.getElementById('recoveryStatus');
@@ -14,19 +16,15 @@
   const friendlyError=err=>{
     const message=String(err?.message||'');
     if(err?.status===402||/exceed_(cached_)?egress_quota|service for this project is restricted/i.test(message))
-      return 'تعذر تسجيل الدخول بسبب تقييد خدمة Supabase بعد تجاوز حد نقل البيانات. لا يعني ذلك أن كلمة المرور خاطئة؛ ستعود الإدارة بعد رفع التقييد عن المشروع.';
+      return 'تعذر تسجيل الدخول بسبب تقييد خدمة Supabase. لا يعني ذلك أن كلمة المرور خاطئة؛ أعد المحاولة بعد قليل.';
     if(/invalid login credentials/i.test(message))return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+    if(/email not confirmed/i.test(message))return 'البريد الإلكتروني يحتاج إلى تأكيد أولاً. افتح رسالة Supabase في بريدك ثم أعد المحاولة.';
     return 'تعذر تسجيل الدخول الآن: '+(message||'خطأ غير معروف');
   };
   if(!window.supabase||!form){if(status){status.textContent='تعذر تحميل خدمة تسجيل الدخول. أعد تحميل الصفحة.';status.className='login-status error';}return;}
 
-  const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
-    auth:{
-      persistSession:true,
-      autoRefreshToken:true,
-      detectSessionInUrl:true,
-      storageKey:ADMIN_STORAGE_KEY
-    },
+  const client=window.AGCH_SUPABASE_CLIENT||window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+    auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:ADMIN_STORAGE_KEY},
     global:{headers:{'x-client-info':'aghchorguit-2026-admin-login'}}
   });
 
@@ -37,8 +35,15 @@
     pageIntro.textContent='أدخل كلمة المرور الجديدة ثم احفظها للعودة إلى لوحة الإدارة.';
   };
 
+  async function isAllowedAdminEmail(email){
+    const {data,error}=await client.from('admin_emails').select('email').ilike('email',email).limit(1);
+    if(error)throw error;
+    return Array.isArray(data)&&data.length>0;
+  }
+
   client.auth.onAuthStateChange((event)=>{
     if(event==='PASSWORD_RECOVERY')recoveryMode();
+    if(event==='SIGNED_IN')setTimeout(()=>{if(!location.hash.includes('type=recovery'))location.replace('./');},120);
   });
 
   (async()=>{
@@ -75,6 +80,25 @@
       status.className='login-status error';
       button.disabled=false;
     }
+  });
+
+  emailLinkLogin?.addEventListener('click',async()=>{
+    const email=document.getElementById('email').value.trim();
+    if(!email){status.textContent='أدخل بريد الإدارة أولاً.';status.className='login-status error';return;}
+    emailLinkLogin.disabled=true;
+    status.textContent='جارٍ التحقق من بريد الإدارة وإرسال رابط الدخول…';
+    status.className='login-status';
+    try{
+      if(!(await isAllowedAdminEmail(email)))throw new Error('هذا البريد غير مسجل ضمن مسؤولي البطولة.');
+      const redirectTo=location.origin+location.pathname;
+      const {error}=await client.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:redirectTo}});
+      if(error)throw error;
+      status.textContent='تم إرسال رابط آمن إلى بريد الإدارة. افتح الرسالة واضغط الرابط؛ سيُنشأ الحساب في مشروع Supabase الجديد ويدخلك مباشرة إلى الإدارة.';
+      status.className='login-status ok';
+    }catch(err){
+      status.textContent=friendlyError(err);
+      status.className='login-status error';
+    }finally{emailLinkLogin.disabled=false;}
   });
 
   forgot.addEventListener('click',async()=>{
