@@ -9,6 +9,9 @@
       unsupported: "نوع البث غير مدعوم.",
       hlsUnsupported: "هذا المتصفح لا يدعم تشغيل هذا البث.",
       watch: "مشاهدة البث",
+      facebookLive: "بث مباشر من Facebook",
+      facebookHint: "يعرض Facebook بعض روابط البث داخل تطبيقه أو موقعه مباشرة.",
+      facebookOpen: "فتح البث على فيسبوك",
     },
     fr: {
       title: "Direct",
@@ -17,6 +20,9 @@
       unsupported: "Ce type de direct n’est pas pris en charge.",
       hlsUnsupported: "Ce navigateur ne peut pas lire ce direct.",
       watch: "Regarder le direct",
+      facebookLive: "Direct sur Facebook",
+      facebookHint: "Certains liens Facebook sont lisibles uniquement sur Facebook.",
+      facebookOpen: "Ouvrir le direct sur Facebook",
     },
     en: {
       title: "Live Stream",
@@ -25,6 +31,9 @@
       unsupported: "This stream type is not supported.",
       hlsUnsupported: "This browser cannot play this live stream.",
       watch: "Watch Live",
+      facebookLive: "Live on Facebook",
+      facebookHint: "Some Facebook live links can only be watched directly on Facebook.",
+      facebookOpen: "Open live on Facebook",
     },
   };
 
@@ -78,6 +87,12 @@
     return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url.href)}&show_text=false&autoplay=true`;
   }
 
+  function isFacebookShareUrl(value) {
+    const url = safeHttpsUrl(value);
+    if (!url || !/(^|\.)facebook\.com$/i.test(url.hostname)) return false;
+    return /^\/share\/(?:v|r)\//i.test(url.pathname);
+  }
+
   function destroy(container) {
     const player = activePlayers.get(container);
     activePlayers.delete(container);
@@ -109,6 +124,42 @@
       '"': "&quot;",
       "'": "&#39;",
     })[char]);
+  }
+
+  function facebookDirect(container, value) {
+    const url = safeHttpsUrl(value);
+    if (!url || !/(^|\.)facebook\.com$/i.test(url.hostname)) return message(container, copy().unavailable);
+    const stage = container.querySelector("[data-stream-media]") || container.querySelector("[data-stream-stage]") || container;
+    const box = document.createElement("div");
+    box.className = "facebook-live-direct";
+    box.setAttribute("role", "region");
+    box.setAttribute("aria-label", copy().facebookLive);
+    box.style.cssText = "min-height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px 20px;text-align:center;background:linear-gradient(145deg,#101318,#181d25);border-radius:22px;color:#fff";
+
+    const badge = document.createElement("div");
+    badge.textContent = "f";
+    badge.setAttribute("aria-hidden", "true");
+    badge.style.cssText = "width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:#1877f2;color:#fff;font:700 40px/1 Arial,sans-serif";
+
+    const title = document.createElement("strong");
+    title.textContent = copy().facebookLive;
+    title.style.cssText = "font-size:20px;line-height:1.5";
+
+    const hint = document.createElement("p");
+    hint.textContent = copy().facebookHint;
+    hint.style.cssText = "margin:0;max-width:520px;opacity:.78;font-size:14px;line-height:1.7";
+
+    const link = document.createElement("a");
+    link.href = url.href;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer external";
+    link.textContent = copy().facebookOpen;
+    link.style.cssText = "display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 22px;border-radius:14px;background:#1877f2;color:#fff;text-decoration:none;font-weight:800;font-size:16px";
+
+    box.append(badge, title, hint, link);
+    stage.replaceChildren(box);
+    container.classList.remove("stream-error");
+    container.classList.add("stream-ready");
   }
 
   function frame(container, src, title, sandbox = "") {
@@ -277,8 +328,8 @@
         const trackId = track?.sid || track?.mediaStreamTrack?.id;
         if (trackId) attachedTracks.delete(trackId);
         track.detach().forEach((element) => {
-        media.delete(element);
-        element.remove();
+          media.delete(element);
+          element.remove();
         });
       };
 
@@ -334,8 +385,9 @@
       return src ? frame(container, src, copy().title) : message(container, copy().unavailable);
     }
     if (type === "facebook") {
+      if (isFacebookShareUrl(url.href)) return facebookDirect(container, url.href);
       const src = facebookEmbed(url.href);
-      return src ? frame(container, src, copy().title) : message(container, copy().unavailable);
+      return src ? frame(container, src, copy().title) : facebookDirect(container, url.href);
     }
     if (type === "hls") return hls(container, url.href);
     if (type === "embed") {
@@ -372,6 +424,8 @@
     youtubeId,
     youtubeEmbed,
     facebookEmbed,
+    isFacebookShareUrl,
+    facebookDirect,
     safeHttpsUrl,
     liveKit,
   };
