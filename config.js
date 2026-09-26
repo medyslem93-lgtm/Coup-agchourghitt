@@ -104,3 +104,17 @@ window.AGCH_CONFIG={
     return createClient(url, key);
   };
 })();
+
+/* Load the public traffic guard before the scripts that request public data. */
+(() => {
+  if (/^\/admin(?:\/|$)/.test(location.pathname)) return;
+  const src = '/public-network-guard.js?v=20260926-egress1';
+  if (document.readyState === 'loading') {
+    document.write(`<script src="${src}"><\/script>`);
+    return;
+  }
+  const script = document.createElement('script');
+  script.src = src;
+  script.async = false;
+  document.head.appendChild(script);
+})();
