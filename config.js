@@ -80,7 +80,34 @@ window.AGCH_CONFIG={
 
 (() => {
   if (/^\/admin(?:\/|$)/.test(location.pathname)) return;
-  const src='/public-network-guard.js?v=20260926-publicfix2';
-  if(document.readyState==='loading'){document.write(`<script src="${src}"><\/script>`);return;}
-  const script=document.createElement('script');script.src=src;script.async=false;document.head.appendChild(script);
+  const scripts=[
+    '/public-snapshot-fallback.js?v=20260926-publicfix3',
+    '/public-network-guard.js?v=20260926-publicfix3'
+  ];
+  const inject=(src)=>{
+    if(document.readyState==='loading'){document.write(`<script src="${src}"><\/script>`);return;}
+    const script=document.createElement('script');script.src=src;script.async=false;document.head.appendChild(script);
+  };
+  scripts.forEach(inject);
+})();
+
+(() => {
+  if (/^\/admin(?:\/|$)/.test(location.pathname)) return;
+  const boot=()=>{
+    if(!document.getElementById('agh-player-of-tournament-css')){
+      const link=document.createElement('link');
+      link.id='agh-player-of-tournament-css';
+      link.rel='stylesheet';
+      link.href='/player-of-tournament.css?v=20260926-publicfix3';
+      document.head.appendChild(link);
+    }
+    if(!document.getElementById('agh-player-of-tournament-js')){
+      const script=document.createElement('script');
+      script.id='agh-player-of-tournament-js';
+      script.src='/player-of-tournament.js?v=20260926-publicfix3';
+      script.defer=true;
+      document.head.appendChild(script);
+    }
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 })();
