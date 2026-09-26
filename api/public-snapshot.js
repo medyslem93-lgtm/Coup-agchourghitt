@@ -2,6 +2,7 @@ import postgres from 'postgres';
 
 const SUPABASE = (process.env.SUPABASE_URL || 'https://pncjlbsflsgshmzgiiqu.supabase.co').replace(/\/+$/, '');
 const API_KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_fnl_v042_IqkcFPpP5oVLA_F_CrpRZX';
+const EDGE_SNAPSHOT_URL = `${SUPABASE}/functions/v1/public-db-snapshot`;
 const CACHE_MS = 5 * 60 * 1000;
 
 function resolveDatabaseUrl() {
@@ -102,10 +103,21 @@ async function readFromPostgres() {
   return payload;
 }
 
+async function readFromEdgeDirectDb() {
+  const response = await fetch(EDGE_SNAPSHOT_URL, {
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+    signal: AbortSignal.timeout(12000),
+  });
+  if (!response.ok) throw new Error(`supabase_edge_direct_${response.status}`);
+  return response.json();
+}
+
 async function readRest(path) {
   const response = await fetch(`${SUPABASE}/rest/v1/${path}`, {
-    headers: { apikey: API_KEY, Authorization: `Bearer ${API_KEY}`, Accept: 'application/json' },
+    headers: { apikey: API_KEY, Accept: 'application/json' },
     signal: AbortSignal.timeout(8000),
+    cache: 'no-store',
   });
   if (!response.ok) throw new Error(`supabase_rest_${response.status}`);
   return response.json();
@@ -132,6 +144,15 @@ function validPayload(payload) {
     Array.isArray(payload.players) && Array.isArray(payload.matches) && Array.isArray(payload.events);
 }
 
+function normalizeOptionalCollections(payload) {
+  if (!payload || typeof payload !== 'object') return payload;
+  for (const key of ['lineups','lineupPlayers','matchStats','standings','playerStats','news','awards','media','referees','assignments','refereeMatchStats','featureFlags','liveClocks']) {
+    if (!Array.isArray(payload[key])) payload[key] = [];
+  }
+  if (!payload.settings || typeof payload.settings !== 'object' || Array.isArray(payload.settings)) payload.settings = {};
+  return payload;
+}
+
 function send(res, payload, source, stale = false) {
   res.setHeader('Cache-Control', stale ? 'public, max-age=15, stale-while-revalidate=300' : 'public, max-age=60, stale-while-revalidate=300');
   res.setHeader('Vercel-CDN-Cache-Control', stale ? 'public, s-maxage=60, stale-while-revalidate=3600' : 'public, s-maxage=300, stale-while-revalidate=3600');
@@ -152,17 +173,24 @@ export default async function handler(req, res) {
     payload = await readFromPostgres();
   } catch (postgresError) {
     console.error('Direct Supabase Postgres read failed:', postgresError?.message || postgresError);
-    if (memoryPayload) return send(res, memoryPayload, 'memory-stale', true);
-    source = 'supabase-rest';
+    source = 'supabase-edge-direct-postgres';
     try {
-      payload = await readFromRest();
-    } catch (restError) {
-      console.error('Supabase REST read failed:', restError?.message || restError);
-      res.setHeader('Cache-Control', 'no-store');
-      return res.status(503).json({ error: 'supabase_unavailable' });
+      payload = await readFromEdgeDirectDb();
+    } catch (edgeError) {
+      console.error('Supabase Edge direct DB read failed:', edgeError?.message || edgeError);
+      if (memoryPayload) return send(res, memoryPayload, 'memory-stale', true);
+      source = 'supabase-rest';
+      try {
+        payload = await readFromRest();
+      } catch (restError) {
+        console.error('Supabase REST read failed:', restError?.message || restError);
+        res.setHeader('Cache-Control', 'no-store');
+        return res.status(503).json({ error: 'supabase_unavailable' });
+      }
     }
   }
 
+  payload = normalizeOptionalCollections(payload);
   if (!validPayload(payload)) {
     if (memoryPayload) return send(res, memoryPayload, 'memory-stale', true);
     res.setHeader('Cache-Control', 'no-store');
