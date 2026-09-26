@@ -1,7 +1,8 @@
 (()=>{
   'use strict';
-  const SUPABASE_URL='https://pncjlbsflsgshmzgiiqu.supabase.co';
-  const SUPABASE_KEY='sb_publishable_fnl_v042_IqkcFPpP5oVLA_F_CrpRZX';
+  const cfg=window.AGCH_CONFIG||{};
+  const SUPABASE_URL=cfg.supabaseUrl||'https://vbdfyxwzugaqerkcnqzk.supabase.co';
+  const SUPABASE_KEY=cfg.supabaseKey||'sb_publishable_WXQXUIk-FQ5SAyzIcslXtA_zo1NPp22';
   const ADMIN_STORAGE_KEY='agch-admin-auth-v2';
   const form=document.getElementById('adminLogin');
   const status=document.getElementById('loginStatus');
@@ -14,13 +15,14 @@
   const friendlyError=err=>{
     const message=String(err?.message||'');
     if(err?.status===402||/exceed_(cached_)?egress_quota|service for this project is restricted/i.test(message))
-      return 'تعذر تسجيل الدخول بسبب تقييد خدمة Supabase بعد تجاوز حد نقل البيانات. لا يعني ذلك أن كلمة المرور خاطئة؛ ستعود الإدارة بعد رفع التقييد عن المشروع.';
+      return 'تعذر تسجيل الدخول بسبب تقييد خدمة Supabase. لا يعني ذلك أن كلمة المرور خاطئة؛ أعد المحاولة بعد قليل.';
     if(/invalid login credentials/i.test(message))return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+    if(/email not confirmed/i.test(message))return 'البريد الإلكتروني يحتاج إلى تأكيد أولاً. افتح رسالة Supabase في بريدك ثم أعد المحاولة.';
     return 'تعذر تسجيل الدخول الآن: '+(message||'خطأ غير معروف');
   };
   if(!window.supabase||!form){if(status){status.textContent='تعذر تحميل خدمة تسجيل الدخول. أعد تحميل الصفحة.';status.className='login-status error';}return;}
 
-  const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+  const client=window.AGCH_SUPABASE_CLIENT||window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
     auth:{
       persistSession:true,
       autoRefreshToken:true,
