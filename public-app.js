@@ -1297,6 +1297,21 @@
       window.dispatchEvent(new CustomEvent('agh:public-snapshot'));
     } catch (error) {
       console.error("Tournament data load failed", error);
+      if (!state.tournaments.length) {
+        try {
+          const backup = await fetch('/assets/public-snapshot-20260926-1350.json', { signal: AbortSignal.timeout(10000) });
+          if (!backup.ok) throw new Error(`backup_${backup.status}`);
+          const payload = correctStaleFinal(await backup.json());
+          if (!Array.isArray(payload.tournaments) || !payload.tournaments.length || !Array.isArray(payload.matches)) throw new Error('invalid_backup');
+          lastPayloadJson = JSON.stringify(payload);
+          hydrate(payload);
+          try { localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), payload })); } catch { /* storage is optional */ }
+          const connection = document.getElementById("connectionState");
+          connection.hidden = false;
+          connection.textContent = "تعذر تحديث البيانات الآن — يتم عرض آخر نسخة محفوظة.";
+          return;
+        } catch (backupError) { console.warn('Public backup unavailable', backupError); }
+      }
       state.loading = false;
       state.error = "تعذر تحميل بيانات البطولة";
       if (!state.tournaments.length) renderError(state.error);

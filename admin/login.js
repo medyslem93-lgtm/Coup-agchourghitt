@@ -11,6 +11,13 @@
   const recoveryStatus=document.getElementById('recoveryStatus');
   const pageTitle=document.getElementById('pageTitle');
   const pageIntro=document.getElementById('pageIntro');
+  const friendlyError=err=>{
+    const message=String(err?.message||'');
+    if(err?.status===402||/exceed_(cached_)?egress_quota|service for this project is restricted/i.test(message))
+      return 'تعذر تسجيل الدخول بسبب تقييد خدمة Supabase بعد تجاوز حد نقل البيانات. لا يعني ذلك أن كلمة المرور خاطئة؛ ستعود الإدارة بعد رفع التقييد عن المشروع.';
+    if(/invalid login credentials/i.test(message))return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+    return 'تعذر تسجيل الدخول الآن: '+(message||'خطأ غير معروف');
+  };
   if(!window.supabase||!form){if(status){status.textContent='تعذر تحميل خدمة تسجيل الدخول. أعد تحميل الصفحة.';status.className='login-status error';}return;}
 
   const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
@@ -64,8 +71,7 @@
       status.className='login-status ok';
       location.replace('./');
     }catch(err){
-      const msg=String(err?.message||'');
-      status.textContent=/invalid login credentials/i.test(msg)?'البريد الإلكتروني أو كلمة المرور غير صحيحة.':'تعذر تسجيل الدخول الآن: '+(msg||'خطأ غير معروف');
+      status.textContent=friendlyError(err);
       status.className='login-status error';
       button.disabled=false;
     }
@@ -79,7 +85,7 @@
     status.className='login-status';
     const redirectTo=location.origin+location.pathname;
     const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo});
-    if(error){status.textContent='تعذر إرسال الرابط: '+error.message;status.className='login-status error';forgot.disabled=false;return;}
+    if(error){status.textContent=friendlyError(error);status.className='login-status error';forgot.disabled=false;return;}
     status.textContent='تم إرسال رابط تغيير كلمة المرور. افتح بريدك واضغط على الرابط ثم عُد لتعيين كلمة مرور جديدة.';
     status.className='login-status ok';
     forgot.disabled=false;
@@ -96,7 +102,7 @@
     recoveryStatus.textContent='جارٍ حفظ كلمة المرور الجديدة…';
     recoveryStatus.className='login-status';
     const {error}=await client.auth.updateUser({password});
-    if(error){recoveryStatus.textContent='تعذر تغيير كلمة المرور: '+error.message;recoveryStatus.className='login-status error';updateButton.disabled=false;return;}
+    if(error){recoveryStatus.textContent=friendlyError(error);recoveryStatus.className='login-status error';updateButton.disabled=false;return;}
     recoveryStatus.textContent='تم تغيير كلمة المرور بنجاح. جارٍ فتح لوحة الإدارة…';
     recoveryStatus.className='login-status ok';
     setTimeout(()=>location.replace('./'),700);
