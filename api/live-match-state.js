@@ -1,5 +1,8 @@
 import postgres from 'postgres';
 
+const SUPABASE = (process.env.SUPABASE_URL || 'https://pncjlbsflsgshmzgiiqu.supabase.co').replace(/\/+$/, '');
+const EDGE_SNAPSHOT_URL = `${SUPABASE}/functions/v1/public-db-snapshot`;
+
 function resolveDatabaseUrl() {
   const direct = process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL_NON_POOLING || process.env.SUPABASE_DB_URL;
   if (direct) return direct;
@@ -40,6 +43,31 @@ function send(res, payload, source = 'supabase-postgres') {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('X-Data-Source', source);
   return res.status(200).json(payload);
+}
+
+function liveFromSnapshot(snapshot) {
+  if (!snapshot || !Array.isArray(snapshot.matches)) throw new Error('edge_snapshot_invalid');
+  const matches = [...snapshot.matches]
+    .sort((a, b) => (Date.parse(b.updated_at || 0) || 0) - (Date.parse(a.updated_at || 0) || 0))
+    .slice(0, 60);
+  const activeMatchIds = matches
+    .filter(match => match.status === 'مباشر' || match.stream_status === 'live')
+    .map(match => match.id);
+  const active = new Set(activeMatchIds);
+  const events = Array.isArray(snapshot.events)
+    ? snapshot.events.filter(event => active.has(event.match_id)).sort((a, b) => (Date.parse(a.created_at || 0) || 0) - (Date.parse(b.created_at || 0) || 0))
+    : [];
+  return { matches, events, activeMatchIds };
+}
+
+async function readFromEdgeDirectDb() {
+  const response = await fetch(EDGE_SNAPSHOT_URL, {
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+    signal: AbortSignal.timeout(9000),
+  });
+  if (!response.ok) throw new Error(`supabase_edge_direct_${response.status}`);
+  return liveFromSnapshot(await response.json());
 }
 
 export default async function handler(req, res) {
@@ -88,9 +116,17 @@ export default async function handler(req, res) {
     memoryAt = Date.now();
     return send(res, payload);
   } catch (error) {
-    if (memoryPayload) return send(res, memoryPayload, 'memory-stale');
-    res.setHeader('Cache-Control', 'no-store');
-    console.error('Live match state unavailable', error?.message || error);
-    return res.status(503).json({ error: 'live_state_unavailable' });
+    console.error('Direct live Postgres unavailable', error?.message || error);
+    try {
+      const payload = await readFromEdgeDirectDb();
+      memoryPayload = payload;
+      memoryAt = Date.now();
+      return send(res, payload, 'supabase-edge-direct-postgres');
+    } catch (edgeError) {
+      if (memoryPayload) return send(res, memoryPayload, 'memory-stale');
+      res.setHeader('Cache-Control', 'no-store');
+      console.error('Live match state unavailable', edgeError?.message || edgeError);
+      return res.status(503).json({ error: 'live_state_unavailable' });
+    }
   }
 }
