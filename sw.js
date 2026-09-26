@@ -1,6 +1,6 @@
-const CACHE = "agchorguit-live-clock-v58-20260925";
+const CACHE = "agchorguit-pregame-v59-20260926";
 // Keep installation small so a first-time viewer can open the site during a match.
-const CORE = ["./", "index.html", "styles.css?v=20260917-media1", "public-app.js?v=20260925-clock2", "config.js?v=20260910-6", "assets/tournament.jpg"];
+const CORE = ["./", "index.html", "styles.css?v=20260917-media1", "public-app.js?v=20260926-pregame1", "config.js?v=20260910-6", "assets/tournament.jpg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

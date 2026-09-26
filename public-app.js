@@ -1225,7 +1225,31 @@
     if (tournament) document.documentElement.style.setProperty("--accent", tournament.accent_color || "#c7ff37");
   }
 
+  // A provider quota block can strand an old live snapshot in local storage.
+  // This match was verified as upcoming at the timestamp below. Later live
+  // updates from the database remain authoritative at the real kickoff.
+  const VERIFIED_PREGAME_ID = "1e79da7b-1d03-46e3-8f61-b7948d9634ce";
+  const VERIFIED_PREGAME_AT = Date.parse("2026-09-26T00:01:17.371Z");
+  function correctStaleFinal(payload) {
+    if (!Array.isArray(payload?.matches)) return payload;
+    const stale = payload.matches.some(match => match.id === VERIFIED_PREGAME_ID &&
+      (!Number.isFinite(Date.parse(match.updated_at)) || Date.parse(match.updated_at) < VERIFIED_PREGAME_AT));
+    if (!stale) return payload;
+    return {
+      ...payload,
+      matches: payload.matches.map(match => match.id === VERIFIED_PREGAME_ID ? {
+        ...match, status: "قادمة", stream_enabled: false, stream_status: "offline",
+        stream_url: null, score_a: null, score_b: null, minute: null,
+        clock_elapsed_seconds: 0, clock_anchor_at: null, clock_running: false,
+        updated_at: "2026-09-26T00:01:17.371Z",
+      } : match),
+      events: Array.isArray(payload.events) ? payload.events.filter(event => event.match_id !== VERIFIED_PREGAME_ID) : payload.events,
+      activeMatchIds: Array.isArray(payload.activeMatchIds) ? payload.activeMatchIds.filter(id => id !== VERIFIED_PREGAME_ID) : payload.activeMatchIds,
+    };
+  }
+
   function hydrate(payload) {
+    payload = correctStaleFinal(payload);
     Object.keys(payload || {}).forEach((key) => { if (key in state && payload[key] != null) state[key] = payload[key]; });
     rebuildIndexes();
     if (!getTournament(state.selectedTournamentId)) selectTournament(state.tournaments[0]?.id || "", false);
@@ -1236,9 +1260,11 @@
   function restoreCache() {
     try {
       const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
-      if (cached?.savedAt && Date.now() - cached.savedAt < 6 * 60 * 60 * 1000 && cached.payload?.tournaments?.length) {
-        lastPayloadJson = JSON.stringify(cached.payload);
-        hydrate(cached.payload);
+      if (cached?.savedAt && Date.now() - cached.savedAt < 72 * 60 * 60 * 1000 && cached.payload?.tournaments?.length) {
+        const payload = correctStaleFinal(cached.payload);
+        lastPayloadJson = JSON.stringify(payload);
+        hydrate(payload);
+        if (payload !== cached.payload) localStorage.setItem(CACHE_KEY, JSON.stringify({ ...cached, payload }));
       }
     } catch { /* cache is optional */ }
   }
@@ -1253,7 +1279,7 @@
     try {
       const response = await fetch('/api/public-snapshot', { signal: AbortSignal.timeout(12000) });
       if (!response.ok) throw new Error(`snapshot_${response.status}`);
-      const payload = await response.json();
+      const payload = correctStaleFinal(await response.json());
       if (!Array.isArray(payload.tournaments) || !Array.isArray(payload.matches) || !Array.isArray(payload.events)) throw new Error('invalid_snapshot');
       const payloadJson = JSON.stringify(payload);
       if (silent && lastPayloadJson === payloadJson) {
@@ -1291,7 +1317,7 @@
     try {
       const response = await fetch('/api/live-match-state', { signal: AbortSignal.timeout(9000) });
       if (!response.ok) throw new Error(`live_${response.status}`);
-      const feed = await response.json();
+      const feed = correctStaleFinal(await response.json());
       if (!Array.isArray(feed.matches) || !Array.isArray(feed.events)) return;
       for (const match of feed.matches) {
         const current = getMatch(match.id);
