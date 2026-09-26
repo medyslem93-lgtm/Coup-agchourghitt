@@ -2,8 +2,20 @@ import postgres from 'postgres';
 
 const SUPABASE = (process.env.SUPABASE_URL || 'https://pncjlbsflsgshmzgiiqu.supabase.co').replace(/\/+$/, '');
 const API_KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_fnl_v042_IqkcFPpP5oVLA_F_CrpRZX';
-const DATABASE_URL = process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL_NON_POOLING || '';
 
+function resolveDatabaseUrl() {
+  const direct = process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL_NON_POOLING || process.env.SUPABASE_DB_URL;
+  if (direct) return direct;
+  const host = process.env.POSTGRES_HOST;
+  const user = process.env.POSTGRES_USER;
+  const password = process.env.POSTGRES_PASSWORD;
+  const database = process.env.POSTGRES_DATABASE || 'postgres';
+  const port = process.env.POSTGRES_PORT || '5432';
+  if (!host || !user || !password) return '';
+  return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${encodeURIComponent(database)}?sslmode=require`;
+}
+
+const DATABASE_URL = resolveDatabaseUrl();
 let sqlClient;
 function getSql() {
   if (!DATABASE_URL) return null;
@@ -42,7 +54,7 @@ const restPaths = {
 
 async function readFromPostgres() {
   const sql = getSql();
-  if (!sql) throw new Error('postgres_url_missing');
+  if (!sql) throw new Error('postgres_credentials_missing');
 
   const [
     tournaments,
