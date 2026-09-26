@@ -199,3 +199,5 @@ export default async function handler(req, res) {
   res.setHeader('X-Data-Source', source);
   return res.status(200).json(payload);
 }
+
+// Redeploy marker after Vercel↔Supabase database connection was attached on 2026-09-26.
