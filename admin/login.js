@@ -27,6 +27,8 @@
     const message=String(err?.message||'');
     if(err?.status===402||/exceed_(cached_)?egress_quota|service for this project is restricted/i.test(message))
       return 'تعذر تسجيل الدخول بسبب تقييد خدمة Supabase. لا يعني ذلك أن كلمة المرور خاطئة؛ أعد المحاولة بعد قليل.';
+    if(/email rate limit exceeded|rate limit.*email/i.test(message))
+      return 'تم بلوغ الحد المؤقت لإرسال رسائل Supabase. لا توجد مشكلة في بريدك أو كلمة المرور. انتظر حتى يتجدد حد الإرسال ثم اطلب رابط تغيير كلمة المرور مرة واحدة فقط.';
     if(/invalid login credentials/i.test(message))return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
     if(/email not confirmed/i.test(message))return 'البريد الإلكتروني يحتاج إلى تأكيد أولاً.';
     if(/expired|otp.*expired|invalid.*token|token.*invalid/i.test(message))return 'رابط تغيير كلمة المرور منتهي أو غير صالح. اطلب رابطًا جديدًا من صفحة الدخول.';
