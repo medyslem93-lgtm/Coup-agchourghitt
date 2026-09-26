@@ -4,22 +4,35 @@ window.AGCH_CONFIG={
   mediaBucket:'tournament-media'
 };
 
-/* Keep one Supabase/Auth client per page. Feature modules share this instance so
-   realtime subscriptions and the authenticated admin session cannot compete. */
+/* Keep one Supabase client per page, but never let the public site own or
+   refresh the administrator session. Admin pages use a dedicated storage key. */
 (() => {
   if (!window.supabase?.createClient || window.AGCH_SUPABASE_CLIENT) return;
   const createClient = window.supabase.createClient.bind(window.supabase);
   const config = window.AGCH_CONFIG;
+  const isAdminPage = /^\/admin(?:\/|$)/.test(location.pathname);
+  const auth = isAdminPage
+    ? {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        storageKey: 'agch-admin-auth-v2',
+      }
+    : {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        storageKey: 'agch-public-auth-v1',
+      };
+
   const client = createClient(config.supabaseUrl, config.supabaseKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    },
-    global: { headers: { 'x-client-info': 'aghchorguit-2026-web' } },
+    auth,
+    global: { headers: { 'x-client-info': isAdminPage ? 'aghchorguit-2026-admin' : 'aghchorguit-2026-web' } },
   });
+
   window.AGCH_SUPABASE_CLIENT = client;
   window.aghDb = client;
+
   window.supabase.createClient = (url, key) => {
     if (url === config.supabaseUrl && key === config.supabaseKey) return client;
     return createClient(url, key);
