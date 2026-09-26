@@ -80,7 +80,40 @@ window.AGCH_CONFIG={
 
 (() => {
   if (/^\/admin(?:\/|$)/.test(location.pathname)) return;
-  const src='/public-network-guard.js?v=20260926-manama1';
+  const src='/public-network-guard.js?v=20260926-publicfix2';
   if(document.readyState==='loading'){document.write(`<script src="${src}"><\/script>`);return;}
   const script=document.createElement('script');script.src=src;script.async=false;document.head.appendChild(script);
+})();
+
+// Public feature bootstrapping. The best-player module used to exist in the
+// repository but was never loaded by the public page, so users could not see it.
+(() => {
+  if (/^\/admin(?:\/|$)/.test(location.pathname)) return;
+  const VERSION='20260926-publicfix2';
+
+  const addStyle=(href,id)=>{
+    if(document.getElementById(id)) return;
+    const link=document.createElement('link');
+    link.id=id;
+    link.rel='stylesheet';
+    link.href=href;
+    document.head.appendChild(link);
+  };
+
+  const addScript=(src,id)=>{
+    if(document.getElementById(id)) return;
+    const script=document.createElement('script');
+    script.id=id;
+    script.src=src;
+    script.defer=true;
+    document.body.appendChild(script);
+  };
+
+  const boot=()=>{
+    addStyle(`/player-of-tournament.css?v=${VERSION}`,'agh-player-of-tournament-style');
+    addScript(`/player-of-tournament.js?v=${VERSION}`,'agh-player-of-tournament-script');
+  };
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true});
+  else boot();
 })();
