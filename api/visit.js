@@ -1,53 +1,21 @@
-import postgres from 'postgres';
+const SUPABASE='https://vbdfyxwzugaqerkcnqzk.supabase.co';
+const API_KEY='sb_publishable_WXQXUIk-FQ5SAyzIcslXtA_zo1NPp22';
+const clean=(value,max)=>typeof value==='string'?value.slice(0,max):null;
 
-function resolveDatabaseUrl() {
-  const direct = process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL_NON_POOLING || process.env.SUPABASE_DB_URL;
-  if (direct) return direct;
-  const host = process.env.POSTGRES_HOST;
-  const user = process.env.POSTGRES_USER;
-  const password = process.env.POSTGRES_PASSWORD;
-  const database = process.env.POSTGRES_DATABASE || 'postgres';
-  const port = process.env.POSTGRES_PORT || '5432';
-  if (!host || !user || !password) return '';
-  return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${encodeURIComponent(database)}?sslmode=require`;
-}
-
-const DATABASE_URL = resolveDatabaseUrl();
-let sqlClient;
-function getSql() {
-  if (!DATABASE_URL) return null;
-  if (!sqlClient) sqlClient = postgres(DATABASE_URL, {
-    max: 1,
-    prepare: false,
-    ssl: 'require',
-    connect_timeout: 3,
-    idle_timeout: 15,
-    max_lifetime: 60 * 10,
-    connection: { statement_timeout: '2500' },
-  });
-  return sqlClient;
-}
-
-const clean = (value, max) => typeof value === 'string' ? value.slice(0, max) : null;
-
-export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
-  res.setHeader('Cache-Control', 'no-store');
-  try {
-    const sql = getSql();
-    if (!sql) return res.status(204).end();
-    const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
-    const visitorId = clean(body.visitor_id, 128);
-    const sessionId = clean(body.session_id, 128);
-    const path = clean(body.path, 500) || '/';
-    const referrerHost = clean(body.referrer_host, 255);
-    if (!visitorId || !sessionId) return res.status(204).end();
-    await sql`
-      insert into public.site_visits (visitor_id, session_id, path, referrer_host)
-      values (${visitorId}, ${sessionId}, ${path}, ${referrerHost})
-    `;
-  } catch (_) {
-    // Analytics must never affect the visitor experience.
-  }
+export default async function handler(req,res){
+  if(req.method!=='POST') return res.status(405).json({error:'method_not_allowed'});
+  res.setHeader('Cache-Control','no-store');
+  try{
+    const body=typeof req.body==='string'?JSON.parse(req.body||'{}'):(req.body||{});
+    const visitor_id=clean(body.visitor_id,128);
+    const session_id=clean(body.session_id,128);
+    if(!visitor_id||!session_id) return res.status(204).end();
+    await fetch(`${SUPABASE}/rest/v1/site_visits`,{
+      method:'POST',
+      headers:{apikey:API_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},
+      body:JSON.stringify({visitor_id,session_id,path:clean(body.path,500)||'/',referrer_host:clean(body.referrer_host,255)}),
+      signal:AbortSignal.timeout(3000)
+    });
+  }catch(_){/* Analytics never blocks the site. */}
   return res.status(204).end();
 }
