@@ -96,7 +96,7 @@ publicIndex = publicIndex
   .replace(/site-directory\.css\?v=[^"']+/g, "site-directory.css?v=20260919-1")
   .replace(/site-directory\.js\?v=[^"']+/g, "site-directory.js?v=20260925-live1")
   .replace(/app-structure-v2\.css\?v=[^"']+/g, "app-structure-v2.css?v=20260921-restore1")
-  .replace(/app-structure-v2\.js\?v=[^"']+/g, "app-structure-v2.js?v=20260922-1")
+  .replace(/app-structure-v2\.js\?v=[^"']+/g, "app-structure-v2.js?v=20260926-repair1")
   .replace(/watch-center-v2\.js\?v=[^"']+/g, "watch-center-v2.js?v=20260920-1")
   .replace(/watch-match-overlay-v1\.js\?v=[^"']+/g, "watch-match-overlay-v1.js?v=20260925-live1")
   .replace(/watch-overlay-polish-v3\.js\?v=[^"']+/g, "watch-overlay-polish-v3.js?v=20260920-1");

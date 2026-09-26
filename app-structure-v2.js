@@ -8,14 +8,6 @@
   const esc = (value = '') => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const rootRoute = () => (location.hash.replace(/^#\/?/, '') || 'home').split('/').filter(Boolean)[0] || 'home';
 
-  let db = null;
-  if (window.supabase?.createClient && cfg.supabaseUrl && cfg.supabaseKey) {
-    db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-      global: { headers: { 'x-client-info': 'aghchorguit-app-structure-stable' } },
-    });
-  }
-
   let tournamentData = null;
   let loadingTournaments = null;
   let applyTimer = 0;
@@ -23,18 +15,28 @@
   async function loadTournamentHub() {
     if (tournamentData) return tournamentData;
     if (loadingTournaments) return loadingTournaments;
-    if (!db) return { tournaments: [], teams: [], matches: [] };
-    loadingTournaments = Promise.all([
-      db.from('tournaments').select('id,slug,name,short_name,season,status,logo_url,accent_color,sort_order').order('sort_order'),
-      db.from('teams').select('id,tournament_id,name').order('name'),
-      db.from('matches').select('id,tournament_id,status,match_date').order('match_date', { ascending: false, nullsFirst: false }),
-    ]).then(([tournaments, teams, matches]) => ({
-      tournaments: tournaments.data || [],
-      teams: teams.data || [],
-      matches: matches.data || [],
-    })).catch(() => ({ tournaments: [], teams: [], matches: [] })).finally(() => { loadingTournaments = null; });
-    tournamentData = await loadingTournaments;
-    return tournamentData;
+    loadingTournaments = (async () => {
+      let payload = window.__AGH_PUBLIC_SNAPSHOT;
+      if (!Array.isArray(payload?.tournaments) || !payload.tournaments.length) {
+        try {
+          const response = await fetch('/api/public-snapshot', { signal: AbortSignal.timeout(12000) });
+          if (response.ok) payload = await response.json();
+        } catch (error) { console.warn('Tournament hub refresh delayed', error); }
+      }
+      if (!Array.isArray(payload?.tournaments) || !payload.tournaments.length) {
+        const response = await fetch('/assets/public-snapshot-20260926-1350.json', { signal: AbortSignal.timeout(10000) });
+        if (!response.ok) throw new Error(`tournament_backup_${response.status}`);
+        payload = await response.json();
+      }
+      return {
+        tournaments: payload.tournaments || [],
+        teams: payload.teams || [],
+        matches: payload.matches || [],
+      };
+    })().catch(() => ({ tournaments: [], teams: [], matches: [] })).finally(() => { loadingTournaments = null; });
+    const data = await loadingTournaments;
+    if (data.tournaments.length) tournamentData = data;
+    return data;
   }
 
   function signature(nav) {
@@ -122,6 +124,7 @@
     if (rootRoute() !== 'tournaments' || main.querySelector('[data-tournament-chooser-v2]')) return;
     const data = await loadTournamentHub();
     if (rootRoute() !== 'tournaments' || main.querySelector('[data-tournament-chooser-v2]')) return;
+    if (!data.tournaments.length) return;
     const page = document.createElement('div');
     page.className = 'page-shell agh-tournament-chooser-page';
     page.dataset.tournamentChooserV2 = '1';
