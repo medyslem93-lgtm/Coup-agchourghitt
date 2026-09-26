@@ -5,6 +5,23 @@ window.AGCH_CONFIG={
   legacySupabaseUrl:'https://pncjlbsflsgshmzgiiqu.supabase.co'
 };
 
+/* Public pages install the resilient snapshot layer before Supabase creates its
+   internal fetch client. This makes every public .from(...).select(...) read use
+   the same Vercel snapshot/fallback path instead of depending on a direct mobile
+   connection to Supabase. Admin pages stay direct and authenticated. */
+(() => {
+  if (/^\/admin(?:\/|$)/.test(location.pathname)) return;
+  const scripts=[
+    '/public-snapshot-fallback.js?v=20260926-publicfix4',
+    '/public-network-guard.js?v=20260926-publicfix4'
+  ];
+  const inject=(src)=>{
+    if(document.readyState==='loading'){document.write(`<script src="${src}"><\/script>`);return;}
+    const script=document.createElement('script');script.src=src;script.async=false;document.head.appendChild(script);
+  };
+  scripts.forEach(inject);
+})();
+
 (() => {
   if (!window.supabase?.createClient || window.AGCH_SUPABASE_CLIENT) return;
   const nativeCreateClient = window.supabase.createClient.bind(window.supabase);
@@ -80,31 +97,18 @@ window.AGCH_CONFIG={
 
 (() => {
   if (/^\/admin(?:\/|$)/.test(location.pathname)) return;
-  const scripts=[
-    '/public-snapshot-fallback.js?v=20260926-publicfix3',
-    '/public-network-guard.js?v=20260926-publicfix3'
-  ];
-  const inject=(src)=>{
-    if(document.readyState==='loading'){document.write(`<script src="${src}"><\/script>`);return;}
-    const script=document.createElement('script');script.src=src;script.async=false;document.head.appendChild(script);
-  };
-  scripts.forEach(inject);
-})();
-
-(() => {
-  if (/^\/admin(?:\/|$)/.test(location.pathname)) return;
   const boot=()=>{
     if(!document.getElementById('agh-player-of-tournament-css')){
       const link=document.createElement('link');
       link.id='agh-player-of-tournament-css';
       link.rel='stylesheet';
-      link.href='/player-of-tournament.css?v=20260926-publicfix3';
+      link.href='/player-of-tournament.css?v=20260926-publicfix4';
       document.head.appendChild(link);
     }
     if(!document.getElementById('agh-player-of-tournament-js')){
       const script=document.createElement('script');
       script.id='agh-player-of-tournament-js';
-      script.src='/player-of-tournament.js?v=20260926-publicfix3';
+      script.src='/player-of-tournament.js?v=20260926-publicfix4';
       script.defer=true;
       document.head.appendChild(script);
     }
