@@ -49,7 +49,8 @@ if (!publicApp.includes("function patchLiveEvent") || !publicApp.includes("showB
   errors.push("public-app.js: live match events are not connected to the broadcast overlay");
 }
 const liveStateApi = readFileSync(resolve(root, "api/live-match-state.js"), "utf8");
-if (!publicApp.includes("/api/live-match-state") || !publicApp.includes("patchLiveEvent({ eventType: 'INSERT'") || !liveStateApi.includes("match_events?select=*")) {
+const liveStateReadsEvents = liveStateApi.includes("match_events?select=*") || liveStateApi.includes("from public.match_events");
+if (!publicApp.includes("/api/live-match-state") || !publicApp.includes("patchLiveEvent({ eventType: 'INSERT'") || !liveStateReadsEvents) {
   errors.push("Live match events are not connected to the shared live feed");
 }
 if (!publicStyles.includes(".broadcast-event-layer") || !publicStyles.includes(".broadcast-event-card")) {
