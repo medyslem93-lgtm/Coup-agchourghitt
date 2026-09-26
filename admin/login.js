@@ -7,7 +7,6 @@
   const form=document.getElementById('adminLogin');
   const status=document.getElementById('loginStatus');
   const button=document.getElementById('loginButton');
-  const emailLinkLogin=document.getElementById('emailLinkLogin');
   const forgot=document.getElementById('forgotPassword');
   const updateForm=document.getElementById('updatePasswordForm');
   const recoveryStatus=document.getElementById('recoveryStatus');
@@ -18,7 +17,7 @@
     if(err?.status===402||/exceed_(cached_)?egress_quota|service for this project is restricted/i.test(message))
       return 'تعذر تسجيل الدخول بسبب تقييد خدمة Supabase. لا يعني ذلك أن كلمة المرور خاطئة؛ أعد المحاولة بعد قليل.';
     if(/invalid login credentials/i.test(message))return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
-    if(/email not confirmed/i.test(message))return 'البريد الإلكتروني يحتاج إلى تأكيد أولاً. افتح رسالة Supabase في بريدك ثم أعد المحاولة.';
+    if(/email not confirmed/i.test(message))return 'البريد الإلكتروني يحتاج إلى تأكيد أولاً.';
     return 'تعذر تسجيل الدخول الآن: '+(message||'خطأ غير معروف');
   };
   if(!window.supabase||!form){if(status){status.textContent='تعذر تحميل خدمة تسجيل الدخول. أعد تحميل الصفحة.';status.className='login-status error';}return;}
@@ -34,12 +33,6 @@
     pageTitle.textContent='تعيين كلمة مرور جديدة';
     pageIntro.textContent='أدخل كلمة المرور الجديدة ثم احفظها للعودة إلى لوحة الإدارة.';
   };
-
-  async function isAllowedAdminEmail(email){
-    const {data,error}=await client.from('admin_emails').select('email').ilike('email',email).limit(1);
-    if(error)throw error;
-    return Array.isArray(data)&&data.length>0;
-  }
 
   client.auth.onAuthStateChange((event)=>{
     if(event==='PASSWORD_RECOVERY')recoveryMode();
@@ -82,26 +75,7 @@
     }
   });
 
-  emailLinkLogin?.addEventListener('click',async()=>{
-    const email=document.getElementById('email').value.trim();
-    if(!email){status.textContent='أدخل بريد الإدارة أولاً.';status.className='login-status error';return;}
-    emailLinkLogin.disabled=true;
-    status.textContent='جارٍ التحقق من بريد الإدارة وإرسال رابط الدخول…';
-    status.className='login-status';
-    try{
-      if(!(await isAllowedAdminEmail(email)))throw new Error('هذا البريد غير مسجل ضمن مسؤولي البطولة.');
-      const redirectTo=location.origin+location.pathname;
-      const {error}=await client.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:redirectTo}});
-      if(error)throw error;
-      status.textContent='تم إرسال رابط آمن إلى بريد الإدارة. افتح الرسالة واضغط الرابط؛ سيُنشأ الحساب في مشروع Supabase الجديد ويدخلك مباشرة إلى الإدارة.';
-      status.className='login-status ok';
-    }catch(err){
-      status.textContent=friendlyError(err);
-      status.className='login-status error';
-    }finally{emailLinkLogin.disabled=false;}
-  });
-
-  forgot.addEventListener('click',async()=>{
+  forgot?.addEventListener('click',async()=>{
     const email=document.getElementById('email').value.trim();
     if(!email){status.textContent='أدخل بريدك الإلكتروني أولاً ثم اضغط «نسيت كلمة المرور؟».';status.className='login-status error';return;}
     forgot.disabled=true;
@@ -110,7 +84,7 @@
     const redirectTo=location.origin+location.pathname;
     const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo});
     if(error){status.textContent=friendlyError(error);status.className='login-status error';forgot.disabled=false;return;}
-    status.textContent='تم إرسال رابط تغيير كلمة المرور. افتح بريدك واضغط على الرابط ثم عُد لتعيين كلمة مرور جديدة.';
+    status.textContent='تم إرسال رابط تغيير كلمة المرور. افتح البريد واضغط الرابط ثم عُد لتعيين كلمة مرور جديدة.';
     status.className='login-status ok';
     forgot.disabled=false;
   });
