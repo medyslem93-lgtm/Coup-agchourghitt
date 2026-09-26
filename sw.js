@@ -1,6 +1,6 @@
-const CACHE = "agchorguit-site-repair-v62-20260926";
+const CACHE = "agchorguit-site-repair-v63-20260926-publicfix2";
 // Keep installation small so a first-time viewer can open the site during a match.
-const CORE = ["./", "index.html", "styles.css?v=20260917-media1", "public-app.js?v=20260926-repair1", "config.js?v=20260910-6", "assets/tournament.jpg"];
+const CORE = ["./", "index.html", "styles.css?v=20260917-media1", "public-app.js?v=20260926-repair1", "config.js?v=20260926-publicfix2", "assets/tournament.jpg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -22,6 +22,7 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+  // API data must never be trapped in the service-worker cache.
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/admin") || event.request.destination === "video" || event.request.headers.has("range")) return;
 
   const cachePut = (response) => {
@@ -34,13 +35,13 @@ self.addEventListener("fetch", (event) => {
   // JavaScript must be network-first. This prevents an old cached config/app
   // bundle from surviving a production hotfix and breaking live data or auth.
   if (event.request.destination === "script" || url.pathname.endsWith(".js")) {
-    event.respondWith(fetch(event.request).then(cachePut).catch(async () =>
+    event.respondWith(fetch(event.request, { cache: "no-store" }).then(cachePut).catch(async () =>
       (await caches.match(event.request)) || Response.error()));
     return;
   }
 
   if (event.request.mode === "navigate" || url.pathname === "/index.html" || url.pathname === "/") {
-    event.respondWith(fetch(event.request).then(cachePut).catch(async () =>
+    event.respondWith(fetch(event.request, { cache: "no-store" }).then(cachePut).catch(async () =>
       (await caches.match(event.request)) || (await caches.match("./")) || Response.error()));
     return;
   }
