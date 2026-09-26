@@ -64,7 +64,7 @@
     snapshotPromise = nativeFetch('/api/public-snapshot', {
       method: 'GET',
       headers: { Accept: 'application/json' },
-      cache: 'default',
+      cache: 'no-store',
       signal: AbortSignal.timeout(15000),
     }).then(async (response) => {
       if (!response.ok) throw new Error(`snapshot_${response.status}`);
@@ -100,10 +100,32 @@
       referee_match_stats: 'refereeMatchStats',
       site_feature_flags: 'featureFlags',
       match_live_clocks: 'liveClocks',
+      qualification_events: 'qualificationEvents',
+      middle_round_three_draws: 'middleRoundThreeDraws',
+      player_tournament_polls: 'playerTournamentPolls',
+      player_tournament_candidates: 'playerTournamentCandidates',
     };
     if (table === 'site_settings') return snapshot.settings && Object.keys(snapshot.settings).length ? [snapshot.settings] : [];
-    const rows = snapshot[map[table]];
-    return Array.isArray(rows) ? rows.slice() : [];
+    let rows = snapshot[map[table]];
+    rows = Array.isArray(rows) ? rows.slice() : [];
+
+    // Some public components request embedded team relations. The shared snapshot
+    // intentionally stores flat rows, so rebuild those lightweight relations here.
+    if (table === 'matches' && Array.isArray(snapshot.teams)) {
+      const teams = new Map(snapshot.teams.map((team) => [String(team.id), team]));
+      rows = rows.map((row) => ({
+        ...row,
+        team_a: row.team_a || teams.get(String(row.team_a_id)) || null,
+        team_b: row.team_b || teams.get(String(row.team_b_id)) || null,
+      }));
+    }
+
+    if (table === 'player_tournament_candidates' && Array.isArray(snapshot.teams)) {
+      const teams = new Map(snapshot.teams.map((team) => [String(team.id), team]));
+      rows = rows.map((row) => ({ ...row, team: row.team || teams.get(String(row.team_id)) || null }));
+    }
+
+    return rows;
   }
 
   function parseValue(value) {
