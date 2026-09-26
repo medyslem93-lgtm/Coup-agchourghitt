@@ -12,14 +12,19 @@
     if(!client?.auth||client.__agchSessionRepair)return client;
     client.__agchSessionRepair=true;
 
-    let storageKey='';
-    try{storageKey=`sb-${new URL(url).hostname.split('.')[0]}-auth-token`;}catch{}
+    const storageKeys=new Set(['agch-admin-auth-v2']);
+    try{storageKeys.add(`sb-${new URL(url).hostname.split('.')[0]}-auth-token`);}catch{}
+    try{
+      const configured=rest?.[1]?.auth?.storageKey;
+      if(configured)storageKeys.add(configured);
+    }catch{}
+
     const clearLocal=async()=>{
-      try{await client.auth.signOut({scope:'local'});}catch{}
-      if(storageKey){
-        try{localStorage.removeItem(storageKey);}catch{}
-        try{sessionStorage.removeItem(storageKey);}catch{}
+      for(const key of storageKeys){
+        try{localStorage.removeItem(key);}catch{}
+        try{sessionStorage.removeItem(key);}catch{}
       }
+      try{await client.auth.signOut({scope:'local'});}catch{}
     };
 
     const getSession=client.auth.getSession.bind(client.auth);
