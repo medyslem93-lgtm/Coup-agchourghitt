@@ -7,6 +7,7 @@
   const form=document.getElementById('adminLogin');
   const status=document.getElementById('loginStatus');
   const button=document.getElementById('loginButton');
+  const emailLinkLogin=document.getElementById('emailLinkLogin');
   const forgot=document.getElementById('forgotPassword');
   const updateForm=document.getElementById('updatePasswordForm');
   const recoveryStatus=document.getElementById('recoveryStatus');
@@ -23,12 +24,7 @@
   if(!window.supabase||!form){if(status){status.textContent='تعذر تحميل خدمة تسجيل الدخول. أعد تحميل الصفحة.';status.className='login-status error';}return;}
 
   const client=window.AGCH_SUPABASE_CLIENT||window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
-    auth:{
-      persistSession:true,
-      autoRefreshToken:true,
-      detectSessionInUrl:true,
-      storageKey:ADMIN_STORAGE_KEY
-    },
+    auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:ADMIN_STORAGE_KEY},
     global:{headers:{'x-client-info':'aghchorguit-2026-admin-login'}}
   });
 
@@ -39,8 +35,15 @@
     pageIntro.textContent='أدخل كلمة المرور الجديدة ثم احفظها للعودة إلى لوحة الإدارة.';
   };
 
+  async function isAllowedAdminEmail(email){
+    const {data,error}=await client.from('admin_emails').select('email').ilike('email',email).limit(1);
+    if(error)throw error;
+    return Array.isArray(data)&&data.length>0;
+  }
+
   client.auth.onAuthStateChange((event)=>{
     if(event==='PASSWORD_RECOVERY')recoveryMode();
+    if(event==='SIGNED_IN')setTimeout(()=>{if(!location.hash.includes('type=recovery'))location.replace('./');},120);
   });
 
   (async()=>{
@@ -77,6 +80,25 @@
       status.className='login-status error';
       button.disabled=false;
     }
+  });
+
+  emailLinkLogin?.addEventListener('click',async()=>{
+    const email=document.getElementById('email').value.trim();
+    if(!email){status.textContent='أدخل بريد الإدارة أولاً.';status.className='login-status error';return;}
+    emailLinkLogin.disabled=true;
+    status.textContent='جارٍ التحقق من بريد الإدارة وإرسال رابط الدخول…';
+    status.className='login-status';
+    try{
+      if(!(await isAllowedAdminEmail(email)))throw new Error('هذا البريد غير مسجل ضمن مسؤولي البطولة.');
+      const redirectTo=location.origin+location.pathname;
+      const {error}=await client.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:redirectTo}});
+      if(error)throw error;
+      status.textContent='تم إرسال رابط آمن إلى بريد الإدارة. افتح الرسالة واضغط الرابط؛ سيُنشأ الحساب في مشروع Supabase الجديد ويدخلك مباشرة إلى الإدارة.';
+      status.className='login-status ok';
+    }catch(err){
+      status.textContent=friendlyError(err);
+      status.className='login-status error';
+    }finally{emailLinkLogin.disabled=false;}
   });
 
   forgot.addEventListener('click',async()=>{
