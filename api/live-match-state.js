@@ -13,7 +13,11 @@ function resolveDatabaseUrl() {
 }
 
 const DATABASE_URL = resolveDatabaseUrl();
+const MEMORY_MS = 8 * 1000;
 let sqlClient;
+let memoryPayload = null;
+let memoryAt = 0;
+
 function getSql() {
   if (!DATABASE_URL) return null;
   if (!sqlClient) {
@@ -30,60 +34,61 @@ function getSql() {
   return sqlClient;
 }
 
+function send(res, payload, source = 'supabase-postgres') {
+  res.setHeader('Cache-Control', 'public, max-age=2, stale-while-revalidate=10');
+  res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=8, stale-while-revalidate=20');
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('X-Data-Source', source);
+  return res.status(200).json(payload);
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'method_not_allowed' });
+  if (memoryPayload && Date.now() - memoryAt < MEMORY_MS) return send(res, memoryPayload, 'memory-cache');
 
   try {
     const sql = getSql();
     if (!sql) throw new Error('postgres_credentials_missing');
 
-    const matches = await sql`
-      select id,tournament_id,team_a_id,team_b_id,status,match_date,match_time,
-             score_a,score_b,minute,stream_enabled,stream_status,stream_type,
-             stream_url,updated_at
-      from public.matches
-      order by updated_at desc nulls last
-      limit 60
+    const rows = await sql`
+      with recent as (
+        select id,tournament_id,team_a_id,team_b_id,status,match_date,match_time,
+               score_a,score_b,minute,stream_enabled,stream_status,stream_type,
+               stream_url,updated_at
+        from public.matches
+        order by updated_at desc nulls last
+        limit 60
+      ), active as (
+        select id from recent where status = 'مباشر' or stream_status = 'live'
+      )
+      select jsonb_build_object(
+        'matches', coalesce((
+          select jsonb_agg(
+            to_jsonb(r) || jsonb_build_object(
+              'clock_elapsed_seconds', c.elapsed_seconds,
+              'clock_anchor_at', c.anchor_at,
+              'clock_running', c.running
+            ) order by r.updated_at desc nulls last
+          )
+          from recent r
+          left join public.match_live_clocks c on c.match_id = r.id
+        ), '[]'::jsonb),
+        'events', coalesce((
+          select jsonb_agg(to_jsonb(e) order by e.created_at asc)
+          from public.match_events e
+          where e.match_id in (select id from active)
+        ), '[]'::jsonb),
+        'activeMatchIds', coalesce((select jsonb_agg(a.id) from active a), '[]'::jsonb)
+      ) as payload
     `;
 
-    const active = Array.from(matches).filter(row => row.status === 'مباشر' || row.stream_status === 'live');
-    const ids = active.map(row => row.id).filter(Boolean);
-
-    let events = [];
-    let clocks = [];
-    if (ids.length) {
-      events = Array.from(await sql`
-        select * from public.match_events
-        where match_id = any(${ids}::uuid[])
-        order by created_at asc
-        limit 300
-      `);
-      clocks = Array.from(await sql`
-        select match_id,elapsed_seconds,anchor_at,running
-        from public.match_live_clocks
-        where match_id = any(${ids}::uuid[])
-      `);
-    }
-
-    const matchRows = Array.from(matches);
-    const clockByMatch = new Map(clocks.map(row => [row.match_id, row]));
-    for (const match of matchRows) {
-      const clock = clockByMatch.get(match.id);
-      if (clock) {
-        Object.assign(match, {
-          clock_elapsed_seconds: clock.elapsed_seconds,
-          clock_anchor_at: clock.anchor_at,
-          clock_running: clock.running,
-        });
-      }
-    }
-
-    res.setHeader('Cache-Control', 'public, max-age=0');
-    res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=3, stale-while-revalidate=6');
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader('X-Data-Source', 'supabase-postgres');
-    return res.status(200).json({ matches: matchRows, events, activeMatchIds: ids });
+    const payload = rows?.[0]?.payload;
+    if (!payload || !Array.isArray(payload.matches)) throw new Error('live_payload_missing');
+    memoryPayload = payload;
+    memoryAt = Date.now();
+    return send(res, payload);
   } catch (error) {
+    if (memoryPayload) return send(res, memoryPayload, 'memory-stale');
     res.setHeader('Cache-Control', 'no-store');
     console.error('Live match state unavailable', error?.message || error);
     return res.status(503).json({ error: 'live_state_unavailable' });
