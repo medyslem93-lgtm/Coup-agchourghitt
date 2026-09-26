@@ -2,9 +2,12 @@
   'use strict';
   const cfg=window.AGCH_CONFIG;
   if(!cfg||!window.supabase)return;
-  const sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:false,autoRefreshToken:false}});
+  const sb=window.AGCH_SUPABASE_CLIENT||window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:false,autoRefreshToken:false}});
   const FALLBACK='../assets/logo-placeholder.svg';
   let logos=new Map();
+  let healthChannel=null;
+  let reconnectTimer=null;
+  let reconnectAttempt=0;
 
   const abs=u=>{try{return new URL(u,location.href).href}catch{return String(u||'')}};
 
@@ -30,11 +33,42 @@
     img.onerror=null;if(!/logo-placeholder\.svg/i.test(src))img.src=FALLBACK;img.style.objectFit='contain';
   },true);
 
+  const reconnectRealtime=()=>{
+    if(reconnectTimer||!navigator.onLine)return;
+    const delay=Math.min(12000,1000*Math.pow(2,Math.min(reconnectAttempt,3)));
+    reconnectAttempt+=1;
+    reconnectTimer=setTimeout(()=>{
+      reconnectTimer=null;
+      try{sb.realtime?.connect?.()}catch{}
+      syncTeams();
+    },delay);
+  };
+
+  const handleRealtimeStatus=status=>{
+    if(status==='SUBSCRIBED'){
+      reconnectAttempt=0;
+      if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null;}
+      document.body.classList.remove('realtime-offline');
+      return;
+    }
+    if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(status)){
+      document.body.classList.add('realtime-offline');
+      reconnectRealtime();
+    }
+  };
+
+  function subscribeHealth(){
+    if(healthChannel)return;
+    healthChannel=sb.channel('admin-health-teams')
+      .on('postgres_changes',{event:'*',schema:'public',table:'teams'},syncTeams)
+      .subscribe(handleRealtimeStatus);
+  }
+
   const mo=new MutationObserver(rows=>rows.forEach(r=>r.addedNodes.forEach(n=>{if(n.nodeType===1){if(n instanceof HTMLImageElement)repair(n);n.querySelectorAll?.('img').forEach(img=>repair(img))}})));
-  document.addEventListener('DOMContentLoaded',()=>{mo.observe(document.body,{subtree:true,childList:true});syncTeams();document.body.classList.toggle('is-offline',!navigator.onLine)},{once:true});
-  addEventListener('online',()=>{document.body.classList.remove('is-offline');syncTeams()});
+  document.addEventListener('DOMContentLoaded',()=>{mo.observe(document.body,{subtree:true,childList:true});syncTeams();subscribeHealth();document.body.classList.toggle('is-offline',!navigator.onLine)},{once:true});
+  addEventListener('online',()=>{document.body.classList.remove('is-offline');try{sb.realtime?.connect?.()}catch{}syncTeams();subscribeHealth()});
   addEventListener('offline',()=>document.body.classList.add('is-offline'));
-  sb.channel('admin-health-teams').on('postgres_changes',{event:'*',schema:'public',table:'teams'},syncTeams).subscribe();
+  addEventListener('admin:connection',event=>handleRealtimeStatus(event?.detail));
 
   // Isolated Team of the Week admin enhancer. Loaded here to avoid altering the legacy admin shell again.
   if(!document.querySelector('script[data-tow-eligibility-loader]')){
