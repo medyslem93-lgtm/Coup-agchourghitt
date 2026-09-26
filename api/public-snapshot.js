@@ -24,9 +24,10 @@ function getSql() {
       max: 1,
       prepare: false,
       ssl: 'require',
-      connect_timeout: 8,
+      connect_timeout: 4,
       idle_timeout: 20,
       max_lifetime: 60 * 10,
+      connection: { statement_timeout: '8000' },
     });
   }
   return sqlClient;
@@ -56,43 +57,26 @@ async function readFromPostgres() {
   const sql = getSql();
   if (!sql) throw new Error('postgres_credentials_missing');
 
-  const [
-    tournaments,
-    teams,
-    players,
-    matches,
-    events,
-    lineups,
-    lineupPlayers,
-    matchStats,
-    standings,
-    playerStats,
-    news,
-    awards,
-    media,
-    settings,
-    referees,
-    assignments,
-    clocks,
-  ] = await Promise.all([
-    sql`select * from public.tournaments order by sort_order asc nulls last`,
-    sql`select * from public.teams order by name asc`,
-    sql`select * from public.players order by name asc`,
-    sql`select * from public.matches order by match_date desc nulls last`,
-    sql`select * from public.match_events order by created_at asc`,
-    sql`select * from public.match_lineups`,
-    sql`select * from public.match_lineup_players`,
-    sql`select * from public.match_stats`,
-    sql`select * from public.tournament_standings`,
-    sql`select * from public.player_tournament_stats`,
-    sql`select * from public.news order by featured desc nulls last, sort_order asc nulls last, publish_date desc nulls last`,
-    sql`select * from public.awards`,
-    sql`select * from public.media_assets where entity_type = 'match' order by created_at asc`,
-    sql`select * from public.site_settings where id = 'main' limit 1`,
-    sql`select * from public.referees order by name asc`,
-    sql`select id, referee_id, tournament_id, match_id, role, category, name, photo_url from public.referee_assignments`,
-    sql`select match_id, elapsed_seconds, anchor_at, running from public.match_live_clocks`,
-  ]);
+  // Read sequentially through one pooled connection. This is intentionally not
+  // Promise.all: the Supabase transaction pooler can stall when many queries are
+  // queued at once behind a single connection.
+  const tournaments = await sql`select * from public.tournaments order by sort_order asc nulls last`;
+  const teams = await sql`select * from public.teams order by name asc`;
+  const players = await sql`select * from public.players order by name asc`;
+  const matches = await sql`select * from public.matches order by match_date desc nulls last`;
+  const events = await sql`select * from public.match_events order by created_at asc`;
+  const lineups = await sql`select * from public.match_lineups`;
+  const lineupPlayers = await sql`select * from public.match_lineup_players`;
+  const matchStats = await sql`select * from public.match_stats`;
+  const standings = await sql`select * from public.tournament_standings`;
+  const playerStats = await sql`select * from public.player_tournament_stats`;
+  const news = await sql`select * from public.news order by featured desc nulls last, sort_order asc nulls last, publish_date desc nulls last`;
+  const awards = await sql`select * from public.awards`;
+  const media = await sql`select * from public.media_assets where entity_type = 'match' order by created_at asc`;
+  const settings = await sql`select * from public.site_settings where id = 'main' limit 1`;
+  const referees = await sql`select * from public.referees order by name asc`;
+  const assignments = await sql`select id, referee_id, tournament_id, match_id, role, category, name, photo_url from public.referee_assignments`;
+  const clocks = await sql`select match_id, elapsed_seconds, anchor_at, running from public.match_live_clocks`;
 
   const payload = {
     tournaments: Array.from(tournaments),
@@ -199,5 +183,3 @@ export default async function handler(req, res) {
   res.setHeader('X-Data-Source', source);
   return res.status(200).json(payload);
 }
-
-// Redeploy marker after Vercel↔Supabase database connection was attached on 2026-09-26.
